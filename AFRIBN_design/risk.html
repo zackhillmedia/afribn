@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Risk Dashboard</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .risk-grid { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:22px; align-items:start; }
+  .map-panel { position:relative; padding:18px; }
+  .map-stage { position:relative; border-radius:14px; overflow:hidden; background:radial-gradient(120% 100% at 70% 10%, rgba(232,37,45,0.08), transparent 60%), #0a0a0c; min-height:480px; }
+  #mapSvg { display:block; width:100%; height:auto; }
+  #mapSvg path { transition:fill .25s ease, opacity .15s; }
+  #mapSvg path:hover { opacity:0.85; }
+  #mapSvg path.sel { stroke:#fff !important; stroke-width:1.4 !important; }
+  .map-tip { position:absolute; pointer-events:none; z-index:20; background:rgba(12,12,15,0.94); border:1px solid var(--line-2); border-radius:10px; padding:9px 12px; font-size:12.5px; opacity:0; transform:translateY(4px); transition:.12s; box-shadow:var(--shadow); white-space:nowrap; }
+  .map-tip.on { opacity:1; transform:none; }
+  .map-tip .tn { font-weight:700; font-size:13.5px; } .map-tip .ts { display:flex; align-items:center; gap:6px; margin-top:3px; }
+  .map-legend2 { position:absolute; left:18px; bottom:16px; display:flex; gap:16px; flex-wrap:wrap; background:rgba(10,10,12,0.7); padding:8px 12px; border-radius:10px; border:1px solid var(--line); backdrop-filter:blur(4px); }
+  .map-legend2 .li { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-2); white-space:nowrap; } .map-legend2 .li .d{width:11px;height:11px;border-radius:3px;}
+  .zoom-ctl { position:absolute; left:18px; top:18px; display:flex; flex-direction:column; gap:1px; z-index:15; border-radius:9px; overflow:hidden; border:1px solid var(--line-2); }
+  .zoom-ctl button { width:34px; height:34px; background:rgba(17,17,20,0.92); border:none; color:var(--ink); font-size:18px; cursor:pointer; display:grid; place-items:center; }
+  .zoom-ctl button:hover { background:var(--panel-3); color:var(--red-bright); }
+  .map-dims { position:absolute; right:18px; top:18px; display:flex; gap:6px; flex-wrap:wrap; z-index:15; max-width:60%; justify-content:flex-end; }
+  .dim-btn { padding:6px 11px; border-radius:8px; background:rgba(17,17,20,0.9); border:1px solid var(--line); color:var(--ink-3); font-weight:600; font-size:12px; cursor:pointer; }
+  .dim-btn.on { background:var(--red); border-color:var(--red); color:#fff; }
+  .zones-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .zone-row { display:flex; align-items:center; gap:13px; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .12s; }
+  .zone-row:last-child { border-bottom:none; }
+  .zone-row:hover, .zone-row.sel { background:rgba(255,255,255,0.03); }
+  .zone-row .nm { font-weight:500; font-size:14.5px; }
+  .zone-row .sc { margin-left:auto; font-family:var(--font-display); font-weight:800; font-size:18px; font-variant-numeric:tabular-nums; }
+  .zone-row .lv { font-size:13px; font-weight:600; min-width:64px; text-align:right; }
+  .ind-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-top:22px; }
+  .ind-card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; }
+  .ind-card .ih { display:flex; align-items:center; gap:9px; font-size:13px; color:var(--ink-2); font-weight:500; }
+  .ind-card .ih .ii { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; flex:none; } .ind-card .ih .ii svg{width:16px;height:16px;}
+  .ind-card .v { font-family:var(--font-display); font-weight:800; font-size:40px; letter-spacing:-0.02em; margin:12px 0 2px; }
+  .ind-card .lv { font-size:13px; font-weight:600; margin-bottom:10px; }
+  .map-fallback { display:none; padding:60px 20px; text-align:center; color:var(--ink-3); }
+  @media (max-width:1200px){ .risk-grid{grid-template-columns:1fr} .ind-row{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Risk Dashboard</h1>
+          <div class="page-sub">Live continental risk map scored across political, security, economic, regulatory and social dimensions.</div></div>
+        <div class="row gap-12">
+          <div class="seg-toggle" id="viewToggle"><button class="on" data-v="map" id="vMap"><span id="vmi"></span> Map</button><button data-v="table" id="vTable"><span id="vti"></span> Table</button></div>
+          <select class="select" id="period"><option>Last 30 days</option><option>Last 7 days</option><option>Last 90 days</option></select>
+          <button class="btn btn-ghost" id="export"><span id="exi"></span> Export</button>
+        </div>
+      </div>
+
+      <div class="risk-grid">
+        <div class="panel map-panel">
+          <div class="map-stage" id="mapStage">
+            <div class="zoom-ctl"><button id="zoomIn">+</button><button id="zoomOut">−</button></div>
+            <div class="map-dims" id="dims"></div>
+            <svg id="mapSvg" preserveAspectRatio="xMidYMid meet"></svg>
+            <div id="mapTable" style="display:none;padding:6px"></div>
+            <div class="map-fallback" id="mapFallback"></div>
+            <div class="map-tip" id="mapTip"></div>
+            <div class="map-legend2">
+              <div class="li"><span class="d" style="background:#3FB950"></span> Low Risk</div>
+              <div class="li"><span class="d" style="background:#E3B341"></span> Medium Risk</div>
+              <div class="li"><span class="d" style="background:#FF6B35"></span> High Risk</div>
+              <div class="li"><span class="d" style="background:#E5252A"></span> Critical Risk</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-pad-lg">
+          <div class="zones-h"><div class="eyebrow" id="zonesLabel">Overall Risk Zones</div><span class="muted" style="font-size:12.5px">54 countries</span></div>
+          <div style="max-height:520px;overflow-y:auto;margin:0 -4px" id="zones"></div>
+        </div>
+      </div>
+
+      <div class="eyebrow" style="margin:26px 0 0">Risk Indicators <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0" id="indScope">· continental average</span></div>
+      <div class="ind-row" id="indicators"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('gauge');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML=ic('gauge'); $('#exi').innerHTML=ic('download','width="16" height="16"');
+  $('#vmi').innerHTML=ic('globe','width="15" height="15"'); $('#vti').innerHTML=ic('listChecks','width="15" height="15"');
+
+  // ---- risk dataset (by world-atlas numeric id) ----
+  const SCORE = {'729':88,'728':92,'180':78,'706':90,'466':70,'566':72,'231':68,'508':62,'404':52,'504':48,'288':45,'72':50,'480':28,'646':34,'686':48,'818':60,'434':75,'148':70,'562':66,'140':80,'120':55,'12':45,'788':40,'854':74,'716':58,'894':38,'24':50,'834':42,'800':50,'710':46,'516':32,'450':44,'384':48,'232':70,'478':55,'430':52,'694':54,'324':56,'204':46,'768':44,'178':48,'266':38,'454':44,'108':66,'174':40,'262':58,'226':48,'748':36,'426':40,'270':46,'624':58,'132':30,'690':28,'678':40,'732':62};
+  const NAME_FALLBACK = { 'Somaliland':85, 'W. Sahara':62, 'Western Sahara':62 };
+  // complete set of all 54 African nation numeric ISO codes (+ W. Sahara 732) so none drop out
+  const AFRICA_IDS = new Set(['12','24','204','72','108','854','120','132','140','148','174','178','180','262','818','226','232','748','231','266','270','288','324','624','384','404','426','430','434','450','454','466','478','480','504','508','516','562','566','646','678','686','690','694','706','710','728','729','732','768','788','800','834','894','716']);
+  const AFRICA_NAMES = new Set(['Somaliland','W. Sahara','Western Sahara']);
+
+  const DIM_ADJ = { Composite:1, Political:1.04, Security:1.14, Economic:0.9, Regulatory:0.82, Social:0.95 };
+  let curDim = 'Composite';
+  const clamp = v => Math.max(8, Math.min(99, Math.round(v)));
+  const nid = v => String(+v);   // normalize ids like "012" -> "12"
+  const baseScore = (id,name) => SCORE[nid(id)] ?? NAME_FALLBACK[name] ?? 45;
+  const dimScore = (id,name) => clamp(baseScore(id,name) * (DIM_ADJ[curDim]||1));
+  const riskCol = s => s>=80?'#E5252A':s>=60?'#FF6B35':s>=40?'#E3B341':'#3FB950';
+  const riskLvl = s => s>=80?'Critical':s>=60?'High':s>=40?'Medium':'Low';
+
+  // ---- map ----
+  const W=640, H=600;
+  let gNode=null, zoom=null, svgSel=null, projection=null, feats=[];
+  const tip = $('#mapTip');
+
+  function isAfrican(f){ return AFRICA_IDS.has(nid(f.id)) || AFRICA_NAMES.has(f.properties.name); }
+
+  function colorFeatures(){
+    if(!gNode) return;
+    gNode.selectAll('path').attr('fill', d=>riskCol(dimScore(nid(d.id), d.properties.name)));
+  }
+
+  function drawMap(topo){
+    const all = topojson.feature(topo, topo.objects.countries).features;
+    feats = all.filter(isAfrican);
+    svgSel = d3.select('#mapSvg').attr('viewBox',`0 0 ${W} ${H}`);
+    const g = svgSel.append('g'); gNode=g;
+    projection = d3.geoMercator().fitExtent([[24,24],[W-24,H-24]], {type:'FeatureCollection',features:feats});
+    const path = d3.geoPath(projection);
+    g.selectAll('path').data(feats).join('path')
+      .attr('d', path)
+      .attr('fill', d=>riskCol(dimScore(nid(d.id), d.properties.name)))
+      .attr('stroke','rgba(0,0,0,0.5)').attr('stroke-width',0.5)
+      .style('cursor','pointer')
+      .on('mousemove', (e,d)=>{ const s=dimScore(nid(d.id),d.properties.name); const r=$('#mapStage').getBoundingClientRect();
+        tip.innerHTML=`<div class="tn">${d.properties.name}</div><div class="ts">${AFRIBN.statusPill(riskLvl(s), riskCol(s))} <b style="font-family:var(--font-display)">${s}</b></div>`;
+        tip.classList.add('on'); let x=e.clientX-r.left+14, y=e.clientY-r.top+14; if(x>r.width-180)x-=200; tip.style.left=x+'px'; tip.style.top=y+'px'; })
+      .on('mouseout', ()=>tip.classList.remove('on'))
+      .on('click', (e,d)=>selectCountry(nid(d.id), d.properties.name));
+    // zoom
+    zoom = d3.zoom().scaleExtent([1,8]).on('zoom', ev=>g.attr('transform', ev.transform));
+    svgSel.call(zoom).on('dblclick.zoom', null);
+    $('#zoomIn').onclick=()=>svgSel.transition().duration(250).call(zoom.scaleBy,1.6);
+    $('#zoomOut').onclick=()=>svgSel.transition().duration(250).call(zoom.scaleBy,1/1.6);
+  }
+
+  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json')
+    .then(drawMap)
+    .catch(()=>{ $('#mapSvg').style.display='none'; const fb=$('#mapFallback'); fb.style.display='block'; fb.innerHTML=`${ic('globe')}<div style="margin-top:10px">Map data unavailable offline.</div>`; });
+
+  // ---- selection ----
+  let selId=null;
+  function selectCountry(id, name){
+    selId=id;
+    if(gNode){ gNode.selectAll('path').classed('sel', d=>nid(d.id)===id); }
+    document.querySelectorAll('.zone-row').forEach(z=>z.classList.toggle('sel', z.dataset.id===id));
+    renderIndicators(id, name);
+    $('#indScope').textContent = '· '+name;
+    toast(`${name}: ${riskLvl(dimScore(id,name))} risk (${dimScore(id,name)})`);
+  }
+
+  // ---- zones list ----
+  const ZONES = [
+    ['Mauritius','mauritius','480'],['Rwanda','rwanda','646'],['Zambia','zambia','894'],['Namibia','namibia','516'],
+    ['Ghana','ghana','288'],['Morocco','morocco','504'],['Senegal','senegal','686'],['Botswana','botswana','72'],
+    ['Tanzania','tanzania','834'],['South Africa','southafrica','710'],['Kenya','kenya','404'],['Algeria','algeria','12'],
+    ['Egypt','egypt','818'],['Cameroon','cameroon','120'],['Mozambique','mozambique','508'],['Niger','niger','562'],
+    ['Ethiopia','ethiopia','231'],['Mali','mali','466'],['Chad','chad','148'],['Nigeria','nigeria','566'],
+    ['Burkina Faso','burkinafaso','854'],['Libya','libya','434'],['DR Congo','drcongo','180'],['CAR','car','140'],
+    ['Sudan','sudan','729'],['Somalia','somalia','706'],['South Sudan','southsudan','728'],
+  ];
+  function renderZones(){
+    const rows = ZONES.map(([n,f,id])=>[n,f,id,dimScore(id,n)]).sort((a,b)=>a[3]-b[3]);
+    $('#zones').innerHTML = rows.map(([n,f,id,s])=>`<div class="zone-row ${id===selId?'sel':''}" data-id="${id}">
+      ${AFRIBN.flag(f)}<span class="nm">${n}</span><span class="sc" style="color:${riskCol(s)}">${s}</span><span class="lv" style="color:${riskCol(s)}">${riskLvl(s)}</span></div>`).join('');
+    $('#zones').querySelectorAll('.zone-row').forEach(z=>z.addEventListener('click',()=>{ const nm=z.querySelector('.nm').textContent; selectCountry(z.dataset.id, nm); }));
+  }
+  renderZones();
+
+  // ---- dimension layer buttons ----
+  const DIMS=['Composite','Political','Security','Economic','Regulatory','Social'];
+  $('#dims').innerHTML=DIMS.map((d,i)=>`<button class="dim-btn ${i===0?'on':''}" data-d="${d}">${d}</button>`).join('');
+  $('#dims').querySelectorAll('.dim-btn').forEach(b=>b.addEventListener('click',()=>{
+    $('#dims').querySelector('.on').classList.remove('on'); b.classList.add('on'); curDim=b.dataset.d;
+    colorFeatures(); renderZones(); if($('#mapTable').style.display!=='none') renderTable();
+    if(selId){ const z=ZONES.find(x=>x[2]===selId); } toast(curDim+' risk layer');
+  }));
+
+  // ---- indicators ----
+  const IND = [['scale','Political Risk','Political'],['shield','Security Risk','Security'],['barChart','Economic Risk','Economic'],['file','Regulatory Risk','Regulatory'],['user','Social Risk','Social']];
+  // continental averages per dimension
+  function avgFor(dim){ const prev=curDim; curDim=dim; const vals=ZONES.map(([n,f,id])=>dimScore(id,n)); curDim=prev; return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length); }
+  function renderIndicators(id, name){
+    $('#indicators').innerHTML = IND.map(([icn,lbl,dim])=>{
+      let v;
+      if(id){ const prev=curDim; curDim=dim; v=dimScore(id, name); curDim=prev; }
+      else v=avgFor(dim);
+      const c=riskCol(v);
+      const sp=Array.from({length:16},(_,k)=>v-6+Math.round(Math.sin(k*0.9+v)*5)+Math.round(Math.random()*4));
+      return `<div class="ind-card"><div class="ih"><span class="ii" style="background:${c}22;color:${c}">${ic(icn)}</span> ${lbl}</div>
+        <div class="v" style="color:${c}">${v}</div><div class="lv" style="color:${c}">${riskLvl(v)}</div>
+        ${AFRIBN.spark(sp,{w:180,h:34,color:c,fill:true,sw:1.8})}</div>`;
+    }).join('');
+  }
+  renderIndicators(null);
+
+  // ---- table view ----
+  function renderTable(){
+    const rows = ZONES.map(([n,f,id])=>[n,f,id,dimScore(id,n)]).sort((a,b)=>b[3]-a[3]);
+    $('#mapTable').innerHTML = `<div class="tbl-scroll"><table class="tbl"><thead><tr><th>Country</th><th>${curDim} Score</th><th>Risk Level</th></tr></thead><tbody>${rows.map(([n,f,id,s])=>`<tr style="cursor:pointer" data-id="${id}" data-n="${n}"><td><span style="display:flex;align-items:center;gap:9px">${AFRIBN.flag(f)} ${n}</span></td><td><span style="font-family:var(--font-display);font-weight:800;color:${riskCol(s)}">${s}</span></td><td>${AFRIBN.statusPill(riskLvl(s), riskCol(s))}</td></tr>`).join('')}</tbody></table></div>`;
+    $('#mapTable').querySelectorAll('tr[data-id]').forEach(r=>r.addEventListener('click',()=>selectCountry(r.dataset.id, r.dataset.n)));
+  }
+  $('#viewToggle').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    $('#viewToggle').querySelector('.on').classList.remove('on'); b.classList.add('on');
+    const t=b.dataset.v==='table';
+    tip.classList.remove('on');
+    $('#mapSvg').style.display=t?'none':''; document.querySelector('.zoom-ctl').style.display=t?'none':'flex'; document.querySelector('.map-legend2').style.display=t?'none':'flex'; $('#dims').style.display=t?'none':'flex';
+    $('#mapTable').style.display=t?'block':'none'; if(t) renderTable();
+  }));
+
+  $('#export').onclick=()=>toast(`${ic('download','width=\"15\" height=\"15\"')} Exporting risk report…`);
+  $('#period').onclick=()=>toast('Period updated');
+</script>
+</body>
+</html>

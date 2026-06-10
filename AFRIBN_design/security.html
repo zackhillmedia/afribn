@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Security</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> Security</span>
+    <h1>Security built for<br><span class="r">sensitive</span> decisions.</h1>
+    <p class="lede">Governments and institutions trust AFRIBN with consequential intelligence. Here's how we protect it.</p>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:10px">
+  <div class="wrap-m"><div class="mgrid c3" id="pillars"></div></div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-narrow">
+    <div class="doc-body" id="body"></div>
+  </div>
+</section>
+
+<section class="wrap-m">
+  <div class="cta-box"><h2>Need a security review?</h2><p>We share our security documentation and answer questionnaires for enterprise and government buyers.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="contact.html" style="height:54px;padding:0 28px;font-size:16px">Request security docs</a></div></div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script src="assets/legal.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing(null);
+  const P=[['shield','Encryption everywhere','TLS 1.2+ in transit and AES-256 at rest for all data and backups.'],['user','Access control','Role-based access, least-privilege, SSO/SAML and full audit logging on Enterprise.'],['server2','Resilient infrastructure','Hardened cloud hosting, isolated environments, monitoring and 99.9% uptime SLA.'],['listChecks','Verification integrity','Tamper-evident audit trails across the intelligence production pipeline.'],['ban','Responsible disclosure','A clear path for researchers to report vulnerabilities — security@afribn.com.'],['globe','Data residency','Regional and on-prem / private-cloud deployment options for sensitive workloads.']];
+  $('#pillars').innerHTML=P.map(([i,t,d])=>`<div class="mcard"><div class="mi">${ic(i)}</div><h3 style="font-size:17px">${t}</h3><p>${d}</p></div>`).join('');
+  AFRIBN.legalDoc([
+    ['Our approach','Security is foundational to an intelligence platform. We apply defense-in-depth across infrastructure, application, data and people — and design for the elevated requirements of government and institutional customers.'],
+    ['Infrastructure security','We run on hardened, reputable cloud infrastructure with network isolation, encrypted storage, automated patching, continuous monitoring and regular backups tested for recovery.'],
+    ['Application & data','Data is encrypted in transit (TLS 1.2+) and at rest (AES-256). We follow secure development practices, conduct code review, and use dependency and vulnerability scanning. Secrets are managed centrally with scoped access.'],
+    ['Identity & access','Access follows least-privilege with role-based controls. Enterprise customers get SSO/SAML, granular permissions and exportable audit logs covering source decisions, intelligence changes and user activity.'],
+    ['Compliance & deployment','We support procurement and security reviews, MSAs and DPAs. Sensitive workloads can be deployed in a chosen region, private cloud or on-premise.'],
+    ['Reporting a vulnerability','We welcome responsible disclosure. Email security@afribn.com with details; we acknowledge promptly and work with researchers to remediate.'],
+  ]);
+</script>
+</body>
+</html>

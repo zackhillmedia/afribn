@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Reports</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .btn-split { display: inline-flex; flex: none; }
+  .btn-split .main { border-radius: 12px 0 0 12px; flex: none; white-space: nowrap; }
+  .page-head > .row { flex: none; }
+  .btn-split .caret { border-radius: 0 12px 12px 0; border-left: 1px solid rgba(255,255,255,0.25); padding: 0 12px; }
+
+  /* featured */
+  .feat-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px; margin-bottom: 22px; }
+  .feat-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .feat-scroll { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .fcard { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; transition: .18s; cursor: pointer; }
+  .fcard:hover { border-color: rgba(232,37,45,0.35); transform: translateY(-2px); }
+  .fcard .fi { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 16px; }
+  .fcard .fi svg { width: 23px; height: 23px; }
+  .fcard h4 { font-size: 16px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; min-height: 38px; }
+  .fcard p { color: var(--ink-3); font-size: 13px; line-height: 1.45; margin: 8px 0 14px; flex: 1; }
+  .fcard .fdate { color: var(--ink-3); font-size: 12.5px; }
+  .fcard .dl { display: inline-flex; align-items: center; gap: 7px; color: var(--red-bright); font-weight: 600; font-size: 13px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .fcard .dl svg { width: 15px; height: 15px; }
+
+  .rep-grid { display: grid; grid-template-columns: minmax(0, 1fr) 312px; gap: 20px; align-items: start; }
+  .tbl-scroll { overflow-x: auto; }
+
+  .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .filter-bar .search-inline { flex: 1; min-width: 180px; }
+
+  .rep-title-cell { display: flex; align-items: center; gap: 11px; }
+  .rep-title-cell .d { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .rep-title-cell .nm { font-weight: 600; }
+  tr:hover .rep-title-cell .nm { color: var(--red-bright); }
+  .ctry-cell { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+  .act-cell { display: flex; align-items: center; gap: 4px; }
+  .act-cell button { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: transparent; border: none; color: var(--ink-3); transition: .12s; }
+  .act-cell button:hover { background: var(--panel-3); color: var(--ink); }
+  .act-cell button svg { width: 17px; height: 17px; }
+  .type-cell, .date-cell { white-space: nowrap; color: var(--ink-2); }
+
+  .pager { display: flex; align-items: center; justify-content: space-between; padding-top: 18px; margin-top: 6px; border-top: 1px solid var(--line); flex-wrap: wrap; gap: 14px; }
+  .pages { display: flex; align-items: center; gap: 6px; }
+  .pages button { min-width: 34px; height: 34px; border-radius: 8px; background: transparent; border: 1px solid var(--line); color: var(--ink-2); font-size: 13.5px; }
+  .pages button:hover { border-color: var(--line-2); color: var(--ink); }
+  .pages button.active { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+  .pages .nav-arrow { color: var(--ink-3); }
+
+  /* widgets */
+  .w-h { font-size: 12.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+  .w-sub { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  .legend-li { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13.5px; }
+  .legend-li .nm { color: var(--ink-2); min-width: 0; } .legend-li .vl { margin-left: auto; font-weight: 600; } .legend-li .pc { color: var(--ink-3); font-size: 12.5px; width: 40px; text-align: right; flex: none; }
+  #catLegend { min-width: 0; }
+  .rank-li { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+  .rank-li .nm { font-size: 14px; min-width: 70px; }
+  .rank-li .bar { flex: 1; } .rank-li .vl { font-weight: 700; font-size: 14px; min-width: 24px; text-align: right; }
+  .rv-li { display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .rv-li:last-child { border-bottom: none; }
+  .rv-li .ri { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--red-tint); color: var(--red-bright); flex: none; }
+  .rv-li .ri svg { width: 15px; height: 15px; }
+  .rv-li .rt { font-size: 14px; font-weight: 500; line-height: 1.3; } .rv-li:hover .rt { color: var(--red-bright); }
+  .rv-li .rd { font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+  .link-r { color: var(--red-bright); font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; margin-top: 14px; }
+  .link-r svg { width: 14px; height: 14px; } .link-r:hover { color: #fff; }
+  .delta-up { color: var(--red-bright); font-weight: 700; font-size: 13px; }
+
+  @media (max-width:1280px){ .feat-scroll{grid-template-columns:repeat(2,1fr)} .rep-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-title"><span class="tic" id="tic"></span> Reports</h1>
+          <div class="page-sub">In-depth analysis and data-driven insights on Africa's political, economic, and security landscape.</div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="myReports"><span id="mri"></span> My Reports</button>
+          <div class="btn-split">
+            <button class="btn btn-primary main" id="createReport" style="flex-direction:row;white-space:nowrap"><span id="cri" style="display:inline-flex"></span><span>Create&nbsp;Report</span></button>
+            <button class="btn btn-primary caret" id="createCaret"><span id="cci" style="display:inline-flex"></span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FEATURED -->
+      <div class="feat-panel">
+        <div class="feat-h"><div class="eyebrow">Featured Reports</div>
+          <div class="row gap-8"><button class="icon-btn" style="width:34px;height:34px" id="fprev"></button><button class="icon-btn" style="width:34px;height:34px" id="fnext"></button></div>
+        </div>
+        <div class="feat-scroll" id="featured"></div>
+      </div>
+
+      <div class="rep-grid">
+        <!-- ALL REPORTS -->
+        <div class="panel panel-pad-lg">
+          <div class="eyebrow" style="margin-bottom:18px">All Reports</div>
+          <div class="filter-bar">
+            <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search reports..."></div>
+            <select class="select" id="fCat"><option>All Categories</option><option>Economy</option><option>Politics</option><option>Industry</option><option>Energy</option><option>Security</option><option>Finance</option><option>Trade</option><option>Environment</option></select>
+            <select class="select" id="fCountry"><option>All Countries</option><option>Nigeria</option><option>Ethiopia</option><option>DR Congo</option><option>Mozambique</option><option>Regional</option><option>Africa</option></select>
+            <select class="select"><option>All Report Types</option><option>Market Report</option><option>Risk Report</option><option>Special Report</option><option>Data Report</option></select>
+            <select class="select"><option>Last 30 days</option><option>Last 7 days</option><option>Last 90 days</option><option>All time</option></select>
+            <button class="btn btn-ghost btn-sm" id="moreFilters"><span id="mf"></span> Filters</button>
+          </div>
+          <div class="tbl-scroll"><table class="tbl" style="margin-top:8px;min-width:680px">
+            <thead><tr><th>Report Title</th><th>Category</th><th>Country / Region</th><th>Type</th><th>Date</th><th style="text-align:right">Actions</th></tr></thead>
+            <tbody id="repBody"></tbody>
+          </table></div>
+          <div class="pager">
+            <span class="muted" id="pagerInfo">Showing 1 to 8 of 128 reports</span>
+            <div class="pages">
+              <button class="nav-arrow" id="pgPrev"><span id="pp"></span></button>
+              <button class="active">1</button><button>2</button><button>3</button><button>4</button><button>5</button><span class="muted" style="padding:0 4px">…</span><button>16</button>
+              <button class="nav-arrow" id="pgNext"><span id="pn"></span></button>
+            </div>
+            <select class="select btn-sm" style="height:38px" id="perPage"><option>Show 10 per page</option><option>Show 25 per page</option><option>Show 50 per page</option></select>
+          </div>
+        </div>
+
+        <!-- WIDGETS -->
+        <div class="stack gap-22">
+          <div class="panel">
+            <div class="row between" style="align-items:flex-start">
+              <div><div class="w-h">Reports Over Time</div><div class="w-sub">Last 30 days</div></div>
+            </div>
+            <div class="row gap-8" style="align-items:baseline;margin:10px 0 2px"><span style="font-family:var(--font-display);font-weight:800;font-size:34px;letter-spacing:-0.02em">128</span><span class="delta-up">+18 (16.4%)</span></div>
+            <div id="repChart" style="margin-top:6px"></div>
+          </div>
+
+          <div class="panel">
+            <div class="w-h">Reports by Category</div><div class="w-sub">Last 30 days</div>
+            <div class="row gap-16" style="margin-top:14px;align-items:center">
+              <div id="catDonut"></div>
+              <div class="grow" id="catLegend"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="w-h">Top Countries</div><div class="w-sub">Last 30 days</div>
+            <div id="topCountries" style="margin-top:10px"></div>
+            <a class="link-r" href="#">View all countries <span id="vc"></span></a>
+          </div>
+
+          <div class="panel">
+            <div class="w-h">Recently Viewed</div>
+            <div id="recent" style="margin-top:10px"></div>
+            <a class="link-r" href="#">View all reports <span id="vr"></span></a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel-2);border:1px solid var(--line-2);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transition:.25s;z-index:80;box-shadow:var(--shadow);pointer-events:none"></div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('file');
+  const ic = AFRIBN.ic;
+  $('#tic').innerHTML = ic('file'); $('#mri').innerHTML = ic('star','width="16" height="16"');
+  $('#cri').innerHTML = ic('plus','width="16" height="16"'); $('#cci').innerHTML = ic('chevDown','width="16" height="16"');
+  $('#si').innerHTML = ic('search'); $('#mf').innerHTML = ic('filter','width="16" height="16"');
+  $('#fprev').innerHTML = ic('chevLeft','width="16" height="16"'); $('#fnext').innerHTML = ic('chevRight','width="16" height="16"');
+  $('#pp').innerHTML = ic('chevLeft','width="15" height="15"'); $('#pn').innerHTML = ic('chevRight','width="15" height="15"');
+  $('#vc').innerHTML = ic('arrowRight','width="14" height="14"'); $('#vr').innerHTML = ic('arrowRight','width="14" height="14"');
+
+  const toast = (msg)=>{ const t=$('#toast'); t.innerHTML=msg; t.style.opacity=1; t.style.transform='translateX(-50%) translateY(0)'; clearTimeout(t._t); t._t=setTimeout(()=>{t.style.opacity=0;t.style.transform='translateX(-50%) translateY(20px)';},2200); };
+
+  // featured reports
+  const FEAT = [
+    ['barChart','#E8252D','Africa Economic Outlook 2024','Growth projections, key trends, and regional outlook.','May 14, 2024', true],
+    ['shield','#FF8A3D','West Africa Security Review Q2 2024','Security developments and risk assessment across the region.','May 10, 2024'],
+    ['bank','#A371F7','Policy & Regulatory Trends in Africa','Key policy shifts and regulatory developments shaping business.','May 8, 2024'],
+    ['trendUp','#4493F8','Infrastructure Investment Report 2024','Sector analysis and investment opportunities across Africa.','May 5, 2024'],
+  ];
+  $('#featured').innerHTML = FEAT.map(([i,c,t,d,date,brief])=>`
+    <div class="fcard" data-brief="${brief?1:0}">
+      <div class="fi" style="background:${c}22;color:${c}">${ic(i)}</div>
+      <h4>${t}</h4><p>${d}</p>
+      <div class="fdate">${date}</div>
+      <span class="dl">${ic('download')} Download PDF</span>
+    </div>`).join('');
+  $('#featured').querySelectorAll('.fcard').forEach(card=>{
+    card.addEventListener('click',(e)=>{
+      if (card.dataset.brief==='1' && !e.target.closest('.dl')) { location.href='brief.html'; return; }
+      if (e.target.closest('.dl')) { toast(`${ic('download','width=\"15\" height=\"15\"')} Downloading PDF…`); }
+      else toast('Opening report…');
+    });
+  });
+
+  // category meta for dots/pills
+  const CATC = { Economy:'#E8252D', Politics:'#A371F7', Industry:'#4493F8', Energy:'#FF8A3D', Security:'#3FB950', Finance:'#E3B341', Trade:'#3FB950', Environment:'#3FB950' };
+  const pillClass = { Economy:'politics', Politics:'security', Industry:'tech', Energy:'energy', Security:'economy', Finance:'finance', Trade:'trade', Environment:'economy' };
+
+  const REPORTS = [
+    ['Nigeria Economy Monthly Update – April 2024','Economy','Nigeria','nigeria','Market Report','May 15, 2024'],
+    ['Horn of Africa Drought Impact Assessment','Environment','Regional','regional','Special Report','May 14, 2024'],
+    ['Ethiopia Political Risk Analysis','Politics','Ethiopia','ethiopia','Risk Report','May 13, 2024'],
+    ['DR Congo Mining Sector Outlook 2024','Industry','DR Congo','drcongo','Industry Report','May 12, 2024'],
+    ['African Central Banks Policy Tracker','Finance','Africa','africa','Data Report','May 11, 2024'],
+    ['Energy Transition in North Africa','Energy','North Africa','northafrica','Trend Report','May 10, 2024'],
+    ['AfCFTA Implementation Progress Report','Trade','Africa','africa','Progress Report','May 9, 2024'],
+    ['Mozambique Post-Election Outlook','Politics','Mozambique','mozambique','Briefing Note','May 8, 2024'],
+  ];
+
+  function renderTable(){
+    const kw = ($('#kw').value||'').toLowerCase();
+    const fc = $('#fCat').value, fco = $('#fCountry').value;
+    const rows = REPORTS.filter(r =>
+      (!kw || r[0].toLowerCase().includes(kw)) &&
+      (fc==='All Categories' || r[1]===fc) &&
+      (fco==='All Countries' || r[2]===fco)
+    );
+    $('#repBody').innerHTML = rows.length ? rows.map(([title,cat,ctry,flag,type,date])=>`
+      <tr style="cursor:pointer" onclick="location.href='brief.html'">
+        <td><div class="rep-title-cell"><span class="d" style="background:${CATC[cat]}"></span><span class="nm">${title}</span></div></td>
+        <td><span class="pill ${pillClass[cat]}">${cat}</span></td>
+        <td><div class="ctry-cell">${AFRIBN.flag(flag)} ${ctry}</div></td>
+        <td class="type-cell">${type}</td>
+        <td class="date-cell">${date}</td>
+        <td><div class="act-cell" onclick="event.stopPropagation()">
+          <button title="View" data-a="view">${ic('eye')}</button>
+          <button title="Download" data-a="dl">${ic('download')}</button>
+          <button title="More" data-a="more">${ic('more')}</button>
+        </div></td>
+      </tr>`).join('')
+      : `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--ink-3)">No reports match your filters.</td></tr>`;
+    $('#pagerInfo').textContent = `Showing 1 to ${rows.length} of 128 reports`;
+    $('#repBody').querySelectorAll('.act-cell button').forEach(b=>b.addEventListener('click',()=>{
+      const a=b.dataset.a; toast(a==='view'?'Opening report preview…':a==='dl'?`${ic('download','width=\"15\" height=\"15\"')} Downloading PDF…`:'Share · Add to My Reports · Export');
+    }));
+  }
+  renderTable();
+  ['#kw'].forEach(s=>$(s).addEventListener('input', renderTable));
+  ['#fCat','#fCountry'].forEach(s=>$(s).addEventListener('change', renderTable));
+
+  // reports over time chart
+  const vals = [14,16,15,18,17,19,16,20,22,19,23,21,24,22,26,23,25,28,24,27,30,26,29,32,28,31,34,30,33,38];
+  $('#repChart').innerHTML = AFRIBN.lineChart([{color:'#E8252D',vals,fill:true,dots:true}], ['Apr 16','Apr 23','Apr 30','May 7','May 14'], {w:300,h:170,max:40,pad:28});
+
+  // category donut
+  const CATS = [['Economy','#E8252D',32,'25%'],['Politics','#A371F7',28,'22%'],['Industry','#4493F8',20,'16%'],['Energy','#FF8A3D',18,'14%'],['Security','#3FB950',16,'13%'],['Other','#8B949E',14,'11%']];
+  $('#catDonut').innerHTML = AFRIBN.donut(CATS.map(c=>({value:c[2],color:c[1]})),{size:120,thick:18});
+  $('#catLegend').innerHTML = CATS.map(([n,c,v,p])=>`<div class="legend-li"><span class="cdot" style="background:${c}"></span><span class="nm">${n}</span><span class="vl">${v}</span><span class="pc">(${p})</span></div>`).join('');
+
+  // top countries
+  const TOPC = [['Nigeria','nigeria',28,'#E8252D'],['Kenya','kenya',16,'#FF8A3D'],['Ethiopia','ethiopia',14,'#A371F7'],['DR Congo','drcongo',12,'#4493F8'],['Ghana','ghana',10,'#3FB950']];
+  $('#topCountries').innerHTML = TOPC.map(([n,f,v,c])=>`<div class="rank-li">${AFRIBN.flag(f)}<span class="nm">${n}</span><span class="bar"><span style="width:${v/28*100}%;background:${c}"></span></span><span class="vl">${v}</span></div>`).join('');
+
+  // recently viewed
+  const RV = [['Africa Economic Outlook 2024','May 14, 2024'],['West Africa Security Review Q2 2024','May 10, 2024'],['Policy & Regulatory Trends in Africa','May 8, 2024']];
+  $('#recent').innerHTML = RV.map(([t,d])=>`<div class="rv-li" onclick="location.href='brief.html'"><span class="ri">${ic('file')}</span><div><div class="rt">${t}</div><div class="rd">${d}</div></div></div>`).join('');
+
+  // header actions
+  $('#myReports').addEventListener('click', ()=> toast('Viewing your saved reports'));
+  $('#createReport').addEventListener('click', ()=> toast('New report builder'));
+  $('#createCaret').addEventListener('click', ()=> toast('Templates · Blank · From data'));
+  $('#moreFilters').addEventListener('click', ()=> toast('Advanced filters'));
+  [['#fprev','Scrolled featured'],['#fnext','Scrolled featured'],['#pgPrev','Previous page'],['#pgNext','Next page']].forEach(([s,m])=>$(s).addEventListener('click',()=>toast(m)));
+  $('#perPage').addEventListener('change', ()=> toast('Updated page size'));
+  document.querySelectorAll('.pages button:not(.nav-arrow)').forEach(b=>b.addEventListener('click',()=>{ document.querySelector('.pages button.active')?.classList.remove('active'); b.classList.add('active'); toast('Page '+b.textContent); }));
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "afribn-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AFRIBN intelligence lifecycle backend prototype",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "start:prod": "NODE_ENV=production node server.js",
+    "migrate:postgres": "node scripts/migrate-postgres.mjs",
+    "test": "node tests/scoring-formulas.mjs && node tests/source-reliability-formulas.mjs && node tests/api-adapters.mjs && node tests/api-smoke.mjs && node tests/persistence-smoke.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

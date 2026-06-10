@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AFRIBN MVP Console</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <a class="brand" href="#landing" data-view="landing" aria-label="AFRIBN home">
+          <span class="brand-word">AFRI<span>BN</span></span>
+          <small>Africa Bureau of News</small>
+        </a>
+
+        <nav class="nav-list">
+          <button class="nav-item active" data-view="landing"><span class="nav-icon">H</span>Landing</button>
+          <button class="nav-item" data-view="auth"><span class="nav-icon">U</span>Access</button>
+          <button class="nav-item" data-view="feed"><span class="nav-icon">F</span>Real-time Feed</button>
+          <button class="nav-item" data-view="story"><span class="nav-icon">S</span>Story Detail</button>
+          <button class="nav-item" data-view="watchlist"><span class="nav-icon">W</span>Watchlist</button>
+          <button class="nav-item" data-view="alerts"><span class="nav-icon">A</span>Alerts</button>
+          <button class="nav-item" data-view="country"><span class="nav-icon">C</span>Country Intel</button>
+          <button class="nav-item" data-view="brief"><span class="nav-icon">B</span>Daily Brief</button>
+          <button class="nav-item" data-view="admin"><span class="nav-icon">M</span>Admin</button>
+        </nav>
+
+        <div class="sidebar-foot">
+          <button class="ghost-btn">Settings</button>
+          <button class="ghost-btn">Log out</button>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <label class="global-search">
+            <span></span>
+            <input id="globalSearch" type="search" placeholder="Search countries, topics, companies...">
+            <kbd>/</kbd>
+          </label>
+          <div class="top-actions">
+            <button class="icon-btn" title="Notifications">N<span class="dot"></span></button>
+            <button class="icon-btn" title="Messages">M<span class="dot small"></span></button>
+            <button class="avatar-btn" title="Profile">
+              <span>DA</span>
+            </button>
+          </div>
+        </header>
+
+        <section class="view active" id="landing">
+          <div class="hero-grid">
+            <div class="hero-copy">
+              <p class="eyebrow">Real-time news. Strategic insight.</p>
+              <h1>Africa's Strategic News Intelligence Network</h1>
+              <p class="lead">Verified news, structured signals, country context, and daily executive briefs for people who need to act before the market moves.</p>
+              <div class="button-row">
+                <button class="primary-btn" data-view-link="auth">Request Access</button>
+                <button class="outline-btn" data-view-link="feed">See Console</button>
+              </div>
+              <div class="trust-strip">
+                <span>54 countries</span>
+                <span>Live monitoring</span>
+                <span>Signal scoring</span>
+                <span>Executive briefs</span>
+              </div>
+            </div>
+            <div class="africa-card">
+              <div class="map-dots" aria-hidden="true"></div>
+              <div class="signal-card top-left">
+                <strong>Policy Update</strong>
+                <span>Nigeria - 2m ago</span>
+              </div>
+              <div class="signal-card middle-right">
+                <strong>Security Alert</strong>
+                <span>DR Congo - 8m ago</span>
+              </div>
+              <div class="signal-card bottom-left">
+                <strong>Energy Deal</strong>
+                <span>Kenya - 15m ago</span>
+              </div>
+            </div>
+          </div>
+          <div class="module-grid four">
+            <article class="metric-card"><span class="metric-icon red">1</span><small>Total Stories</small><strong>3,248</strong><em>+12.4% vs yesterday</em></article>
+            <article class="metric-card"><span class="metric-icon amber">2</span><small>Policy Changes</small><strong>86</strong><em>+8.7% vs yesterday</em></article>
+            <article class="metric-card"><span class="metric-icon purple">3</span><small>Deals Tracked</small><strong>152</strong><em>+15.3% vs yesterday</em></article>
+            <article class="metric-card"><span class="metric-icon green">4</span><small>Events Tracked</small><strong>204</strong><em>+9.1% vs yesterday</em></article>
+          </div>
+        </section>
+
+        <section class="view" id="auth">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">MVP function 1</p>
+              <h2>Access Workspace</h2>
+              <p>Simple request-access and login surface for a gated intelligence product.</p>
+            </div>
+          </div>
+          <div class="split-layout">
+            <form class="panel form-panel">
+              <h3>Request access</h3>
+              <label>Work email<input type="email" placeholder="you@organization.com"></label>
+              <label>Organization<input type="text" placeholder="Company, ministry, fund..."></label>
+              <label>Primary interest<select><option>Investment intelligence</option><option>Policy monitoring</option><option>Risk and security</option><option>Development programs</option></select></label>
+              <button type="button" class="primary-btn">Submit Request</button>
+            </form>
+            <div class="panel">
+              <h3>Workspace preferences</h3>
+              <div class="preference-list">
+                <label><input type="checkbox" checked> Nigeria</label>
+                <label><input type="checkbox" checked> Kenya</label>
+                <label><input type="checkbox"> Ghana</label>
+                <label><input type="checkbox" checked> Energy</label>
+                <label><input type="checkbox"> Security</label>
+                <label><input type="checkbox" checked> Policy</label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="feed">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">MVP function 2</p>
+              <h2>Real-time Feed</h2>
+              <p>Live, filterable stream of intelligence items across Africa.</p>
+            </div>
+            <button class="outline-btn">Customize Feed</button>
+          </div>
+          <div class="content-grid">
+            <div class="panel">
+              <div class="filter-bar">
+                <input id="feedSearch" type="search" placeholder="Filter by keywords...">
+                <select id="countryFilter"><option value="all">All Countries</option></select>
+                <select id="topicFilter"><option value="all">All Topics</option></select>
+                <button class="outline-btn" id="resetFilters">Reset</button>
+              </div>
+              <div class="feed-list" id="feedList"></div>
+            </div>
+            <aside class="side-stack">
+              <div class="panel"><h3>Live Feed Summary</h3><div class="big-number">128</div><p>Total updates in last 24 hours</p><div class="mini-chart"></div></div>
+              <div class="panel"><h3>Top Countries</h3><div id="countryBars" class="bar-list"></div></div>
+              <div class="panel"><h3>Top Topics</h3><div id="topicBars" class="bar-list"></div></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="story">
+          <div class="page-heading compact">
+            <button class="ghost-btn" data-view-link="feed">&lt;- Back to Feed</button>
+            <div class="story-actions">
+              <button class="icon-btn">B</button>
+              <button class="icon-btn">S</button>
+              <button class="icon-btn">L</button>
+            </div>
+          </div>
+          <div class="story-layout">
+            <article class="story-main">
+              <div class="chip-row"><span class="chip red">ENERGY</span><span class="chip">EAST AFRICA</span><span class="chip red">HIGH IMPACT</span></div>
+              <h2>Kenya signs $2.1bn renewable energy agreement with UAE consortium</h2>
+              <h3>What happened</h3>
+              <p>Kenya signed a $2.1 billion agreement with a UAE-led consortium to develop 1.2GW of renewable energy projects across solar, wind, and battery storage facilities.</p>
+              <div class="panel inset">
+                <h3>Why it matters</h3>
+                <ul class="check-list">
+                  <li>Strengthens Kenya's energy security and lowers fossil fuel reliance.</li>
+                  <li>Attracts foreign direct investment and regional supply-chain activity.</li>
+                  <li>Creates a visible benchmark for clean-energy partnerships in East Africa.</li>
+                </ul>
+              </div>
+              <div class="mini-card-row">
+                <span>Foreign investment</span>
+                <span>Job creation</span>
+                <span>Energy stability</span>
+                <span>Regional leadership</span>
+              </div>
+              <div class="panel inset">
+                <h3>Watch next</h3>
+                <ul>
+                  <li>Final investment decision on first 400MW phase.</li>
+                  <li>Environmental and social impact assessments.</li>
+                  <li>Grid upgrades in northern Kenya.</li>
+                </ul>
+              </div>
+            </article>
+            <aside class="side-stack">
+              <div class="panel score-panel"><h3>Impact Assessment</h3><p>Governments <span>4.5/5</span></p><p>Investors <span>5/5</span></p><p>Diplomats <span>3/5</span></p><p>Corporates <span>5/5</span></p><div class="score">85<small>/100</small></div></div>
+              <div class="panel"><h3>What leaders should know</h3><ul class="plain-list"><li>Local community engagement will be critical.</li><li>Permits and land acquisition may delay execution.</li><li>Local suppliers may gain contract opportunities.</li></ul></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="watchlist">
+          <div class="page-heading">
+            <div><p class="eyebrow">MVP function 4</p><h2>Watchlist</h2><p>Track countries, companies, topics, and people that matter to each user.</p></div>
+            <button class="primary-btn" id="addWatchItem">Add Item</button>
+          </div>
+          <div class="content-grid">
+            <div class="panel">
+              <div class="tabs"><button class="active">All Items <span>48</span></button><button>Countries</button><button>Companies</button><button>Topics</button><button>People</button></div>
+              <table class="data-table">
+                <thead><tr><th>Item</th><th>Type</th><th>Category</th><th>Risk</th><th>Alerts</th></tr></thead>
+                <tbody id="watchTable"></tbody>
+              </table>
+            </div>
+            <aside class="side-stack">
+              <div class="panel"><h3>Watchlist Summary</h3><div class="donut"></div><p>48 total items across countries, companies, topics, and people.</p></div>
+              <div class="panel"><h3>Recent Alerts</h3><div id="watchAlerts" class="compact-list"></div></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="alerts">
+          <div class="page-heading">
+            <div><p class="eyebrow">MVP function 5</p><h2>Alerts</h2><p>Rule-based notifications for high-priority intelligence.</p></div>
+            <button class="primary-btn">Create Alert</button>
+          </div>
+          <div class="module-grid five">
+            <article class="metric-card"><small>Total Alerts</small><strong>19</strong><em>+6 vs last 7 days</em></article>
+            <article class="metric-card"><small>High Priority</small><strong>6</strong><em>+2 vs last 7 days</em></article>
+            <article class="metric-card"><small>Medium</small><strong>8</strong><em>+1 vs last 7 days</em></article>
+            <article class="metric-card"><small>Low</small><strong>5</strong><em>-1 vs last 7 days</em></article>
+            <article class="metric-card"><small>Acknowledged</small><strong>12</strong><em>+3 vs last 7 days</em></article>
+          </div>
+          <div class="content-grid">
+            <div class="panel">
+              <table class="data-table">
+                <thead><tr><th>Alert</th><th>Category</th><th>Country</th><th>Priority</th><th>Status</th><th>Triggered</th></tr></thead>
+                <tbody id="alertTable"></tbody>
+              </table>
+            </div>
+            <aside class="side-stack">
+              <div class="panel"><h3>Alert Rule</h3><p>If country is Nigeria and topic is Policy Change and impact is High, notify immediately.</p><button class="outline-btn">Edit Rule</button></div>
+              <div class="panel"><h3>Top Categories</h3><div id="alertBars" class="bar-list"></div></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="country">
+          <div class="page-heading">
+            <div><p class="eyebrow">MVP function 6</p><h2>Country Intelligence</h2><p>Country overview, key indicators, latest stories, risk, and projects.</p></div>
+            <button class="outline-btn">Add to Watchlist</button>
+          </div>
+          <div class="country-title"><span class="flag">NG</span><h2>Nigeria</h2></div>
+          <div class="tabs"><button class="active">Overview</button><button>Politics</button><button>Economy</button><button>Security</button><button>Investments</button></div>
+          <div class="content-grid">
+            <div class="side-stack wide">
+              <div class="module-grid four">
+                <article class="metric-card"><small>GDP Growth</small><strong>2.9%</strong><em>+0.6% vs 2023</em></article>
+                <article class="metric-card"><small>Inflation</small><strong>33.7%</strong><em>+1.2% vs Mar</em></article>
+                <article class="metric-card"><small>NGN/USD</small><strong>1,470</strong><em>-0.8% yesterday</em></article>
+                <article class="metric-card"><small>Risk Rating</small><strong class="red-text">High</strong><em>Outlook stable</em></article>
+              </div>
+              <div class="panel"><h3>Latest High Impact Stories</h3><div id="countryStories" class="feed-list compact"></div></div>
+            </div>
+            <aside class="side-stack">
+              <div class="panel"><h3>Key Indicators</h3><div class="key-list"><p>External reserves <span>$33.2B</span></p><p>Unemployment <span>5.3%</span></p><p>Public debt/GDP <span>37.4%</span></p><p>Current account <span>1.2%</span></p></div></div>
+              <div class="panel"><h3>Major Projects</h3><div class="compact-list"><p>Lagos-Calabar Coastal Highway <strong>$15.7B</strong></p><p>Dangote Refinery Expansion <strong>$19B</strong></p><p>Nigeria-Morocco Gas Pipeline <strong>$5.3B</strong></p></div></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="brief">
+          <div class="page-heading">
+            <div><p class="eyebrow">MVP function 7</p><h2>Daily Executive Brief</h2><p>Top developments, key themes, and PDF export.</p></div>
+            <button class="primary-btn">Download PDF</button>
+          </div>
+          <div class="content-grid">
+            <div class="panel">
+              <h3>Top 10 Developments</h3>
+              <div id="briefList" class="ranked-list"></div>
+            </div>
+            <aside class="side-stack">
+              <div class="panel"><h3>Brief Summary</h3><p>Africa's political and economic landscape continues to evolve with significant developments across energy, governance, and regional security.</p></div>
+              <div class="panel"><h3>Key Themes</h3><div class="theme-list"><span>Energy Transition</span><span>Economic Reform</span><span>Regional Security</span><span>Investment Flows</span><span>Governance</span></div></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="admin">
+          <div class="page-heading">
+            <div><p class="eyebrow">MVP function 8 and 9</p><h2>Editorial Admin</h2><p>Manual publishing workflow for the first functional version.</p></div>
+            <button class="primary-btn" id="publishMock">Publish Item</button>
+          </div>
+          <div class="split-layout">
+            <form class="panel form-panel">
+              <h3>Create intelligence item</h3>
+              <label>Headline<input id="adminTitle" type="text" value="Ghana announces new infrastructure financing window"></label>
+              <label>Country<select><option>Ghana</option><option>Nigeria</option><option>Kenya</option><option>DR Congo</option></select></label>
+              <label>Category<select><option>Economy</option><option>Politics</option><option>Energy</option><option>Security</option><option>Policy</option></select></label>
+              <label>Impact score<input type="range" min="0" max="100" value="74"></label>
+              <label>Why it matters<textarea>Signals renewed public-private infrastructure activity and could create near-term procurement opportunities.</textarea></label>
+            </form>
+            <div class="panel">
+              <h3>Publishing queue</h3>
+              <div id="adminQueue" class="compact-list"></div>
+              <div class="workflow">
+                <span>Draft</span><span>Review</span><span>Score</span><span>Publish</span><span>Brief</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="frontend-api.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

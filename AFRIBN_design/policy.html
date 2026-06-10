@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Policy Monitor</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .grid-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 22px; }
+
+  .pol-grid { display: grid; grid-template-columns: minmax(0, 1fr) 312px; gap: 20px; align-items: start; }
+  .tbl-scroll { overflow-x: auto; }
+
+  .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .filter-bar .search-inline { flex: 1; min-width: 180px; }
+
+  .pol-cell { display: flex; align-items: flex-start; gap: 13px; }
+  .pol-cell .pi { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+  .pol-cell .pi svg { width: 19px; height: 19px; }
+  .pol-cell .nm { font-weight: 600; line-height: 1.25; white-space: nowrap; }
+  tr:hover .pol-cell .nm { color: var(--red-bright); }
+  .pol-cell .ds { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; max-width: 260px; line-height: 1.4; }
+  .tbl th:first-child, .tbl td:first-child { min-width: 264px; }
+  .tbl td, .tbl th { padding-left: 10px; padding-right: 10px; }
+  .grid-stats .delta { white-space: nowrap; }
+  .ctry-cell { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+  .status-cell { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .status-cell .sd { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .impact-cell { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; white-space: nowrap; }
+  .impact-cell svg { width: 14px; height: 14px; }
+  .row-more { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: transparent; border: none; color: var(--ink-3); }
+  .row-more:hover { background: var(--panel-3); color: var(--ink); }
+  .row-more svg { width: 17px; height: 17px; }
+
+  .pager { display: flex; align-items: center; justify-content: space-between; padding-top: 18px; margin-top: 6px; border-top: 1px solid var(--line); flex-wrap: wrap; gap: 14px; }
+  .pages { display: flex; align-items: center; gap: 6px; }
+  .pages button { min-width: 34px; height: 34px; border-radius: 8px; background: transparent; border: 1px solid var(--line); color: var(--ink-2); font-size: 13.5px; }
+  .pages button:hover { border-color: var(--line-2); color: var(--ink); }
+  .pages button.active { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+
+  .w-h { font-size: 12.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+  .w-sub { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  .delta-up { color: var(--red-bright); font-weight: 700; font-size: 13px; }
+  .legend-li { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13.5px; }
+  .legend-li .nm { color: var(--ink-2); min-width: 0; } .legend-li .vl { margin-left: auto; font-weight: 600; } .legend-li .pc { color: var(--ink-3); font-size: 12.5px; width: 40px; text-align: right; flex: none; }
+  #statusLegend { min-width: 0; }
+  .alert-li { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .alert-li:last-child { border-bottom: none; }
+  .alert-li .ad { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: none; }
+  .alert-li .at { font-size: 14px; font-weight: 500; line-height: 1.35; }
+  .alert-li .am { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+  .link-r { color: var(--red-bright); font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .link-r svg { width: 14px; height: 14px; } .link-r:hover { color: #fff; }
+
+  @media (max-width:1300px){ .grid-stats{grid-template-columns:repeat(3,1fr)} .pol-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1460px">
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-title"><span class="tic" id="tic"></span> Policy Monitor</h1>
+          <div class="page-sub">Track policy changes, regulatory updates, and government actions across Africa.</div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="customize"><span id="cwi"></span> Customize Watchlist</button>
+          <button class="btn btn-ghost" id="download"><span id="dli"></span> Download Report</button>
+        </div>
+      </div>
+
+      <div class="grid-stats" id="stats"></div>
+
+      <div class="pol-grid">
+        <!-- TABLE -->
+        <div class="panel panel-pad-lg">
+          <div class="filter-bar">
+            <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search policies, keywords..."></div>
+            <select class="select" id="fCountry"><option>All Countries</option><option>Nigeria</option><option>DR Congo</option><option>Kenya</option><option>Ghana</option><option>Pan-African</option></select>
+            <select class="select" id="fSector"><option>All Sectors</option><option>Energy</option><option>Mining</option><option>Trade</option><option>Finance</option><option>Technology</option></select>
+            <select class="select" id="fType"><option>All Policy Types</option><option>Policy</option><option>Regulation</option><option>Initiative</option></select>
+            <select class="select" id="fStatus"><option>All Statuses</option><option>Implemented</option><option>Under Review</option><option>Public Consultation</option></select>
+          </div>
+          <div class="tbl-scroll"><table class="tbl" style="margin-top:8px;min-width:700px">
+            <thead><tr><th>Policy / Initiative</th><th>Country</th><th>Sector</th><th>Policy Type</th><th>Status</th><th>Date</th><th>Impact</th><th></th></tr></thead>
+            <tbody id="polBody"></tbody>
+          </table></div>
+          <div class="pager">
+            <span class="muted" id="pagerInfo">Showing 1 to 5 of 156 policies</span>
+            <div class="pages">
+              <button id="pgPrev"><span id="pp"></span></button>
+              <button class="active">1</button><button>2</button><button>3</button><button>4</button><button>5</button><span class="muted" style="padding:0 4px">…</span><button>32</button>
+              <button id="pgNext"><span id="pn"></span></button>
+            </div>
+            <select class="select" style="height:38px" id="perPage"><option>Show 10 per page</option><option>Show 25 per page</option></select>
+          </div>
+        </div>
+
+        <!-- WIDGETS -->
+        <div class="stack gap-22">
+          <div class="panel">
+            <div class="row between" style="align-items:flex-start">
+              <div><div class="w-h">Policy Activity Trend</div><div class="w-sub">Last 30 days</div></div>
+              <div style="text-align:right"><div style="font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-0.02em">156</div><div class="delta-up">+18 (13.0%)</div></div>
+            </div>
+            <div id="polChart" style="margin-top:8px"></div>
+          </div>
+
+          <div class="panel">
+            <div class="w-h">Policy by Status</div>
+            <div class="row gap-16" style="margin-top:14px;align-items:center">
+              <div id="statusDonut"></div>
+              <div class="grow" id="statusLegend"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="row between" style="margin-bottom:4px"><div class="w-h">Recent Alerts</div><a class="link-r" href="#">View all</a></div>
+            <div id="recentAlerts" style="margin-top:6px"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel-2);border:1px solid var(--line-2);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transition:.25s;z-index:80;box-shadow:var(--shadow);pointer-events:none"></div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('policy');
+  const ic = AFRIBN.ic;
+  $('#tic').innerHTML = ic('policy'); $('#cwi').innerHTML = ic('star','width="16" height="16"'); $('#dli').innerHTML = ic('download','width="16" height="16"');
+  $('#si').innerHTML = ic('search'); $('#pp').innerHTML = ic('chevLeft','width="15" height="15"'); $('#pn').innerHTML = ic('chevRight','width="15" height="15"');
+  const toast = (msg)=>{ const t=$('#toast'); t.innerHTML=msg; t.style.opacity=1; t.style.transform='translateX(-50%) translateY(0)'; clearTimeout(t._t); t._t=setTimeout(()=>{t.style.opacity=0;t.style.transform='translateX(-50%) translateY(20px)';},2200); };
+
+  // stats
+  const STATS = [
+    ['file','#E8252D','156','New Policies','+18','vs last 7 days','up'],
+    ['scale','#E3B341','64','Under Review','+7','vs last 7 days','up'],
+    ['checkCircle','#3FB950','92','Implemented','+24','vs last 7 days','up'],
+    ['clock','#4493F8','12','Repealed / Amended','-3','vs last 7 days','down'],
+    ['megaphone','#A371F7','23','Public Consultations','+5','vs last 7 days','up'],
+  ];
+  $('#stats').innerHTML = STATS.map(([i,c,v,l,d,sub,dir])=>`
+    <div class="stat">
+      <div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div>
+      <div class="num">${v}</div>
+      <div class="lbl">${l}</div>
+      <div class="delta ${dir==='up'?'up':'down'}" style="font-size:12.5px">${d} <span class="muted" style="font-weight:400">${sub}</span></div>
+    </div>`).join('');
+
+  // policy type pills + status meta
+  const TYPE = { Policy:['rgba(63,185,80,0.16)','#5ed46e'], Regulation:['rgba(240,136,62,0.16)','#ffa05a'], Initiative:['rgba(68,147,248,0.16)','#6fb0ff'] };
+  const STATUS = { Implemented:'#3FB950', 'Under Review':'#E3B341', 'Public Consultation':'#A371F7', 'Repealed':'#4493F8' };
+  const SECTOR_IC = { Energy:['leaf','#3fb950'], Mining:['bank','#e3b341'], Trade:['handshake','#4493f8'], Finance:['bank','#a371f7'], Technology:['chip','#4493f8'] };
+
+  const POLICIES = [
+    ['Renewable Energy Policy 2024','New incentives and tax breaks for solar, wind, and battery storage investments.','Nigeria','nigeria','Energy','Policy','Implemented','May 16, 2024','High','up'],
+    ['Mining Code Amendment','Updates to royalty rates and local content requirements.','DR Congo','drcongo','Mining','Regulation','Under Review','May 15, 2024','Medium','up'],
+    ['AfCFTA Trade Facilitation Measure','New measures to simplify cross-border trade documentation.','Pan-African','regional','Trade','Initiative','Under Review','May 14, 2024','High','up'],
+    ['Central Bank FX Regulation Update','Revised guidelines for foreign exchange transactions and reporting.','Kenya','kenya','Finance','Regulation','Implemented','May 13, 2024','Medium','up'],
+    ['Fuel Subsidy Removal','Phased removal of fuel subsidies announced by government.','Ghana','ghana','Energy','Policy','Public Consultation','May 12, 2024','High','up'],
+    ['Data Protection Framework','Comprehensive data privacy and protection regulations for digital services.','Kenya','kenya','Technology','Regulation','Public Consultation','May 11, 2024','Medium','up'],
+    ['Local Content Development Act','Mandates for domestic participation in oil & gas projects.','Nigeria','nigeria','Energy','Policy','Implemented','May 10, 2024','High','up'],
+  ];
+
+  function renderTable(){
+    const kw = ($('#kw').value||'').toLowerCase();
+    const fc=$('#fCountry').value, fs=$('#fSector').value, ft=$('#fType').value, fst=$('#fStatus').value;
+    const rows = POLICIES.filter(p =>
+      (!kw || (p[0]+p[1]).toLowerCase().includes(kw)) &&
+      (fc==='All Countries' || p[2]===fc) &&
+      (fs==='All Sectors' || p[4]===fs) &&
+      (ft==='All Policy Types' || p[5]===ft) &&
+      (fst==='All Statuses' || p[6]===fst)
+    );
+    $('#polBody').innerHTML = rows.length ? rows.map(([nm,ds,ctry,flag,sector,type,status,date,impact,dir])=>{
+      const [pb,pc]=TYPE[type]; const [sic,scol]=SECTOR_IC[sector]||['file','#8b949e'];
+      const impColor = impact==='High'?'var(--orange)':'var(--amber)';
+      return `<tr style="cursor:pointer" onclick="event.stopPropagation()">
+        <td><div class="pol-cell"><span class="pi" style="background:${scol}22;color:${scol}">${ic(sic)}</span><div><div class="nm">${nm}</div><div class="ds">${ds}</div></div></div></td>
+        <td><div class="ctry-cell">${AFRIBN.flag(flag)} ${ctry}</div></td>
+        <td class="muted-2">${sector}</td>
+        <td><span class="pill" style="background:${pb};color:${pc}">${type}</span></td>
+        <td><div class="status-cell"><span class="sd" style="background:${STATUS[status]}"></span>${status}</div></td>
+        <td class="muted-2" style="white-space:nowrap">${date}</td>
+        <td><span class="impact-cell" style="color:${impColor}">${impact} ${ic('trendUp')}</span></td>
+        <td><button class="row-more" onclick="event.stopPropagation()">${ic('more')}</button></td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--ink-3)">No policies match your filters.</td></tr>`;
+    $('#pagerInfo').textContent = `Showing 1 to ${rows.length} of 156 policies`;
+    $('#polBody').querySelectorAll('.row-more').forEach(b=>b.addEventListener('click',()=>toast('Track · Set alert · View source · Share')));
+    $('#polBody').querySelectorAll('tr').forEach(r=>r.addEventListener('click',()=>{ if(r.querySelector('.nm')) toast('Opening: '+r.querySelector('.nm').textContent); }));
+  }
+  renderTable();
+  ['#kw'].forEach(s=>$(s).addEventListener('input', renderTable));
+  ['#fCountry','#fSector','#fType','#fStatus'].forEach(s=>$(s).addEventListener('change', renderTable));
+
+  // policy activity trend chart
+  const vals = [55,62,58,70,66,78,72,88,80,95,90,110,102,120,115,135,128,150,142,160,150,170,156];
+  $('#polChart').innerHTML = AFRIBN.lineChart([{color:'#E8252D',vals,fill:true,dots:true}], ['Apr 17','Apr 24','May 1','May 8','May 15'], {w:300,h:170,max:200,pad:30});
+
+  // policy by status donut
+  const ST = [['Implemented','#3FB950',92,'40%'],['Under Review','#E3B341',64,'26%'],['Public Consultation','#A371F7',23,'10%'],['Repealed / Amended','#4493F8',12,'5%'],['Other','#8B949E',20,'17%']];
+    $('#statusDonut').innerHTML = AFRIBN.donut(ST.map(s=>({value:s[2],color:s[1]})),{size:104,thick:16});
+  $('#statusLegend').innerHTML = ST.map(([n,c,v,p])=>`<div class="legend-li"><span class="cdot" style="background:${c}"></span><span class="nm">${n}</span><span class="vl">${v}</span><span class="pc">(${p})</span></div>`).join('');
+
+  // recent alerts
+  const RA = [
+    ['#E3B341','New Mining Regulation published in Zambia','May 16, 2024 · Mining','2h ago'],
+    ['#3FB950','Energy Policy 2024 implemented in Nigeria','May 16, 2024 · Energy','3h ago'],
+    ['#A371F7','Public consultation opened: Data Protection','May 15, 2024 · Technology','1d ago'],
+  ];
+  $('#recentAlerts').innerHTML = RA.map(([c,t,m])=>`<div class="alert-li"><span class="ad" style="background:${c}"></span><div><div class="at">${t}</div><div class="am">${m}</div></div></div>`).join('');
+
+  // header + pager actions
+  $('#customize').addEventListener('click', ()=>toast('Customize your policy watchlist'));
+  $('#download').addEventListener('click', ()=>{ toast(`${ic('download','width=\"15\" height=\"15\"')} Preparing policy report…`); setTimeout(()=>window.print(),600); });
+  $('#perPage').addEventListener('change', ()=>toast('Updated page size'));
+  $('#pgPrev').addEventListener('click', ()=>toast('Previous page')); $('#pgNext').addEventListener('click', ()=>toast('Next page'));
+  document.querySelectorAll('.pages button:not(#pgPrev):not(#pgNext)').forEach(b=>b.addEventListener('click',()=>{ document.querySelector('.pages button.active')?.classList.remove('active'); b.classList.add('active'); toast('Page '+b.textContent); }));
+</script>
+</body>
+</html>

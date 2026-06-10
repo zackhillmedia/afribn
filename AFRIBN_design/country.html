@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Country Intelligence</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .ci-eyebrow { font-size: 22px; font-weight: 700; color: var(--ink); font-family: var(--font-display); letter-spacing: -0.01em; margin-bottom: 14px; }
+  .ci-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+  .country-pick { display: flex; align-items: center; gap: 16px; position: relative; cursor: pointer; padding: 4px 10px 4px 4px; border-radius: 14px; transition: background .15s; }
+  .country-pick:hover { background: var(--panel); }
+  .country-pick .flag-lg { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1px var(--line-2); }
+  .country-pick h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; }
+  .country-pick .cv { color: var(--ink-3); }
+  .cdrop { position: absolute; top: 100%; left: 0; margin-top: 8px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 14px; padding: 8px; min-width: 240px; z-index: 30; box-shadow: var(--shadow); display: none; }
+  .cdrop.open { display: block; }
+  .cdrop .ci-opt { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; font-weight: 500; }
+  .cdrop .ci-opt:hover { background: var(--panel-3); }
+  .cdrop .ci-opt .flag { width: 26px; height: 19px; }
+
+  .tabs2 { display: flex; gap: 32px; border-bottom: 1px solid var(--line); margin-bottom: 26px; overflow-x: auto; }
+  .tab2 { padding: 0 2px 16px; color: var(--ink-3); font-weight: 600; font-size: 15.5px; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; transition: color .15s; cursor: pointer; }
+  .tab2:hover { color: var(--ink-2); }
+  .tab2.active { color: #fff; border-bottom-color: var(--red); }
+
+  .ci-grid { display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start; }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .metric { padding: 4px 22px; border-right: 1px solid var(--line); }
+  .metric:first-child { padding-left: 4px; }
+  .metric:last-child { border-right: none; padding-right: 4px; }
+  .metric .ml { font-size: 13px; color: var(--ink-2); border-bottom: 1px dotted var(--line-2); padding-bottom: 2px; display: inline-block; }
+  .metric .mv { font-family: var(--font-display); font-weight: 800; font-size: 33px; letter-spacing: -0.02em; margin: 12px 0 8px; }
+  .metric .md { font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+  .metric .spk { margin-top: 12px; height: 34px; }
+  .seg { display: flex; gap: 5px; margin-top: 14px; }
+  .seg i { height: 5px; border-radius: 3px; flex: 1; background: var(--panel-3); }
+
+  .ci-story { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .ci-story:last-of-type { border-bottom: none; }
+  .ci-story .img { width: 76px; height: 60px; border-radius: 10px; object-fit: cover; flex: none; }
+  .ci-story .cat { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; }
+  .ci-story h4 { font-size: 16px; font-weight: 600; margin: 5px 0 4px; line-height: 1.25; }
+  .ci-story:hover h4 { color: var(--red-bright); }
+  .ci-story p { font-size: 13px; color: var(--ink-3); }
+  .ci-story .score { text-align: center; flex: none; border-left: 1px solid var(--line); padding-left: 18px; margin-left: 8px; min-width: 92px; }
+  .ci-story .score .sl { font-size: 10.5px; color: var(--ink-3); letter-spacing: 0.04em; }
+  .ci-story .score .sv { font-family: var(--font-display); font-weight: 800; font-size: 30px; }
+  .ci-story .score .st { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+
+  .ind-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .ind-row:last-of-type { border-bottom: none; }
+  .ind-row .lbl0 { white-space: nowrap; }
+  .ind-row .iv { font-weight: 700; white-space: nowrap; }
+
+  .proj-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .proj-row:last-of-type { border-bottom: none; }
+  .proj-row .pi { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--panel-3); color: var(--ink-2); flex: none; }
+  .proj-row .pi svg { width: 19px; height: 19px; }
+  .proj-row .pn { font-size: 14.5px; font-weight: 500; }
+  .proj-row .pv { margin-left: auto; color: var(--red-bright); font-weight: 700; font-size: 15px; }
+
+  .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .panel-h .eyebrow { font-size: 12.5px; }
+  .link-r { color: var(--red-bright); font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .link-r svg { width: 14px; height: 14px; }
+  .link-r:hover { color: #fff; }
+
+  @media (max-width: 1180px){ .ci-grid{grid-template-columns:1fr} .metrics{grid-template-columns:1fr 1fr} .metric{border-right:none;border-bottom:1px solid var(--line);padding:14px 4px} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1320px">
+
+      <div class="ci-eyebrow">Country Intelligence</div>
+      <div class="ci-head">
+        <div class="country-pick" id="cpick">
+          <img class="flag-lg" id="flagLg" alt="">
+          <h1 id="cname">Nigeria</h1>
+          <span class="cv" id="cchev"></span>
+          <div class="cdrop" id="cdrop"></div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="watchBtn"><span id="wbi"></span> Add to Watchlist</button>
+          <button class="icon-btn" id="shareBtn"></button>
+        </div>
+      </div>
+
+      <div class="tabs2" id="tabs"></div>
+
+      <div class="ci-grid">
+        <!-- MAIN -->
+        <div class="stack gap-24">
+          <div class="panel panel-pad-lg" id="overviewPanel">
+            <div class="eyebrow" style="margin-bottom:20px">Overview</div>
+            <div class="metrics" id="metrics"></div>
+          </div>
+
+          <div class="panel panel-pad-lg">
+            <div class="panel-h"><div class="eyebrow">Latest High Impact Stories</div></div>
+            <div id="cistories"></div>
+            <a class="link-r" href="feed.html" style="margin-top:14px;display:inline-flex">View all stories <span id="vas"></span></a>
+          </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="stack gap-24">
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:6px">Key Indicators</div>
+            <div id="indicators"></div>
+            <a class="link-r" href="#" style="margin-top:14px;display:inline-flex">View all indicators <span id="vai"></span></a>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:6px">Major Projects</div>
+            <div id="projects"></div>
+            <a class="link-r" href="#" style="margin-top:14px;display:inline-flex">View all projects <span id="vap"></span></a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel-2);border:1px solid var(--line-2);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transition:.25s;z-index:80;box-shadow:var(--shadow);pointer-events:none"></div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('globe');
+  const ic = AFRIBN.ic;
+  $('#cchev').innerHTML = ic('chevDown'); $('#wbi').innerHTML = ic('plus'); $('#shareBtn').innerHTML = ic('share');
+  ['#vas','#vai','#vap'].forEach(s=>$(s).innerHTML = ic('arrowRight','width="14" height="14"'));
+
+  const flagImg = name => `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16">'+ ('') +'</svg>')}`;
+
+  const DATA = {
+    Nigeria: {
+      flag:'nigeria', risk:['High','risk-high',4],
+      metrics:[
+        ['GDP Growth (2024)','2.9%','+0.6% vs 2023','up',[2.1,2.3,2.2,2.5,2.4,2.6,2.7,2.6,2.8,2.9]],
+        ['Inflation Rate (Apr 2024)','33.7%','+1.2% vs Mar 2024','down',[28,29,30,31,30.5,32,32.5,33,33.2,33.7]],
+        ['Currency (NGN/USD)','1,470.25','-0.8% vs yesterday','down',[1380,1410,1395,1440,1455,1448,1462,1458,1475,1470]],
+      ],
+      indicators:[['External Reserves','$33.2B'],['Unemployment Rate','5.3%'],['Public Debt/GDP','37.4%'],['Current Account Balance','1.2% of GDP']],
+      projects:[['deal','Lagos–Calabar Coastal Highway','$15.7B'],['factory','Dangote Refinery Expansion','$19B'],['oil','Nigeria–Morocco Gas Pipeline','$5.3B']],
+      stories:[
+        ['bridge','politics','#ff7378','#e5484d','POLITICS','Tinubu approves 2024 supplementary budget of ₦6.2tn','Budget focuses on infrastructure, defense, and social investment.','78','2h ago'],
+        ['finance','economy','#5ed46e','#3fb950','ECONOMY','CBN maintains interest rates at 24.75%','Monetary Policy Committee holds rates steady to curb inflation.','65','5h ago'],
+        ['energy','energy','#ffa05a','#f0883e','ENERGY','Nigeria, NNPC sign $3bn gas infrastructure deal with TotalEnergies','Deal aims to boost gas production and domestic supply.','82','1d ago'],
+      ],
+    },
+    Kenya: {
+      flag:'kenya', risk:['Medium','risk-med',3],
+      metrics:[
+        ['GDP Growth (2024)','5.5%','+0.4% vs 2023','up',[4.8,5.0,4.9,5.1,5.2,5.3,5.2,5.4,5.4,5.5]],
+        ['Inflation Rate (Apr 2024)','5.0%','-0.6% vs Mar 2024','up',[6.8,6.5,6.2,5.9,5.7,5.5,5.4,5.2,5.1,5.0]],
+        ['Currency (KES/USD)','131.20','+0.3% vs yesterday','up',[148,144,140,137,135,133,132,131.5,131,131.2]],
+      ],
+      indicators:[['External Reserves','$7.1B'],['Unemployment Rate','5.7%'],['Public Debt/GDP','70.2%'],['Current Account Balance','-4.0% of GDP']],
+      projects:[['zap','Garissa–Turkana Renewable Hub','$2.1B'],['deal','Standard Gauge Railway Phase 2B','$3.6B'],['factory','Lamu Port (LAPSSET)','$5.0B']],
+      stories:[
+        ['energy','energy','#ffa05a','#f0883e','ENERGY','Kenya signs $2.1bn renewable energy agreement with UAE consortium','Solar, wind and battery storage across northern counties.','85','10m ago'],
+        ['finance','economy','#5ed46e','#3fb950','ECONOMY','Kenya Central Bank cuts policy rate to 12.0%','Move aims to boost private sector lending and growth.','72','15m ago'],
+        ['city','politics','#ff7378','#e5484d','POLITICS','Parliament passes Finance Bill amendments','Revisions follow public consultation on tax measures.','64','1d ago'],
+      ],
+    },
+    Ethiopia: {
+      flag:'ethiopia', risk:['High','risk-high',4],
+      metrics:[
+        ['GDP Growth (2024)','6.2%','+0.3% vs 2023','up',[5.6,5.8,5.7,5.9,6.0,6.1,6.0,6.1,6.2,6.2]],
+        ['Inflation Rate (Apr 2024)','23.3%','-1.1% vs Mar 2024','up',[28,27.5,27,26,25.5,25,24.4,24,23.6,23.3]],
+        ['Currency (ETB/USD)','57.10','-0.5% vs yesterday','down',[52,53,54,55,55.5,56,56.4,56.8,57,57.1]],
+      ],
+      indicators:[['External Reserves','$1.5B'],['Unemployment Rate','3.5%'],['Public Debt/GDP','38.8%'],['Current Account Balance','-3.2% of GDP']],
+      projects:[['zap','Grand Ethiopian Renaissance Dam','$4.8B'],['deal','Ethiopia–Djibouti Railway Upgrade','$1.4B'],['factory','Industrial Parks Development','$2.5B']],
+      stories:[
+        ['city','politics','#ff7378','#e5484d','POLITICS','Ethiopia, Somalia hold technical talks in Ankara','Step forward in mediation efforts; fragile progress.','65','3h ago'],
+        ['industry','industry','#b9c0c8','#8b949e','INDUSTRY','Ethiopia launches national industrial parks plan','Plan targets 10 new industrial parks over five years.','60','6h ago'],
+        ['finance','economy','#5ed46e','#3fb950','ECONOMY','IMF approves $3.4bn support program','Backs macroeconomic reforms and FX liberalization.','74','1d ago'],
+      ],
+    },
+  };
+
+  function render(country){
+    const d = DATA[country];
+    $('#cname').textContent = country;
+    $('#flagLg').src = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice">'+ flagInnerOf(d.flag) +'</svg>')}`;
+
+    // metrics + risk cell
+    let m = d.metrics.map(([l,v,delta,dir,vals])=>`
+      <div class="metric">
+        <span class="ml">${l}</span>
+        <div class="mv">${v}</div>
+        <div class="md ${dir==='up'?'up':'down'}">${ic(dir==='up'?'trendUp':'trendDown','width="13" height="13"')} ${delta}</div>
+        <div class="spk">${AFRIBN.spark(vals,{w:150,h:34,color:'#E8252D',sw:1.6})}</div>
+      </div>`).join('');
+    const [rl,rc,rn] = d.risk;
+    m += `<div class="metric">
+        <span class="ml">Risk Rating</span>
+        <div class="mv ${rc}">${rl}</div>
+        <div class="md muted" style="color:var(--ink-3)">Outlook: Stable</div>
+        <div class="seg">${[0,1,2,3,4].map(i=>`<i style="background:${i<rn?(rn>=4?'#E8252D':rn>=3?'#FF8A3D':'#E3B341'):'var(--panel-3)'}"></i>`).join('')}</div>
+      </div>`;
+    $('#metrics').innerHTML = m;
+
+    // stories
+    $('#cistories').innerHTML = d.stories.map(([sc,pc,tc,dc,cat,title,desc,score,tm])=>`
+      <a class="ci-story" href="story.html">
+        <img class="img" src="${AFRIBN.scene(sc,150,120)}" alt="">
+        <div class="grow">
+          <div class="cat" style="color:${tc}">${cat}</div>
+          <h4>${title}</h4>
+          <p>${desc}</p>
+        </div>
+        <div class="score"><div class="sl">Signal Score</div><div class="sv">${score}</div><div class="st">${tm}</div></div>
+      </a>`).join('');
+
+    // indicators
+    $('#indicators').innerHTML = d.indicators.map(([l,v])=>`<div class="ind-row"><span class="muted-2 lbl0">${l}</span><span class="iv">${v}</span></div>`).join('');
+    // projects
+    $('#projects').innerHTML = d.projects.map(([i,n,v])=>`<div class="proj-row"><span class="pi">${ic(i)}</span><span class="pn">${n}</span><span class="pv">${v}</span></div>`).join('');
+  }
+
+  // need flagInner from AFRIBN — replicate via a tiny accessor
+  function flagInnerOf(name){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = AFRIBN.flag(name);
+    const svg = tmp.querySelector('svg');
+    return svg ? svg.innerHTML : '';
+  }
+
+  // country dropdown
+  $('#cpick').addEventListener('click', (e)=>{ e.stopPropagation(); $('#cdrop').classList.toggle('open'); });
+  document.addEventListener('click', ()=> $('#cdrop').classList.remove('open'));
+  $('#cdrop').innerHTML = Object.keys(DATA).map(c=>`<div class="ci-opt" data-c="${c}">${AFRIBN.flag(DATA[c].flag)} ${c}</div>`).join('');
+  $('#cdrop').querySelectorAll('.ci-opt').forEach(o=>o.addEventListener('click',(e)=>{ e.stopPropagation(); render(o.dataset.c); $('#cdrop').classList.remove('open'); resetWatch(); }));
+
+  // tabs
+  const TABS = ['Overview','Politics','Economy','Security','Investments','Key Sectors','Relations'];
+  $('#tabs').innerHTML = TABS.map((t,i)=>`<div class="tab2${i===0?' active':''}" data-t="${t}">${t}</div>`).join('');
+  $('#tabs').querySelectorAll('.tab2').forEach(tab=>tab.addEventListener('click',()=>{
+    $('#tabs').querySelector('.active').classList.remove('active');
+    tab.classList.add('active');
+    const t = tab.dataset.t;
+    const op = $('#overviewPanel');
+    if (t === 'Overview'){ render($('#cname').textContent); op.querySelector('.eyebrow').textContent='Overview'; op.querySelector('#metrics')||0; }
+    else {
+      op.innerHTML = `<div class="eyebrow" style="margin-bottom:14px">${t}</div><p class="muted-2" style="line-height:1.7;font-size:15px">${tabBlurb(t)}</p>`;
+    }
+  }));
+  function tabBlurb(t){
+    const map = {
+      Politics:'Governance stability, electoral calendar, key office-holders and legislative activity. Current administration maintains a working majority; next general elections scheduled for 2027. Cabinet reshuffle expected in Q3.',
+      Economy:'Macroeconomic trajectory, monetary policy, fiscal balance and trade. Authorities are tightening to anchor inflation expectations while pursuing FX reforms and subsidy rationalization to widen fiscal space.',
+      Security:'Conflict, civil unrest and cross-border threats by region. Elevated risk in select northern and border areas; security cooperation agreements active. Maritime security in the Gulf of Guinea improving year-on-year.',
+      Investments:'FDI flows, active deals and sectors attracting capital. Energy, infrastructure and digital lead inbound investment. Several PPP frameworks under review to de-risk private participation.',
+      'Key Sectors':'Sector-by-sector outlook across energy, agriculture, telecoms, mining and finance. Energy transition and gas monetization are the standout themes for the next 24 months.',
+      Relations:'Bilateral and multilateral ties, blocs and strategic partnerships. Deepening Gulf and Asia engagement alongside traditional Western partners; active in AfCFTA implementation.',
+    };
+    return map[t] || '';
+  }
+
+  // watchlist + share
+  const toast = (msg)=>{ const t=$('#toast'); t.innerHTML=msg; t.style.opacity=1; t.style.transform='translateX(-50%) translateY(0)'; clearTimeout(t._t); t._t=setTimeout(()=>{t.style.opacity=0;t.style.transform='translateX(-50%) translateY(20px)';},2000); };
+  let watching=false;
+  function resetWatch(){ watching=false; $('#watchBtn').classList.remove('btn-primary'); $('#watchBtn').classList.add('btn-ghost'); $('#watchBtn').innerHTML = ic('plus')+' Add to Watchlist'; }
+  $('#watchBtn').addEventListener('click', ()=>{
+    watching=!watching;
+    if(watching){ $('#watchBtn').classList.remove('btn-ghost'); $('#watchBtn').classList.add('btn-primary'); $('#watchBtn').innerHTML = ic('check')+' On Watchlist'; toast(`${ic('check','width=\"15\" height=\"15\"')} <span style="color:var(--green)">${$('#cname').textContent} added to watchlist</span>`); }
+    else resetWatch();
+  });
+  $('#shareBtn').addEventListener('click', ()=> toast('Country profile link copied'));
+
+  render('Nigeria');
+</script>
+</body>
+</html>

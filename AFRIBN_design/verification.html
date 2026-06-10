@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Verification</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .vf-grid { display: grid; grid-template-columns: 360px minmax(0,1fr); gap: 22px; align-items: start; }
+  .queue { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .queue-h { padding: 14px 16px; border-bottom: 1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
+  .queue-h .eyebrow { font-size: 12px; }
+  .q-items { max-height: calc(100vh - 250px); overflow-y: auto; }
+  .q-item { padding: 15px 16px; border-bottom: 1px solid var(--line); cursor: pointer; border-left: 2px solid transparent; }
+  .q-item:hover { background: rgba(255,255,255,0.02); } .q-item.active { background: var(--red-tint); border-left-color: var(--red); }
+  .q-item .t { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .q-item .m { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--ink-3); }
+  .rev-sec { margin-bottom: 18px; }
+  .rev-sec .eyebrow { margin-bottom: 12px; }
+  .score-mini { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  .score-mini .sm { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; text-align: center; }
+  .score-mini .sm .v { font-family: var(--font-display); font-weight: 800; font-size: 26px; } .score-mini .sm .l { font-size: 11.5px; color: var(--ink-3); margin-top:2px; }
+  .src-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line); } .src-row:last-child{border-bottom:none;}
+  .src-row .nm{font-weight:600;font-size:14px;} .src-row .nm small{display:block;color:var(--ink-3);font-size:12px;font-weight:400;}
+  .src-row .sc{margin-left:auto;font-family:var(--font-display);font-weight:800;}
+  .warn-item { display:flex; gap:11px; padding:12px 14px; border-radius:11px; margin-bottom:10px; }
+  .warn-item svg{width:18px;height:18px;flex:none;}
+  .action-bar { position: sticky; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); padding: 16px 0 0; display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+  @media (max-width:1100px){ .vf-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Verification</h1>
+          <div class="page-sub">Quality-control workspace before intelligence is published.</div></div>
+        <a class="btn btn-ghost" href="published.html"><span id="pbi"></span> Published Intelligence</a>
+      </div>
+
+      <div class="vf-grid">
+        <div class="queue">
+          <div class="queue-h"><div class="eyebrow">Verification Queue</div><span class="spill" style="background:var(--red-tint);color:var(--red-bright)"><span class="spill-dot" style="background:var(--red)"></span><span id="qcount">4</span></span></div>
+          <div class="q-items" id="queue"></div>
+        </div>
+        <div class="panel panel-pad-lg" id="review"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('listChecks');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('listChecks'); $('#pbi').innerHTML = ic('send','width="16" height="16"');
+
+  const ITEMS = [
+    { id:'STORY-4821', t:'Kenya signs $2.1bn renewable energy agreement with UAE consortium', topic:'Energy', flag:'kenya', country:'Kenya', analyst:'A. Mwangi', aiv:85, conf:82, signal:85,
+      sources:[['Reuters Africa','Pan-African · API',94],['AFP Afrique','Pan-African',92],['Ministry of Energy (KE)','Official',88]],
+      agents:[['FT-2202','Verify consortium members','Accepted',2]],
+      warns:[['gap','#E3B341','Open gap','Full consortium member list still pending field confirmation'],['ok','#3FB950','Corroboration','Matched across 3 independent sources']],
+      what:'Kenya signed a $2.1bn agreement with a UAE-led consortium to develop 1.20GW of renewable energy across Garissa, Turkana and Marsabit over three years.',
+      why:'Strengthens energy security, attracts FDI, deepens UAE–Kenya ties, advances 100% clean-energy goal by 2030.' },
+    { id:'STORY-4815', t:'Sudan army and RSF agree to ceasefire talks in Jeddah', topic:'Security', flag:'sudan', country:'Sudan', analyst:'K. Osman', aiv:78, conf:66, signal:80,
+      sources:[['AFP Afrique','Pan-African',92],['Reuters Africa','Pan-African · API',94]],
+      agents:[['FT-2204','Obtain ceasefire communiqué','Submitted',1]],
+      warns:[['gap','#FF6B35','Contradiction','Talks location disputed (Jeddah vs Cairo)'],['gap','#E3B341','Missing source','No official party statement yet']],
+      what:'Sudan\'s army and the RSF agreed to resume ceasefire talks in Jeddah, mediators announced — the first direct engagement in months.',
+      why:'First direct talks in months; regional humanitarian and security implications remain high.' },
+    { id:'STORY-4810', t:'DR Congo introduces new mining code', topic:'Industry', flag:'drcongo', country:'DR Congo', analyst:'P. Lukau', aiv:75, conf:82, signal:75,
+      sources:[['Reuters Africa','Pan-African · API',94],['Mining Journal','Sector',79]],
+      agents:[['FT-2205','Gazette publication date','Submitted',1]],
+      warns:[['ok','#3FB950','Corroboration','Confirmed by gazette scan'],['gap','#E3B341','Missing detail','Royalty rate specifics by mineral']],
+      what:'The DRC introduced a new mining code to attract investment and raise state revenue via revised royalty rates and local-content rules.',
+      why:'Affects global cobalt & copper supply chains and investor calculus across the Copperbelt.' },
+    { id:'STORY-4808', t:'Nigeria approves ₦6.2tn supplementary budget', topic:'Politics', flag:'nigeria', country:'Nigeria', analyst:'C. Bello', aiv:78, conf:88, signal:78,
+      sources:[['The Guardian Nigeria','Nigeria · RSS',86],['Business Day','Nigeria',81]],
+      agents:[],
+      warns:[['ok','#3FB950','Corroboration','Confirmed by 2 national outlets']],
+      what:'President Tinubu approved a ₦6.2tn supplementary budget focused on infrastructure, defense and social investment.',
+      why:'Signals fiscal priorities and affects contractors, defense and social-sector exposure.' },
+  ];
+
+  let sel=0;
+  function renderQueue(){
+    $('#queue').innerHTML = ITEMS.map((it,i)=>`<div class="q-item ${i===sel?'active':''}" data-i="${i}">
+      <div class="t">${it.t}</div><div class="m">${AFRIBN.flag(it.flag)} ${it.country} · ${it.id} · ${it.analyst}</div></div>`).join('');
+    $('#queue').querySelectorAll('.q-item').forEach(el=>el.addEventListener('click',()=>{ sel=+el.dataset.i; renderQueue(); renderReview(); }));
+    $('#qcount').textContent=ITEMS.length;
+  }
+  function renderReview(){
+    const it=ITEMS[sel]; if(!it){ $('#review').innerHTML='<div class="empty">Queue clear — nothing to verify.</div>'; return; }
+    $('#review').innerHTML=`
+      <div class="row gap-8" style="margin-bottom:12px"><span class="pill ${({Energy:'energy',Security:'security',Industry:'industry',Politics:'politics'})[it.topic]}">${it.topic}</span>${AFRIBN.statusPill('In Review','#E3B341')}<span class="muted" style="font-size:13px;margin-left:auto">${it.id} · drafted by ${it.analyst}</span></div>
+      <h2 style="font-size:24px;font-weight:800;letter-spacing:-0.02em;line-height:1.15;max-width:26ch;margin-bottom:18px">${it.t}</h2>
+
+      <div class="rev-sec"><div class="eyebrow">Score Summary</div>
+        <div class="score-mini"><div class="sm"><div class="v" style="color:var(--red)">${it.aiv}</div><div class="l">AIV</div></div><div class="sm"><div class="v" style="color:${it.conf>=75?'#3FB950':'#E3B341'}">${it.conf}</div><div class="l">Confidence</div></div><div class="sm"><div class="v">${it.signal}</div><div class="l">Signal</div></div></div></div>
+
+      <div class="rev-sec"><div class="eyebrow">Source Reliability</div>
+        ${it.sources.map(([n,c,s])=>`<div class="src-row">${ic('database','width=\"16\" height=\"16\"')}<div class="nm">${n}<small>${c}</small></div><span class="sc" style="color:${s>=85?'#3FB950':s>=70?'#a3d44a':'#E3B341'}">${s}</span></div>`).join('')}</div>
+
+      <div class="rev-sec"><div class="eyebrow">Linked Agent Reports</div>
+        ${it.agents.length?it.agents.map(([id,t,st,n])=>`<div class="src-row">${ic('pin','width=\"16\" height=\"16\"')}<div class="nm">${t}<small>${id} · ${n} attachment(s)</small></div>${AFRIBN.statusPill(st, st==='Accepted'?'#3FB950':'#A371F7')}</div>`).join(''):'<div class="muted" style="font-size:13.5px">No agent reports linked.</div>'}</div>
+
+      <div class="rev-sec"><div class="eyebrow">Contradictions & Gaps</div>
+        ${it.warns.map(([k,c,l,v])=>`<div class="warn-item" style="background:${c}12;border:1px solid ${c}33"><span style="color:${c}">${ic(k==='ok'?'checkCircle':'alertTri')}</span><div><div style="font-weight:600;font-size:13.5px;color:${c}">${l}</div><div style="font-size:13px;color:var(--ink-2);margin-top:2px">${v}</div></div></div>`).join('')}</div>
+
+      <div class="rev-sec"><div class="eyebrow">Intelligence Draft</div>
+        <div style="font-size:13.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:6px">What happened</div>
+        <p style="color:var(--ink-2);line-height:1.6;margin-bottom:14px">${it.what}</p>
+        <div style="font-size:13.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:6px">Why it matters</div>
+        <p style="color:var(--ink-2);line-height:1.6">${it.why}</p></div>
+
+      <div class="rev-sec"><div class="eyebrow">Verification Notes</div>
+        <div class="field"><textarea id="vnotes" placeholder="Add review notes, required changes, or rationale…"></textarea></div></div>
+
+      <div class="action-bar">
+        <button class="btn btn-primary" id="aPublish">${ic('send','width=\"16\" height=\"16\"')} Approve & Publish</button>
+        <button class="btn btn-ghost" id="aApprove">${ic('check','width=\"16\" height=\"16\"')} Approve</button>
+        <button class="btn btn-ghost" id="aClarify">${ic('message','width=\"16\" height=\"16\"')} Request Clarification</button>
+        <button class="btn btn-ghost" id="aReject" style="color:#ff7378;margin-left:auto">${ic('x','width=\"16\" height=\"16\"')} Reject</button>
+      </div>`;
+    const act=(msg,kind,remove)=>{ toast(msg,kind); if(remove){ ITEMS.splice(sel,1); if(sel>=ITEMS.length) sel=Math.max(0,ITEMS.length-1); renderQueue(); renderReview(); } };
+    $('#aPublish').onclick=()=>act(`${it.id} verified & published`,'ok',true);
+    $('#aApprove').onclick=()=>act(`${it.id} approved`,'ok',true);
+    $('#aClarify').onclick=()=>act('Clarification requested from analyst','warn');
+    $('#aReject').onclick=()=>act(`${it.id} rejected`,'warn',true);
+  }
+  renderQueue(); renderReview();
+</script>
+</body>
+</html>

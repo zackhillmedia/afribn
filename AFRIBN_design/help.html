@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Help Center</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> Help Center</span>
+    <h1>How can we <span class="r">help</span>?</h1>
+    <div class="search-inline" style="max-width:520px;margin:26px auto 0;height:54px;border-radius:14px"><span id="si"></span><input id="hsearch" placeholder="Search help articles..."></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:20px">
+  <div class="wrap-m"><div class="mgrid c4" id="cats"></div></div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-narrow">
+    <div class="sec-head left"><div class="ek">Popular</div><h2>Frequently asked</h2></div>
+    <div id="faq"></div>
+  </div>
+</section>
+
+<section class="wrap-m">
+  <div class="cta-box"><h2>Still need a hand?</h2><p>Our team is here for you.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="contact.html" style="height:54px;padding:0 28px;font-size:16px">Contact support</a></div></div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing(null);
+  $('#si').innerHTML=ic('search');
+  const CATS=[['home','Getting started','First steps & onboarding'],['gauge','Using the platform','Feeds, dashboards & alerts'],['file','Reports & exports','Briefs, PDFs & data'],['sliders','API & integrations','Keys, endpoints & webhooks'],['user','Account & billing','Profiles, plans & invoices'],['shield','Security & access','SSO, roles & permissions'],['globe','Coverage & methodology','Sources, scoring & countries'],['message','Contact & support','Reach the team']];
+  $('#cats').innerHTML=CATS.map(([i,t,d])=>`<a class="mcard" href="#" onclick="AFRIBN.toast('Opening: '+'${t}');return false"><div class="mi">${ic(i)}</div><h3 style="font-size:16.5px">${t}</h3><p style="font-size:13.5px">${d}</p></a>`).join('');
+  const FAQ=[
+    ['How do I get access to AFRIBN?','Submit a request via Request Access and our team provisions a workspace matched to your role and coverage needs — usually within one business day.'],
+    ['How do I set up alerts?','Open Alerts, click Create Alert, and define triggers by country, topic, source, score threshold, watchlist or risk change, then choose in-app, email or SMS delivery.'],
+    ['Can I export reports as PDF?','Yes — every report and the Daily Executive Brief can be downloaded as PDF from the report header.'],
+    ['How is source reliability calculated?','Each source has a transparent Source Reliability Score from named factors like trust record, authoritativeness and corroboration. See our Methodology page for the full breakdown.'],
+    ['Do you support SSO?','SSO / SAML is available on Enterprise plans, along with role-based access control and audit logging.'],
+    ['How do I add teammates?','On Professional and Enterprise plans, invite teammates from Admin / Operations → Users. Seat limits depend on your plan.'],
+  ];
+  function renderFaq(list){ $('#faq').innerHTML=list.map(([q,a])=>`<div class="acc-item"><div class="acc-q">${q}<span class="qx">${ic('plus')}</span></div><div class="acc-a"><div class="inner">${a}</div></div></div>`).join('');
+    $('#faq').querySelectorAll('.acc-item').forEach(it=>it.querySelector('.acc-q').addEventListener('click',()=>{ const o=it.classList.contains('open'); $('#faq').querySelectorAll('.acc-item').forEach(x=>x.classList.remove('open')); if(!o)it.classList.add('open'); }));
+  }
+  renderFaq(FAQ); $('#faq').querySelector('.acc-item').classList.add('open');
+  $('#hsearch').addEventListener('input',e=>{ const v=e.target.value.toLowerCase(); renderFaq(FAQ.filter(([q,a])=>(q+a).toLowerCase().includes(v))); });
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Intelligence Workspace</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .ws-grid { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 22px; align-items: start; }
+  .ws-tabs { display:flex; gap:6px; margin-bottom:18px; background:var(--panel-2); border:1px solid var(--line); border-radius:11px; padding:4px; width:fit-content; }
+  .ws-tabs button { border:none; background:none; color:var(--ink-3); padding:8px 16px; border-radius:8px; font-weight:600; font-size:13.5px; cursor:pointer; }
+  .ws-tabs button.on { background:var(--red); color:#fff; }
+  .ai-box { background: linear-gradient(180deg, rgba(232,37,45,0.06), transparent); border: 1px solid rgba(232,37,45,0.22); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .ai-box .ah { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--red-bright); margin-bottom:10px; }
+  .ai-box .ah svg { width:15px; height:15px; }
+  .ai-box p { font-size:13px; color:var(--ink-2); line-height:1.55; }
+  .ai-box .use { margin-top:10px; }
+  .tag-input { display:flex; flex-wrap:wrap; gap:7px; padding:8px; background:var(--panel-2); border:1px solid var(--line-2); border-radius:10px; }
+  .tg { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; padding:4px 9px; border-radius:7px; background:var(--panel-3); }
+  .tg .x { cursor:pointer; color:var(--ink-3); display:inline-flex; } .tg .x:hover{ color:#fff; }
+  .tag-input input { flex:1; min-width:80px; background:none; border:none; outline:none; color:var(--ink); font-size:13px; }
+  .src-link { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .src-link:last-child{border-bottom:none;}
+  .src-link svg{width:15px;height:15px;color:var(--ink-3);flex:none;}
+  .save-state { font-size:12.5px; color:var(--ink-3); display:flex; align-items:center; gap:6px; }
+  .save-state svg{width:14px;height:14px;color:var(--green);}
+  @media (max-width:1100px){ .ws-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+      <div class="page-head">
+        <div>
+          <div class="row gap-8" style="margin-bottom:6px"><span class="pill energy">Energy</span><span class="pill region">Draft</span><span class="save-state" id="saveState"></span></div>
+          <h1 class="page-title">Intelligence Workspace</h1>
+          <div class="page-sub">Turn raw content into decision-grade intelligence.</div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="saveDraft"><span id="sdi"></span> Save draft</button>
+          <button class="btn btn-ghost" id="toScore"><span id="tsi"></span> Submit for scoring</button>
+          <button class="btn btn-primary" id="toVerify"><span id="tvi"></span> Submit for verification</button>
+        </div>
+      </div>
+
+      <div class="ws-tabs"><button class="on">Story</button><button id="eventTab">Event</button></div>
+
+      <div class="ws-grid">
+        <!-- EDITOR -->
+        <div class="panel panel-pad-lg">
+          <div class="field"><label>Headline</label><input id="f_head" value="Kenya signs $2.1bn renewable energy agreement with UAE consortium"></div>
+          <div class="field"><label>Summary</label><textarea id="f_sum">Kenya signed a $2.1bn agreement with a UAE-led consortium to develop 1.20GW of renewable energy across Garissa, Turkana and Marsabit over three years.</textarea></div>
+          <div class="field"><label>What happened</label><textarea id="f_what">Kenya has signed a $2.1 billion agreement with a UAE-led consortium to develop 1.20GW of renewable energy projects, including solar, wind, and battery storage facilities, over the next three years. The agreement includes power purchase agreements and knowledge-transfer initiatives.</textarea></div>
+          <div class="field"><label>Why it matters</label><textarea id="f_why">Strengthens Kenya's energy security, attracts significant FDI, deepens UAE–Kenya economic ties, and advances Kenya's 100% clean-energy goal by 2030.</textarea></div>
+          <div class="field"><label>Potential consequences</label><textarea id="f_cons">Increased foreign investment; job creation in northern counties; energy-cost stabilization; regional clean-energy leadership.</textarea></div>
+          <div class="field"><label>Watch next (30–90 days)</label><textarea id="f_watch">Final investment decision on first 400MW phase; environmental & social impact assessments; grid upgrades in northern Kenya.</textarea></div>
+          <div class="field"><label>Internal notes <span class="muted" style="font-weight:400">(not published)</span></label><textarea id="f_notes" placeholder="Analyst notes, caveats, follow-ups…">Confirm GW figure with Ministry of Energy. Corroborated by Reuters + AFP.</textarea></div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg">
+            <div class="ai-box">
+              <div class="ah"><span id="aii"></span> AI-generated draft</div>
+              <p id="aiText">"Kenya's $2.1bn UAE renewable deal marks one of East Africa's largest clean-energy commitments, signalling rising Gulf capital flows into African infrastructure."</p>
+              <button class="btn btn-ghost btn-sm use" id="useAI">Use suggestion</button>
+            </div>
+            <div class="muted" style="font-size:12px;display:flex;align-items:center;gap:6px"><span id="diffi"></span> 3 analyst edits vs AI draft</div>
+          </div>
+
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:10px">Countries</div>
+            <div class="tag-input" id="tCountries"></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:10px">Topics & Sectors</div>
+            <div class="tag-input" id="tTopics"></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:10px">Entities</div>
+            <div class="tag-input" id="tEntities"></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:8px">Source Links</div>
+            <div id="srcLinks"></div>
+            <button class="btn btn-ghost btn-sm" id="addSrc" style="margin-top:12px;width:100%"><span id="asi2"></span> Add source link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('edit');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#sdi').innerHTML=ic('check','width="16" height="16"'); $('#tsi').innerHTML=ic('target','width="16" height="16"'); $('#tvi').innerHTML=ic('send','width="16" height="16"');
+  $('#aii').innerHTML=ic('flask'); $('#diffi').innerHTML=ic('branch','width="14" height="14"'); $('#asi2').innerHTML=ic('plus','width="15" height="15"');
+  $('#saveState').innerHTML=`${ic('check')} Saved 2m ago`;
+
+  function tagBox(el, items, color){
+    const render=()=>{ el.innerHTML = items.map((t,i)=>`<span class="tg" style="${color?'background:'+color+'22;color:'+color:''}">${t} <span class="x" data-i="${i}">${ic('x','width=\"11\" height=\"11\"')}</span></span>`).join('') + `<input placeholder="Add…">`;
+      el.querySelectorAll('.x').forEach(x=>x.addEventListener('click',()=>{ items.splice(+x.dataset.i,1); render(); }));
+      const inp=el.querySelector('input'); inp.addEventListener('keydown',e=>{ if(e.key==='Enter'&&inp.value.trim()){ items.push(inp.value.trim()); render(); el.querySelector('input').focus(); } });
+    };
+    render();
+  }
+  tagBox($('#tCountries'), ['Kenya','UAE'], '#4493f8');
+  tagBox($('#tTopics'), ['Energy','Renewables','FDI','Investments'], '#f0883e');
+  tagBox($('#tEntities'), ['Ministry of Energy','Garissa','Turkana','UAE consortium'], '#a371f7');
+
+  const SRC=[['Reuters Africa','reuters.com/africa/...'],['AFP Afrique','afp.com/...'],['Ministry of Energy (KE)','energy.go.ke/...']];
+  $('#srcLinks').innerHTML = SRC.map(([n,u])=>`<div class="src-link">${ic('link')}<div><div style="font-weight:600">${n}</div><div class="muted" style="font-size:11.5px">${u}</div></div></div>`).join('');
+
+  $('#useAI').onclick=()=>{ $('#f_sum').value=$('#aiText').textContent.replace(/"/g,''); toast('AI suggestion applied','ok'); };
+  $('#saveDraft').onclick=()=>{ $('#saveState').innerHTML=`${ic('check')} Saved just now`; toast('Draft saved','ok'); };
+  $('#toScore').onclick=()=>{ toast('Submitting for scoring…','ok'); setTimeout(()=>location.href='scoring.html',700); };
+  $('#toVerify').onclick=()=>{ toast('Submitted for verification','ok'); setTimeout(()=>location.href='verification.html',800); };
+  $('#addSrc').onclick=()=>toast('Add source link');
+  $('#eventTab').onclick=function(){ document.querySelector('.ws-tabs .on').classList.remove('on'); this.classList.add('on'); toast('Switched to Event editor'); };
+</script>
+</body>
+</html>

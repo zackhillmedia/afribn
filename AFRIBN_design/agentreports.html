@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Agent Reports</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .ar-cell { display:flex; align-items:center; gap:12px; }
+  .ar-cell .av2 { width:36px; height:36px; border-radius:50%; background:var(--panel-3); display:grid; place-items:center; color:var(--ink-2); flex:none; font-family:var(--font-display); font-weight:700; font-size:13px; }
+  .ar-cell .nm { font-weight:600; white-space:nowrap; } .ar-cell .tk { font-size:12px; color:var(--ink-3); white-space:nowrap; }
+  .att { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-2); }
+  .att svg{width:15px;height:15px;color:var(--ink-3);}
+  .row-act button{ width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:transparent;border:none;color:var(--ink-3);} .row-act button:hover{background:var(--panel-3);color:var(--ink);} .row-act button svg{width:16px;height:16px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Agent Reports</h1>
+          <div class="page-sub">Field-submitted evidence awaiting routing to verification.</div></div>
+        <div class="row gap-12">
+          <select class="select" id="fStatus"><option>All Status</option><option>Submitted</option><option>In Review</option><option>Sent to Verification</option></select>
+          <a class="btn btn-ghost" href="tasks.html"><span id="fti"></span> Field Tasks</a>
+        </div>
+      </div>
+      <div class="kpi-row" id="stats" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="panel panel-pad-lg">
+        <div class="tbl-scroll"><table class="tbl" style="min-width:900px">
+          <thead><tr><th>Report</th><th>Agent</th><th>Location</th><th>Submitted</th><th>Evidence</th><th>Confidence</th><th>Status</th><th></th></tr></thead>
+          <tbody id="body"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="drawer-back" id="drawerBack"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('listChecks');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('inbox'); $('#fti').innerHTML = ic('pin','width="16" height="16"');
+
+  $('#stats').innerHTML = [['inbox','#E8252D','18','Submitted'],['eye','#E3B341','7','In Review'],['send','#3FB950','42','Sent to Verification (7d)'],['users','#A371F7','9','Active Field Agents']]
+    .map(([i,c,v,l])=>`<div class="stat"><div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div><div class="num">${v}</div><div class="lbl">${l}</div></div>`).join('');
+
+  const ST={ Submitted:'#A371F7','In Review':'#E3B341','Sent to Verification':'#3FB950' };
+  const REPORTS=[
+    { id:'AR-881', task:'FT-2205 · DR Congo mining gazette date', agent:'P. Lukau', loc:'Kinshasa, DR Congo', flag:'drcongo', sub:'2h ago', att:2, conf:88, status:'Submitted', summary:'Obtained official gazette scan confirming the new mining code publication date (May 10). Royalty schedule annex attached.' },
+    { id:'AR-880', task:'FT-2204 · Sudan ceasefire communiqué', agent:'K. Osman', loc:'Port Sudan, Sudan', flag:'sudan', sub:'4h ago', att:1, conf:64, status:'Submitted', summary:'Secured partial communiqué; mediator identity unconfirmed. Recommend second source before verification.' },
+    { id:'AR-878', task:'FT-2203 · Garissa solar site photos', agent:'A. Mwangi', loc:'Garissa, Kenya', flag:'kenya', sub:'1d ago', att:6, conf:92, status:'In Review', summary:'Site overview photos + GPS coordinates captured. Construction at early earthworks stage.' },
+    { id:'AR-875', task:'FT-2198 · Lagos budget document', agent:'C. Bello', loc:'Abuja, Nigeria', flag:'nigeria', sub:'2d ago', att:3, conf:90, status:'Sent to Verification', summary:'High-resolution budget document scan with source attribution. Cross-checked against National Assembly record.' },
+    { id:'AR-870', task:'FT-2190 · Sahel troop movement', agent:'M. Diallo', loc:'Gao, Mali', flag:'mali', sub:'4d ago', att:1, conf:38, status:'In Review', summary:'Single low-quality image; unable to corroborate. Flagged as insufficient.' },
+  ];
+
+  function render(){
+    const fs=$('#fStatus').value;
+    const rows=REPORTS.filter(r=>fs==='All Status'||r.status===fs);
+    $('#body').innerHTML=rows.map(r=>`<tr style="cursor:pointer" data-id="${r.id}">
+      <td><div class="ar-cell"><span class="av2">${ic('file','width=\"16\" height=\"16\"')}</span><div><div class="nm">${r.id}</div><div class="tk">${r.task}</div></div></div></td>
+      <td class="muted-2" style="white-space:nowrap">${r.agent}</td>
+      <td><span class="att">${AFRIBN.flag(r.flag)} ${r.loc}</span></td>
+      <td class="muted-2" style="white-space:nowrap">${r.sub}</td>
+      <td><span class="att">${ic('image')} ${r.att}</span></td>
+      <td><span style="font-weight:700;color:${r.conf>=60?'#3FB950':'#FF6B35'}">${r.conf}%</span></td>
+      <td>${AFRIBN.statusPill(r.status, ST[r.status])}</td>
+      <td><div class="row-act" onclick="event.stopPropagation()"><button data-v="${r.id}" title="Send to verification">${ic('send')}</button></div></td>
+    </tr>`).join('');
+    $('#body').querySelectorAll('tr').forEach(t=>t.addEventListener('click',()=>openDrawer(t.dataset.id)));
+    $('#body').querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>{ const r=REPORTS.find(x=>x.id===b.dataset.v); r.status='Sent to Verification'; render(); toast(`${r.id} sent to verification`,'ok'); }));
+  }
+  render();
+  $('#fStatus').addEventListener('change',render);
+
+  function openDrawer(id){
+    const r=REPORTS.find(x=>x.id===id); if(!r) return;
+    $('#drawer').innerHTML=`<div class="drawer-h"><div><div class="eyebrow red">Agent Report · ${r.id}</div><h2 style="font-size:20px;font-weight:800;margin-top:6px;line-height:1.2">${r.task}</h2></div><button class="icon-btn" id="dClose" style="width:36px;height:36px">${ic('x')}</button></div>
+      <div class="drawer-b">
+        <div style="margin-bottom:14px">${AFRIBN.statusPill(r.status, ST[r.status])}</div>
+        <div class="kv"><span class="k">Agent</span><span class="v">${r.agent}</span></div>
+        <div class="kv"><span class="k">Location</span><span class="v">${r.loc}</span></div>
+        <div class="kv"><span class="k">Submitted</span><span class="v">${r.sub}</span></div>
+        <div class="kv"><span class="k">Confidence</span><span class="v" style="color:${r.conf>=60?'#3FB950':'#FF6B35'}">${r.conf}%</span></div>
+        <div class="eyebrow" style="margin:18px 0 8px">Summary</div>
+        <p style="color:var(--ink-2);line-height:1.6;font-size:14px">${r.summary}</p>
+        <div class="eyebrow" style="margin:18px 0 8px">Evidence (${r.att})</div>
+        ${Array.from({length:r.att}).map((_,i)=>`<div class="file-chip" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;margin-top:8px;font-size:13px">${ic('image','width=\"16\" height=\"16\"')} evidence_0${i+1}.${i%2?'pdf':'jpg'}<span style="margin-left:auto;color:var(--ink-4)">${(1+i*0.8).toFixed(1)} MB</span></div>`).join('')}
+        <button class="btn btn-primary" style="width:100%;height:46px;margin-top:20px" id="dSend">${ic('send','width=\"16\" height=\"16\"')} Send to Verification</button>
+      </div>`;
+    $('#drawerBack').classList.add('open'); $('#drawer').classList.add('open');
+    $('#dClose').onclick=closeDrawer;
+    $('#dSend').onclick=()=>{ r.status='Sent to Verification'; closeDrawer(); render(); toast(`${r.id} sent to verification`,'ok'); };
+  }
+  function closeDrawer(){ $('#drawerBack').classList.remove('open'); $('#drawer').classList.remove('open'); }
+  $('#drawerBack').addEventListener('click',closeDrawer);
+</script>
+</body>
+</html>

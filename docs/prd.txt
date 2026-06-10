@@ -1,0 +1,1470 @@
+
+
+--- PAGE 1 ---
+ 
+AFRIBN  Product  Requirements  
+Document
+ 
+(PRD)
+ 
+Product  Name  
+AFRIBN  (Africa  Bureau  of  News)  
+Product  Vision  
+AFRIBN  is  Africa's  Intelligence  Operating  System.  
+The  platform  transforms  fragmented  information  from  news,  government  publications,  policy  
+documents,
+ 
+corporate
+ 
+announcements,
+ 
+field
+ 
+reports,
+ 
+and
+ 
+local
+ 
+intelligence
+ 
+networks
+ 
+into
+ 
+verified,
+ 
+structured,
+ 
+actionable
+ 
+intelligence
+ 
+for
+ 
+governments,
+ 
+investors,
+ 
+corporations,
+ 
+diplomats,
+ 
+and
+ 
+development
+ 
+organizations.
+ 
+AFRIBN's  goal  is  to  become  the  Bloomberg  Terminal,  Stratfor,  and  ACLED  equivalent  for  
+Africa,
+ 
+combining
+ 
+AI-driven
+ 
+intelligence
+ 
+gathering
+ 
+with
+ 
+human
+ 
+verification
+ 
+and
+ 
+local
+ 
+field
+ 
+reporting.
+ 
+ 
+Problem  Statement  
+Decision-makers  operating  across  Africa  face  several  challenges:  
+●  Information  is  fragmented  across  thousands  of  sources.  ●  High-impact  developments  are  often  buried  in  low-value  news.  ●  Verification  is  difficult.  ●  Intelligence  arrives  too  late.  ●  There  is  no  unified  platform  connecting  policies,  deals,  risks,  events,  and  field  
+intelligence.
+ 
+Organizations  need:  
+●  Real-time  situational  awareness.  ●  Verified  intelligence.  ●  Early  warning  signals.  ●  Strategic  context.  ●  Actionable  recommendations.  
+
+
+--- PAGE 2 ---
+ 
+Core  Product  Philosophy  
+AFRIBN  is  NOT  a  news  website.  
+AFRIBN  is  an  Intelligence  Lifecycle  Platform.  
+Every  piece  of  information  passes  through:  
+Source  Collection  
+→
+ 
+AI
+ 
+Distillation
+ 
+→
+ 
+Confidence
+ 
+Scoring
+ 
+→
+ 
+Gap
+ 
+Detection
+ 
+→
+ 
+Country
+ 
+Agent
+ 
+Verification
+ 
+→
+ 
+Editorial
+ 
+Review
+ 
+→
+ 
+Knowledge
+ 
+Graph
+ 
+→
+ 
+Published
+ 
+Intelligence
+ 
+ 
+User  Types  
+Platform  Administrator  
+Responsibilities:  
+●  Manage  users  ●  Manage  sources  ●  Manage  system  settings  ●  Configure  AI  models  ●  Configure  scoring  algorithms  
+Intelligence  Analyst  
+Responsibilities:  
+●  Review  AI  outputs  ●  Validate  intelligence  ●  Create  reports  ●  Review  risk  assessments  
+Country  Agent  
+
+
+--- PAGE 3 ---
+Responsibilities:  
+●  Perform  fact  verification  ●  Conduct  interviews  ●  Upload  field  reports  ●  Collect  supporting  documents  
+Verification  Officer  
+Responsibilities:  
+●  Approve  intelligence  ●  Reject  intelligence  ●  Verify  evidence  chains  
+Enterprise  Client  
+Responsibilities:  
+●  Consume  intelligence  ●  Configure  watchlists  ●  Configure  alerts  ●  Download  reports  
+ 
+Intelligence  Pipeline  
+Stage  1:  Source  Collection  
+Sources  include:  
+News  Sources  
+Government
+ 
+Websites
+ 
+Parliament
+ 
+Websites
+ 
+Tender
+ 
+Portals
+ 
+Corporate
+ 
+Filings
+ 
+NGO
+ 
+Publications
+ 
+Think
+ 
+Tanks
+ 
+Multilateral
+ 
+Institutions
+ 
+Social
+ 
+Sources
+ 
+Partner
+ 
+Networks
+ 
+Output:  
+
+
+--- PAGE 4 ---
+Raw  Articles  
+Raw
+ 
+Documents
+ 
+Raw
+ 
+Events
+ 
+ 
+Stage  2:  AI  Distillation  
+The  AI  extracts:  
+Title  
+Summary
+ 
+Country
+ 
+Region
+ 
+Sector
+ 
+Event
+ 
+Type
+ 
+Organizations
+ 
+People
+ 
+Projects
+ 
+Risk
+ 
+Indicators
+ 
+Opportunities
+ 
+Key
+ 
+Claims
+ 
+Output:  
+Story  
+Event
+ 
+Entities
+ 
+Metadata
+ 
+ 
+Stage  3:  Confidence  Scoring  
+The  system  calculates:  
+Source  Reliability  
+Evidence
+ 
+Strength
+ 
+Corroboration
+ 
+Score
+ 
+Human
+ 
+Verification
+ 
+Score
+ 
+Output:  
+Confidence  Score  (0–100)  
+ 
+
+
+--- PAGE 5 ---
+Stage  4:  Signal  Scoring  
+The  system  calculates:  
+Impact  
+Urgency
+ 
+Novelty
+ 
+Economic
+ 
+Relevance
+ 
+Political
+ 
+Relevance
+ 
+Strategic
+ 
+Importance
+ 
+Output:  
+Signal  Score  (0–100)  
+ 
+Stage  5:  Gap  Detection  
+The  AI  identifies:  
+Missing  Facts  
+Missing
+ 
+Sources
+ 
+Missing
+ 
+Documents
+ 
+Missing
+ 
+Stakeholders
+ 
+Missing
+ 
+Timelines
+ 
+Output:  
+Gap  Report  
+ 
+Stage  6:  Country  Agent  Workflow  
+Country  agents  receive:  
+Fact  Check  Tasks  
+Interview
+ 
+Requests
+ 
+Document
+ 
+Collection
+ 
+Requests
+ 
+Field
+ 
+Verification
+ 
+Tasks
+ 
+Output:  
+Agent  Submission  
+ 
+
+
+--- PAGE 6 ---
+Stage  7:  Verification  
+Verification  officers:  
+Review  Evidence  
+Approve
+ 
+Findings
+ 
+Reject
+ 
+Findings
+ 
+Request
+ 
+Additional
+ 
+Verification
+ 
+Output:  
+Verified  Intelligence  
+ 
+Stage  8:  Knowledge  Graph  
+All  intelligence  becomes  connected.  
+Nodes:  
+Countries  
+People
+ 
+Organizations
+ 
+Companies
+ 
+Policies
+ 
+Deals
+ 
+Projects
+ 
+Events
+ 
+Relationships:  
+Funds  
+Regulates
+ 
+Owns
+ 
+Operates
+ 
+Impacts
+ 
+Partners
+ 
+With
+ 
+Output:  
+Knowledge  Graph  
+ 
+Stage  9:  Publishing  
+Verified  intelligence  becomes  available  across  all  products.  
+
+
+--- PAGE 7 ---
+ 
+Core  Backend  Modules  
+Authentication  Module  
+Features:  
+Login  
+Registration
+ 
+Role
+ 
+Management
+ 
+Permissions
+ 
+Organizations
+ 
+Tables:  
+users  
+roles
+ 
+permissions
+ 
+organizations
+ 
+ 
+Source  Management  Module  
+Features:  
+Add  Source  
+Edit
+ 
+Source
+ 
+Deactivate
+ 
+Source
+ 
+Monitor
+ 
+Source
+ 
+Health
+ 
+Tables:  
+sources  
+source_categories
+ 
+source_health
+ 
+Endpoints:  
+POST  /sources  
+GET
+ 
+/sources
+ 
+PATCH
+ 
+/sources/{id}
+ 
+ 
+
+
+--- PAGE 8 ---
+Scraping  Module  
+Features:  
+Scheduled  Scraping  
+Duplicate
+ 
+Detection
+ 
+Content
+ 
+Extraction
+ 
+Language
+ 
+Detection
+ 
+Tables:  
+scrape_jobs  
+raw_articles
+ 
+raw_documents
+ 
+Workers:  
+News  Scraper  
+Government
+ 
+Scraper
+ 
+Policy
+ 
+Scraper
+ 
+Company
+ 
+Scraper
+ 
+ 
+Intelligence  Processing  Module  
+Features:  
+Story  Extraction  
+Entity
+ 
+Recognition
+ 
+Classification
+ 
+Summarization
+ 
+Tables:  
+stories  
+events
+ 
+entities
+ 
+entity_mentions
+ 
+ 
+Confidence  Engine  
+Purpose:  
+Determine  trustworthiness.  
+
+
+--- PAGE 9 ---
+Output:  
+Confidence  Score  
+Tables:  
+confidence_scores  
+evidence_records
+ 
+ 
+Signal  Engine  
+Purpose:  
+Determine  strategic  importance.  
+Output:  
+Signal  Score  
+Tables:  
+signal_scores  
+ 
+Gap  Detection  Module  
+Purpose:  
+Identify  missing  intelligence.  
+Tables:  
+gap_reports  
+ 
+Country  Operations  Module  
+Purpose:  
+Manage  field  verification.  
+Tables:  
+
+
+--- PAGE 10 ---
+field_tasks  
+agent_reports
+ 
+attachments
+ 
+ 
+Verification  Module  
+Purpose:  
+Approve  intelligence.  
+Tables:  
+verification_reviews  
+Statuses:  
+draft  
+review
+ 
+verification
+ 
+verified
+ 
+published
+ 
+ 
+Knowledge  Graph  Module  
+Purpose:  
+Connect  all  intelligence.  
+Tables:  
+graph_nodes  
+graph_edges
+ 
+ 
+Publishing  Module  
+Purpose:  
+Distribute  intelligence  products.  
+Tables:  
+published_intelligence  
+
+
+--- PAGE 11 ---
+ 
+Product  Features  
+Real-Time  Feed  
+Purpose:  
+Live  intelligence  stream.  
+Features:  
+Country  Filters  
+Sector
+ 
+Filters
+ 
+Impact
+ 
+Filters
+ 
+Keyword
+ 
+Search
+ 
+Endpoint:  
+GET  /feed  
+ 
+Alerts  
+Purpose:  
+Notify  users  of  critical  developments.  
+Features:  
+Threshold  Alerts  
+Watchlist
+ 
+Alerts
+ 
+Risk
+ 
+Alerts
+ 
+Policy
+ 
+Alerts
+ 
+Tables:  
+alerts  
+alert_rules
+ 
+ 
+Watchlists  
+Purpose:  
+
+
+--- PAGE 12 ---
+Monitor  countries,  companies,  people,  sectors.  
+Tables:  
+watchlists  
+watchlist_items
+ 
+ 
+Country  Intelligence  
+Purpose:  
+Provide  a  country-level  intelligence  overview.  
+Includes:  
+Politics  
+Economy
+ 
+Security
+ 
+Investments
+ 
+Risk
+ 
+Profile
+ 
+Key
+ 
+Developments
+ 
+ 
+Policy  Monitor  
+Purpose:  
+Track  regulatory  and  policy  developments.  
+Policy  States:  
+Proposed  
+Consultation
+ 
+Approved
+ 
+Implemented
+ 
+Repealed
+ 
+Tables:  
+policies  
+ 
+Deal  Tracker  
+
+
+--- PAGE 13 ---
+Purpose:  
+Track  major  investments  and  transactions.  
+Deal  States:  
+Rumor  
+Negotiation
+ 
+Signed
+ 
+Funded
+ 
+Implementation
+ 
+Completed
+ 
+Tables:  
+deals  
+ 
+Event  Tracker  
+Purpose:  
+Track  key  events.  
+Examples:  
+Elections  
+Summits
+ 
+Conferences
+ 
+Parliament
+ 
+Sessions
+ 
+Tables:  
+events  
+ 
+Risk  Dashboard  
+Purpose:  
+Provide  country  risk  assessments.  
+Risk  Categories:  
+Political  
+Economic
+ 
+Security
+ 
+
+
+--- PAGE 14 ---
+Regulatory  
+Social
+ 
+Tables:  
+risk_scores  
+country_risk_snapshots
+ 
+ 
+Reports  
+Purpose:  
+Generate  intelligence  products.  
+Types:  
+Executive  Brief  
+Country
+ 
+Report
+ 
+Sector
+ 
+Report
+ 
+Risk
+ 
+Report
+ 
+Special
+ 
+Report
+ 
+Tables:  
+reports  
+report_sections
+ 
+ 
+Proprietary  Algorithms  
+AFRIBN  Signal  Score  
+Measures:  
+Strategic  Importance  
+Inputs:  
+Impact  
+Urgency
+ 
+Novelty
+ 
+Influence
+ 
+Cross-Border
+ 
+Effects
+ 
+
+
+--- PAGE 15 ---
+Output:  
+0–100  
+ 
+AFRIBN  Risk  Score  
+Measures:  
+Country  Risk  
+Inputs:  
+Political  
+Economic
+ 
+Security
+ 
+Regulatory
+ 
+Social
+ 
+Output:  
+0–100  
+ 
+AFRIBN  Confidence  Score  
+Measures:  
+Trustworthiness  
+Inputs:  
+Source  Quality  
+Evidence
+ 
+Verification
+ 
+Corroboration
+ 
+Output:  
+0–100  
+ 
+AFRIBN  Gap  Detection  Engine  
+Measures:  
+
+
+--- PAGE 16 ---
+Missing  Intelligence  
+Output:  
+Verification  Tasks  
+ 
+AFRIBN  Entity  Resolution  Engine  
+Purpose:  
+Merge  duplicate  entities.  
+Example:  
+Dangote  Group  
+Dangote
+ 
+Industries
+ 
+Dangote
+ 
+Refinery
+ 
+ 
+AI  Requirements  
+Models  Required:  
+Summarization  Model  
+Classification
+ 
+Model
+ 
+Entity
+ 
+Extraction
+ 
+Model
+ 
+Risk
+ 
+Assessment
+ 
+Model
+ 
+Executive
+ 
+Brief
+ 
+Generator
+ 
+Gap
+ 
+Detection
+ 
+Model
+ 
+Future  Fine-Tuning:  
+Policy  Classifier  
+Deal
+ 
+Classifier
+ 
+Risk
+ 
+Classifier
+ 
+Entity
+ 
+Resolution
+ 
+Model
+ 
+ 
+Non-Functional  Requirements  
+Availability:  
+
+
+--- PAGE 17 ---
+99.9%  
+Response  Time:  
+<500ms  API  
+Feed  Refresh:  
+<60  seconds  
+Risk  Updates:  
+Daily  
+Alert  Delivery:  
+<5  minutes  
+Scalability:  
+54  Countries  
+10,000+
+ 
+Sources
+ 
+100M+
+ 
+Intelligence
+ 
+Records
+ 
+ 
+Success  Metrics  
+Coverage:  
+54
+ 
+African
+ 
+Countries
+ 
+Sources:  
+10,000+
+ 
+Stories  Processed:  
+100,000+/month
+ 
+Verification  Rate:  
+80%  
+False  Alert  Rate:  
+<5%
+ 
+Client  Retention:  
+90%  
+
+
+--- PAGE 18 ---
+Daily  Active  Users:  
+Growing
+ 
+MoM
+ 
+ 
+Long-Term  Vision  
+AFRIBN  becomes  the  definitive  intelligence  infrastructure  for  Africa,  combining  AI,  local  field  
+verification,
+ 
+and
+ 
+proprietary
+ 
+intelligence
+ 
+models
+ 
+to
+ 
+deliver
+ 
+the
+ 
+most
+ 
+trusted
+ 
+source
+ 
+of
+ 
+decision
+ 
+intelligence
+ 
+on
+ 
+the
+ 
+continent.
+ 
+ 
+A  TRD  should  be  implementation-oriented:  data  models,  services,  APIs,  queues,  workers,  
+security,
+ 
+and
+ 
+deployment.
+ 
+Think
+ 
+of
+ 
+it
+ 
+as
+ 
+the
+ 
+document
+ 
+your
+ 
+engineering
+ 
+team
+ 
+can
+ 
+build
+ 
+from
+ 
+without
+ 
+guessing.
+ 
+Below  is  a  practical  TRD  for  AFRIBN  v1.0  aligned  with  the  PRD  and  the  UI  screenshots.  
+AFRIBN  Technical  Requirements  Document  (TRD)  v1.0  
+1.  System  Overview  
+AFRIBN  is  a  modular  intelligence  platform  that  ingests  data  from  thousands  of  sources,  
+processes
+ 
+it
+ 
+through
+ 
+AI
+ 
+and
+ 
+human
+ 
+verification,
+ 
+stores
+ 
+it
+ 
+in
+ 
+a
+ 
+structured
+ 
+intelligence
+ 
+warehouse,
+ 
+and
+ 
+exposes
+ 
+it
+ 
+through
+ 
+APIs
+ 
+that
+ 
+power
+ 
+feeds,
+ 
+dashboards,
+ 
+reports,
+ 
+alerts,
+ 
+and
+ 
+analytics
+ 
+products.
+ 
+Architecture  
+ 
+
+
+
+--- PAGE 19 ---
+Recommended  v1  architecture:  Modular  Monolith  +  Worker  Cluster.  
+Component  Technology  
+Frontend  Next.js  (App  Router)  
+API  FastAPI  (Python)  or  NestJS  (TypeScript)  
+Database  PostgreSQL  15+  
+Queue  Redis  +  Celery  (Python)  /  BullMQ  (Node)  
+Search  OpenSearch  /  Elasticsearch  
+Object  Storage  
+S3-compatible  storage  
+Auth  JWT  +  RBAC  
+Observability  OpenTelemetry  +  Prometheus  +  Grafana  
+Deployment  Docker  +  Kubernetes  (optional  for  v1)  
+2.  Module  Structure  
+3.  Database  Design  
+3.1  Identity  &  Access  
+Table  Purpose  
+
+
+--- PAGE 20 ---
+users  Platform  users  
+roles  RBAC  roles  
+permissions  Granular  permissions  
+organizations  Enterprise  accounts  
+organization_members  
+User  membership  
+subscriptions  Plan  and  billing  state  
+3.2  Sources  &  Collection  
+Table  Purpose  
+sources  Registered  intelligence  sources  
+source_categories  
+Source  classification  
+source_health  Availability  and  reliability  
+scrape_jobs  Scheduled  and  historical  scrape  runs  
+raw_articles  Raw  scraped  articles  
+
+
+--- PAGE 21 ---
+raw_documents  PDFs,  filings,  reports  
+raw_events  Raw  event  records  
+raw_articles  fields  (minimum):  
+3.3  Intelligence  Core  
+Table  Purpose  
+stories  Canonical  intelligence  story  
+events  Structured  event  record  
+entities  Countries,  companies,  people,  orgs  
+entity_aliases  Alternative  names  
+entity_mentions  Entity  ↔  story  mapping  
+story_sources  Source  provenance  
+story_tags  Topic  tagging  
+3.4  Specialized  Intelligence  Tables  
+Table  Purpose  
+
+
+--- PAGE 22 ---
+policies  Policy  and  regulation  tracking  
+deals  Investment  and  transaction  tracking  
+risk_scores  Computed  risk  metrics  
+country_risk_snapshots  
+Historical  country  risk  snapshots  
+confidence_scores  Trust  metrics  
+signal_scores  Importance  metrics  
+3.5  Human  Workflow  
+Table  Purpose  
+gap_reports  Missing-information  analysis  
+field_tasks  Assignments  to  country  agents  
+agent_reports  Submitted  findings  
+attachments  Uploaded  evidence  
+verification_reviews  Approval  workflow  
+3.6  Knowledge  Graph  
+
+
+--- PAGE 23 ---
+Table  Purpose  
+graph_nodes  
+Entities  and  concepts  
+graph_edges  
+Relationships  
+3.7  Publishing  &  Consumption  
+Table  Purpose  
+published_intelligence  Public/enterprise  intelligence  records  
+feed_items  Real-time  feed  cache  
+alerts  Generated  alerts  
+alert_rules  User-defined  alert  criteria  
+watchlists  User  watchlists  
+watchlist_items  Items  being  monitored  
+reports  Generated  reports  
+report_sections  Structured  report  content  
+4.  Processing  Pipeline  
+
+
+--- PAGE 24 ---
+ 
+5.  Queue  &  Worker  Design  
+Queues  
+Queue  Purpose  
+scrape_queue  Fetch  source  content  
+parse_queue  Extract  article  bodies  
+ai_queue  AI  distillation  
+scoring_queue  
+Signal  &  confidence  scoring  
+gap_queue  Gap  detection  
+graph_queue  Knowledge  graph  updates  
+
+
+
+--- PAGE 25 ---
+alert_queue  Alert  generation  
+report_queue  Report  generation  
+Worker  Types  
+Worker  Responsibility  
+NewsScraperWorker  Fetch  news  sources  
+GovScraperWorker  Monitor  government  sites  
+DocumentParserWorker  Extract  PDF/HTML  text  
+AIDistillationWorker  Generate  structured  intelligence  
+EntityResolutionWorker  Deduplicate  entities  
+ScoringWorker  Calculate  scores  
+GapDetectionWorker  Create  verification  gaps  
+GraphWorker  Update  graph  relationships  
+AlertWorker  Evaluate  alert  rules  
+ReportWorker  Assemble  reports  
+
+
+--- PAGE 26 ---
+6.  API  Specification  
+6.1  Authentication  
+Method  Endpoint  
+POST  /auth/login  
+POST  /auth/register  
+POST  /auth/refresh  
+GET  /users/me  
+6.2  Sources  
+Method  Endpoint  
+POST  /sources  
+GET  /sources  
+GET  /sources/{id}  
+PATCH  /sources/{id}  
+POST  /sources/{id}/test-scrape  
+6.3  Feed  
+
+
+--- PAGE 27 ---
+Method  Endpoint  
+GET  /feed  
+GET  /feed?country=Nigeria  
+GET  /feed?sector=Energy  
+GET  /feed?impact=high  
+6.4  Stories  &  Events  
+Method  Endpoint  
+GET  /stories  
+GET  /stories/{id}  
+GET  /events  
+GET  /events/{id}  
+6.5  Country  Intelligence  
+Method  Endpoint  
+GET  /countries/{country}  
+
+
+--- PAGE 28 ---
+GET  /countries/{country}/economy  
+GET  /countries/{country}/politics  
+GET  /countries/{country}/security  
+GET  /countries/{country}/investments  
+6.6  Policy  Monitor  
+Method  Endpoint  
+GET  /policies  
+GET  /policies/{id}  
+GET  /policies?country=Kenya  
+GET  /policies?status=implemented  
+6.7  Deal  Tracker  
+Method  Endpoint  
+GET  /deals  
+GET  /deals/{id}  
+
+
+--- PAGE 29 ---
+GET  /deals?sector=Energy  
+GET  /deals?country=Nigeria  
+6.8  Risk  Dashboard  
+Method  Endpoint  
+GET  /risk/countries  
+GET  /risk/countries/{country}  
+GET  /risk/countries/{country}/history  
+6.9  Watchlists  
+Method  Endpoint  
+GET  /watchlists  
+POST  /watchlists  
+POST  /watchlists/{id}/items  
+DELETE  /watchlists/{id}/items/{itemId}  
+6.10  Alerts  
+Method  Endpoint  
+
+
+--- PAGE 30 ---
+GET  /alerts  
+POST  /alerts/rules  
+PATCH  /alerts/{id}/acknowledge  
+6.11  Reports  
+Method  Endpoint  
+GET  /reports  
+POST  /reports/generate  
+GET  /reports/{id}  
+GET  /reports/{id}/download  
+6.12  Field  Operations  
+Method  Endpoint  
+GET  /agent/tasks  
+GET  /agent/tasks/{id}  
+POST  /agent/tasks/{id}/submit  
+
+
+--- PAGE 31 ---
+POST  /agent/reports/{id}/attachments  
+6.13  Verification  
+Method  Endpoint  
+POST  /verification/{id}/approve  
+POST  /verification/{id}/reject  
+POST  /verification/{id}/request-more-info  
+7.  AI  Processing  Specification  
+Input  
+Output  
+AI  Service  Requirements  
+1.  Structured  JSON  output  validation.  2.  Retry  on  malformed  responses.  3.  Prompt  versioning.  4.  Model  version  tracking.  5.  Human  feedback  capture  for  future  fine-tuning.  
+8.  Proprietary  Algorithms  
+8.1  Signal  Score  
+Purpose:  rank  strategic  importance.  
+Inputs  
+Factor  Weight  
+
+
+--- PAGE 32 ---
+Impact  30%  
+Urgency  20%  
+Novelty  15%  
+Country  Importance  10%  
+Sector  Importance  10%  
+Cross-Border  Effect  10%  
+Source  Credibility  5%  
+8.2  Confidence  Score  
+Purpose:  measure  trustworthiness.  
+Inputs  
+Factor  Weight  
+Source  Reliability  40%  
+Corroboration  Count  25%  
+Human  Verification  20%  
+Document  Evidence  10%  
+
+
+--- PAGE 33 ---
+AI  Uncertainty  Penalty  -15%  
+8.3  Risk  Score  
+Purpose:  country-level  risk  assessment.  
+Categories  
+Category  Weight  
+Political  30%  
+Security  25%  
+Economic  20%  
+Regulatory  15%  
+Social  10%  
+9.  Search  &  Indexing  
+Indexed  Documents  
+●  Stories  ●  Events  ●  Policies  ●  Deals  ●  Reports  ●  Entities  
+Search  Features  
+●  Full-text  search  ●  Autocomplete  ●  Faceted  filtering  
+
+
+--- PAGE 34 ---
+●  Entity-aware  search  ●  Cross-language  search  
+10.  Security  Requirements  
+1.  JWT  authentication.  2.  Role-based  access  control.  3.  Encryption  at  rest.  4.  Encryption  in  transit  (TLS).  5.  Audit  logging  for  all  admin  actions.  6.  Document  access  permissions.  7.  Rate  limiting  on  public  APIs.  8.  Secrets  management  (Vault  /  cloud  secret  manager).  
+11.  Observability  
+Metrics  to  collect:  
+Metric  Target  
+API  latency  <500ms  p95  
+Scrape  success  rate  >95%  
+AI  processing  latency  <30s/article  
+Queue  depth  Monitored  continuously  
+Alert  delivery  time  <5  minutes  
+Verification  SLA  <24  hours  
+12.  Deployment  
+Environments  
+
+
+--- PAGE 35 ---
+Environment  Purpose  
+dev  Local  development  
+staging  QA  and  integration  testing  
+production  Live  system  
+Production  Topology  
+13.  Scaling  Strategy  
+v1  (0–10k  DAU)  
+●  Single  PostgreSQL  instance  ●  Single  Redis  ●  2–4  API  instances  ●  Separate  worker  pool  
+v2  (10k–100k  DAU)  
+●  Read  replicas  ●  Dedicated  OpenSearch  cluster  ●  Horizontal  worker  scaling  ●  CDN  for  assets  
+v3  (100k+  DAU)  
+●  Sharded  data  by  country/region  ●  Stream  processing  (Kafka)  ●  Graph  database  optimization  ●  Multi-region  deployment  
+14.  Milestone  Plan  
+Milestone  Deliverables  
+M1  Auth,  Sources,  Scraping,  Raw  Storage  
+
+
+--- PAGE 36 ---
+M2  AI  Distillation,  Entities,  Stories,  Events  
+M3  Scoring,  Gap  Detection,  Field  Ops,  Verification  
+M4  Feed,  Country  Intelligence,  Watchlists,  Alerts  
+M5  Policy  Monitor,  Deal  Tracker,  Event  Tracker,  Reports  
+M6  Knowledge  Graph,  Risk  Engine,  Executive  Briefs  
+Engineering  Principle  
+All  frontend  products  (Feed,  Country  Intelligence,  Policy  Monitor,  Deal  Tracker,  Event  
+Tracker,
+ 
+Reports,
+ 
+Alerts,
+ 
+Watchlists,
+ 
+Risk
+ 
+Dashboard)
+ 
+must
+ 
+read
+ 
+from
+ 
+the
+ 
+same
+ 
+verified
+ 
+intelligence
+ 
+warehouse.
+ 
+Do
+ 
+not
+ 
+build
+ 
+separate
+ 
+data
+ 
+silos
+ 
+for
+ 
+each
+ 
+product.
+ 
+This  TRD  is  intentionally  implementation-focused  and  can  serve  as  the  starting  blueprint  for  
+backend
+ 
+architecture,
+ 
+database
+ 
+migrations,
+ 
+API
+ 
+contracts,
+ 
+worker
+ 
+development,
+ 
+and
+ 
+infrastructure
+ 
+provisioning.
+ 
+ 
+ 

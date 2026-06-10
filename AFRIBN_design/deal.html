@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Deal Tracker</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .kpi-row { grid-template-columns: repeat(5, 1fr); }
+  .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .filter-bar .search-inline { flex: 1; min-width: 180px; }
+  .deal-cell { display: flex; align-items: center; gap: 13px; }
+  .deal-cell .di { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; flex: none; font-weight: 800; font-family: var(--font-display); font-size: 15px; }
+  .deal-cell .di svg { width: 20px; height: 20px; }
+  .deal-cell .nm { font-weight: 600; line-height: 1.2; white-space: nowrap; }
+  .deal-cell .ds { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; white-space: nowrap; }
+  .ctry-cell { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+  .val-cell { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .stage-pill { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 6px; white-space: nowrap; }
+  .row-more { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: transparent; border: none; color: var(--ink-3); }
+  .row-more:hover { background: var(--panel-3); color: var(--ink); }
+  .row-more svg { width: 17px; height: 17px; }
+  .pager { display: flex; align-items: center; justify-content: space-between; padding-top: 18px; margin-top: 6px; border-top: 1px solid var(--line); flex-wrap: wrap; gap: 14px; }
+  .pages { display: flex; align-items: center; gap: 6px; }
+  .pages button { min-width: 34px; height: 34px; border-radius: 8px; background: transparent; border: 1px solid var(--line); color: var(--ink-2); font-size: 13.5px; }
+  .pages button:hover { border-color: var(--line-2); color: var(--ink); }
+  .pages button.active { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+  th.sortable { cursor: pointer; } th.sortable:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1500px">
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-title"><span class="tic" id="tic"></span> Deal Tracker</h1>
+          <div class="page-sub">Track and monitor key deals and transactions across Africa.</div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="export"><span id="exi"></span> Export</button>
+          <button class="btn btn-primary" id="addDeal"><span id="adi"></span> Add Deal</button>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="stats"></div>
+
+      <div class="panel panel-pad-lg">
+        <div class="filter-bar">
+          <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search deals..."></div>
+          <select class="select" id="fStatus"><option>All Status</option><option>In Progress</option><option>On Hold</option><option>Completed</option><option>Cancelled</option></select>
+          <select class="select" id="fCountry"><option>All Countries</option><option>Kenya</option><option>Nigeria</option><option>Morocco</option><option>Ethiopia</option><option>Pan-African</option></select>
+          <select class="select" id="fSector"><option>All Sectors</option><option>Energy</option><option>Infrastructure</option><option>Trade</option><option>Telecoms</option></select>
+          <select class="select" id="fType"><option>All Deal Types</option><option>Partnership</option><option>Project</option><option>Acquisition</option></select>
+          <button class="btn btn-ghost btn-sm" id="moreFilters"><span id="mf"></span> Filters</button>
+        </div>
+        <div class="tbl-scroll"><table class="tbl" style="margin-top:8px;min-width:920px">
+          <thead><tr><th>Deal</th><th>Country</th><th>Sector</th><th>Deal Type</th><th>Value</th><th>Stage</th><th>Status</th><th class="sortable" id="sortUpd">Updated &#x2195;</th><th></th></tr></thead>
+          <tbody id="dealBody"></tbody>
+        </table></div>
+        <div class="pager">
+          <span class="muted" id="pagerInfo">Showing 1 to 8 of 128 deals</span>
+          <div class="pages">
+            <button id="pgPrev"><span id="pp"></span></button>
+            <button class="active">1</button><button>2</button><button>3</button><button>4</button><button>5</button><span class="muted" style="padding:0 4px">…</span><button>22</button>
+            <button id="pgNext"><span id="pn"></span></button>
+          </div>
+          <select class="select" style="height:38px" id="perPage"><option>Show 10 per page</option><option>Show 25 per page</option></select>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add Deal modal -->
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <div class="modal-h"><h3>Add Deal</h3><button class="icon-btn" id="modalClose" style="width:36px;height:36px"></button></div>
+    <div class="modal-b">
+      <div class="field"><label>Deal name</label><input id="m_name" placeholder="e.g. Kenya–UAE Renewable Energy Deal"></div>
+      <div class="field"><label>Description</label><input id="m_desc" placeholder="Short summary of the deal"></div>
+      <div class="field-row">
+        <div class="field"><label>Country</label><select id="m_country"><option>Kenya</option><option>Nigeria</option><option>Morocco</option><option>Ethiopia</option><option>Pan-African</option></select></div>
+        <div class="field"><label>Sector</label><select id="m_sector"><option>Energy</option><option>Infrastructure</option><option>Trade</option><option>Telecoms</option></select></div>
+      </div>
+      <div class="field-row three">
+        <div class="field"><label>Deal type</label><select id="m_type"><option>Partnership</option><option>Project</option><option>Acquisition</option></select></div>
+        <div class="field"><label>Value (US$)</label><input id="m_value" placeholder="$2.1bn"></div>
+        <div class="field"><label>Stage</label><select id="m_stage"><option>Concept</option><option>Planning</option><option>Due Diligence</option><option>Execution</option><option>Implementation</option></select></div>
+      </div>
+      <div class="field"><label>Status</label><select id="m_status"><option>In Progress</option><option>On Hold</option><option>Completed</option><option>Cancelled</option></select></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-ghost" id="modalCancel">Cancel</button><button class="btn btn-primary" id="modalSave">Add Deal</button></div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('deal');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('deal'); $('#exi').innerHTML = ic('download','width="16" height="16"'); $('#adi').innerHTML = ic('plus','width="16" height="16"');
+  $('#si').innerHTML = ic('search'); $('#mf').innerHTML = ic('filter','width="16" height="16"');
+  $('#pp').innerHTML = ic('chevLeft','width="15" height="15"'); $('#pn').innerHTML = ic('chevRight','width="15" height="15"');
+  $('#modalClose').innerHTML = ic('x');
+
+  const STATS = [
+    ['flame','#E8252D','128','Total Deals','+12','vs last 30 days','up'],
+    ['clock','#E3B341','42','In Progress','+8','vs last 30 days','up'],
+    ['checkCircle','#3FB950','28','Completed','+6','vs last 30 days','up'],
+    ['pause','#4493F8','18','On Hold','-2','vs last 30 days','down'],
+    ['xCircle','#A371F7','10','Cancelled','-1','vs last 30 days','down'],
+  ];
+  $('#stats').innerHTML = STATS.map(([i,c,v,l,d,sub,dir])=>`
+    <div class="stat"><div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div>
+      <div class="num">${v}</div><div class="lbl">${l}</div>
+      <div class="delta ${dir==='up'?'up':'down'}" style="font-size:12.5px;white-space:nowrap">${d} <span class="muted" style="font-weight:400">${sub}</span></div></div>`).join('');
+
+  const STAGE = { Concept:['#8B949E'], Planning:['#A371F7'], 'Due Diligence':['#4493F8'], Execution:['#FF8A3D'], Implementation:['#3FB950'] };
+  const STATUS = { 'In Progress':'#3FB950','On Hold':'#4493F8','Completed':'#3FB950','Cancelled':'#E5252A' };
+  const SECTOR = { Energy:['zap','#3fb950'], Infrastructure:['factory','#4493f8'], Trade:['handshake','#a371f7'], Telecoms:['feed','#e3b341'] };
+
+  let DEALS = [
+    ['Kenya – UAE Renewable Energy Deal','Solar, wind & battery storage projects','Kenya','kenya','Energy','Partnership','$2.1bn','Implementation','In Progress','May 16, 2024'],
+    ['Nigeria LNG Train 7 Project','LNG export infrastructure expansion','Nigeria','nigeria','Energy','Project','$5.7bn','Execution','In Progress','May 15, 2024'],
+    ['Dangote Refinery Expansion','650,000 bpd refinery expansion','Nigeria','nigeria','Energy','Project','$2.9bn','Execution','In Progress','May 14, 2024'],
+    ['Morocco Green Hydrogen Initiative','Green hydrogen production hub','Morocco','morocco','Energy','Partnership','$9.0bn','Due Diligence','On Hold','May 13, 2024'],
+    ['Ethiopia–Djibouti Railway Upgrade','Railway modernization project','Ethiopia','ethiopia','Infrastructure','Project','$1.4bn','Planning','In Progress','May 12, 2024'],
+    ['African Continental Free Trade Area','Digital trade and logistics platform','Pan-African','regional','Trade','Partnership','TBD','Concept','Cancelled','May 10, 2024'],
+    ['MTN–Airtel Network Sharing Agreement','Tower & spectrum sharing across markets','Pan-African','regional','Telecoms','Partnership','$1.8bn','Due Diligence','In Progress','May 9, 2024'],
+    ['Tanzania–Zambia Railway Revamp','TAZARA corridor rehabilitation','Tanzania','tanzania','Infrastructure','Project','$2.2bn','Planning','In Progress','May 8, 2024'],
+  ];
+
+  function render(){
+    const kw=($('#kw').value||'').toLowerCase(), fs=$('#fStatus').value, fc=$('#fCountry').value, fse=$('#fSector').value, ft=$('#fType').value;
+    const rows = DEALS.filter(d =>
+      (!kw || (d[0]+d[1]).toLowerCase().includes(kw)) &&
+      (fs==='All Status'||d[8]===fs) && (fc==='All Countries'||d[2]===fc) &&
+      (fse==='All Sectors'||d[4]===fse) && (ft==='All Deal Types'||d[5]===ft));
+    $('#dealBody').innerHTML = rows.length ? rows.map(([nm,ds,ctry,flag,sector,type,val,stage,status,upd])=>{
+      const [sic,scol]=SECTOR[sector]||['deal','#8b949e']; const stc=STAGE[stage][0];
+      return `<tr style="cursor:pointer">
+        <td><div class="deal-cell"><span class="di" style="background:${scol}22;color:${scol}">${ic(sic)}</span><div><div class="nm">${nm}</div><div class="ds">${ds}</div></div></div></td>
+        <td><div class="ctry-cell">${AFRIBN.flag(flag)} ${ctry}</div></td>
+        <td class="muted-2">${sector}</td>
+        <td class="muted-2" style="white-space:nowrap">${type}</td>
+        <td class="val-cell">${val}</td>
+        <td><span class="stage-pill" style="background:${stc}22;color:${stc}">${stage}</span></td>
+        <td>${AFRIBN.statusPill(status, STATUS[status])}</td>
+        <td class="muted-2" style="white-space:nowrap">${upd}</td>
+        <td><button class="row-more" onclick="event.stopPropagation()">${ic('more')}</button></td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--ink-3)">No deals match your filters.</td></tr>`;
+    $('#pagerInfo').textContent = `Showing 1 to ${rows.length} of 128 deals`;
+    $('#dealBody').querySelectorAll('.row-more').forEach(b=>b.addEventListener('click',()=>toast('View · Edit · Set alert · Export')));
+    $('#dealBody').querySelectorAll('tr').forEach(r=>r.addEventListener('click',()=>{ if(r.querySelector('.nm')) toast('Opening deal: '+r.querySelector('.nm').textContent); }));
+  }
+  render();
+  ['#kw'].forEach(s=>$(s).addEventListener('input',render));
+  ['#fStatus','#fCountry','#fSector','#fType'].forEach(s=>$(s).addEventListener('change',render));
+
+  // sort by updated
+  let asc=false;
+  $('#sortUpd').addEventListener('click',()=>{ asc=!asc; DEALS.sort((a,b)=> asc? new Date(a[9])-new Date(b[9]) : new Date(b[9])-new Date(a[9])); render(); });
+
+  // modal
+  const mb=$('#modalBack');
+  const openM=()=>mb.classList.add('open'), closeM=()=>mb.classList.remove('open');
+  $('#addDeal').addEventListener('click',openM); $('#modalClose').addEventListener('click',closeM); $('#modalCancel').addEventListener('click',closeM);
+  mb.addEventListener('click',e=>{ if(e.target===mb) closeM(); });
+  $('#modalSave').addEventListener('click',()=>{
+    const nm=$('#m_name').value.trim()||'Untitled Deal';
+    const flagMap={Kenya:'kenya',Nigeria:'nigeria',Morocco:'morocco',Ethiopia:'ethiopia','Pan-African':'regional'};
+    DEALS.unshift([nm,$('#m_desc').value.trim()||'New deal','—',flagMap[$('#m_country').value]||'regional','—','—',$('#m_value').value.trim()||'TBD',$('#m_stage').value,$('#m_status').value,'May 16, 2024']);
+    DEALS[0][2]=$('#m_country').value; DEALS[0][4]=$('#m_sector').value; DEALS[0][5]=$('#m_type').value;
+    closeM(); render(); toast(`${nm} added to deal tracker`,'ok');
+    $('#m_name').value=''; $('#m_desc').value=''; $('#m_value').value='';
+  });
+
+  $('#export').addEventListener('click',()=>toast(`${ic('download','width=\"15\" height=\"15\"')} Exporting deals to CSV…`));
+  $('#moreFilters').addEventListener('click',()=>toast('Advanced filters'));
+  $('#perPage').addEventListener('change',()=>toast('Updated page size'));
+  $('#pgPrev').addEventListener('click',()=>toast('Previous page')); $('#pgNext').addEventListener('click',()=>toast('Next page'));
+  document.querySelectorAll('.pages button:not(#pgPrev):not(#pgNext)').forEach(b=>b.addEventListener('click',()=>{ document.querySelector('.pages button.active')?.classList.remove('active'); b.classList.add('active'); toast('Page '+b.textContent); }));
+</script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Gap Reports</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .kpi-row { grid-template-columns: repeat(4, 1fr); }
+  .gap-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin-bottom: 16px; }
+  .gap-card.crit { border-color: rgba(229,72,77,0.3); }
+  .gap-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+  .gap-head .lk { font-size: 12px; color: var(--ink-3); display:flex; align-items:center; gap:6px; }
+  .gap-head .lk svg{width:13px;height:13px;}
+  .gap-head h3 { font-size: 18px; font-weight: 700; margin-top: 7px; letter-spacing:-0.01em; }
+  .prio { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+  .gap-items { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .gi { display: flex; gap: 11px; padding: 12px 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 11px; }
+  .gi .ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none; }
+  .gi .ic svg { width: 16px; height: 16px; }
+  .gi .l { font-size: 11.5px; color: var(--ink-3); } .gi .v { font-size: 13.5px; font-weight: 500; margin-top: 2px; }
+  .followups { margin-bottom: 16px; }
+  .fu { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 14px; }
+  .fu .q { width: 6px; height: 6px; border-radius: 50%; background: var(--red); flex: none; }
+  .gap-foot { display: flex; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .due { font-size: 13px; color: var(--ink-3); display:flex; align-items:center; gap:7px; } .due svg{width:15px;height:15px;}
+  @media (max-width:1300px){ .kpi-row{grid-template-columns:repeat(2,1fr)} } @media (max-width:760px){ .gap-items{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1240px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Gap Reports</h1>
+          <div class="page-sub">What's missing before intelligence can be trusted or published.</div></div>
+        <div class="row gap-12">
+          <select class="select" id="fPrio"><option>All Priorities</option><option>Critical</option><option>High</option><option>Medium</option></select>
+          <button class="btn btn-primary" id="newGap"><span id="ngi"></span> Create Gap Report</button>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="stats"></div>
+      <div id="gapList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('alertTri');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('alertTri'); $('#ngi').innerHTML = ic('plus','width="16" height="16"');
+
+  const STATS = [
+    ['alertTri','#E8252D','24','Open Gaps','+3','vs last 7 days','up'],
+    ['flame','#FF6B35','6','Critical','+1','vs last 7 days','up'],
+    ['pin','#E3B341','11','Awaiting Field Task','+2','vs last 7 days','up'],
+    ['checkCircle','#3FB950','18','Resolved (7d)','+9','vs last 7 days','up'],
+  ];
+  $('#stats').innerHTML = STATS.map(([i,c,v,l,d,sub,dir])=>`
+    <div class="stat"><div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div>
+      <div class="num">${v}</div><div class="lbl">${l}</div>
+      <div class="delta ${dir==='up'?'up':'down'}" style="font-size:12.5px;white-space:nowrap">${d} <span class="muted" style="font-weight:400">${sub}</span></div></div>`).join('');
+
+  const PRIO = { Critical:'#E5252A', High:'#FF6B35', Medium:'#E3B341', Low:'#4493F8' };
+  const GAPS = [
+    { prio:'Critical', story:'Unverified: explosion reported near Mogadishu port', conf:35, due:'May 17, 2024',
+      items:[['ban','#e5484d','Missing corroboration','No independent source confirms the event'],['alertTri','#e3b341','Contradictory evidence','Source is currently suppressed (SRS 35)'],['shield','#ff6b35','Confidence gap','35% — below 60% publish threshold'],['target','#a371f7','Missing facts','Casualties, cause, exact location unknown']],
+      fu:['Confirm with Mogadishu Port Authority','Obtain ground photos / video evidence','Cross-check with AMISOM security bulletins'] },
+    { prio:'High', story:'Kenya signs $2.1bn renewable energy agreement with UAE consortium', conf:74, due:'May 18, 2024',
+      items:[['target','#a371f7','Missing facts','Full list of consortium members & signatories'],['barChart','#4493f8','Missing detail','Financing breakdown by project phase'],['shield','#3fb950','Confidence gap','74% — corroborated by 2 sources']],
+      fu:['Confirm 1.20GW capacity figure with Ministry of Energy','Identify all UAE consortium members'] },
+    { prio:'High', story:'Sudan army and RSF agree to ceasefire talks in Jeddah', conf:66, due:'May 17, 2024',
+      items:[['alertTri','#e3b341','Contradictory evidence','Talks location disputed (Jeddah vs Cairo)'],['ban','#ff6b35','Missing source','No official statement from either party']],
+      fu:['Obtain official communiqué','Confirm mediator (Saudi/US) on record'] },
+    { prio:'Medium', story:'DR Congo introduces new mining code', conf:82, due:'May 20, 2024',
+      items:[['target','#a371f7','Missing facts','Effective date and transition period'],['barChart','#4493f8','Missing detail','Specific royalty rate changes by mineral']],
+      fu:['Confirm gazette publication date','Detail cobalt vs copper royalty changes'] },
+  ];
+
+  function render(){
+    const fp=$('#fPrio').value;
+    const rows=GAPS.filter(g=>fp==='All Priorities'||g.prio===fp);
+    $('#gapList').innerHTML = rows.map((g,gi)=>`
+      <div class="gap-card ${g.prio==='Critical'?'crit':''}">
+        <div class="gap-head">
+          <div><div class="lk">${ic('link2')} Linked to STORY · ${g.story.slice(0,1)==='U'?'RAW-9921':'STORY-48'+(21+gi)}</div><h3>${g.story}</h3></div>
+          <span class="prio" style="background:${PRIO[g.prio]}22;color:${PRIO[g.prio]}">${g.prio}</span>
+        </div>
+        <div class="gap-items">${g.items.map(([i,c,l,v])=>`<div class="gi"><span class="ic" style="background:${c}22;color:${c}">${ic(i)}</span><div><div class="l">${l}</div><div class="v">${v}</div></div></div>`).join('')}</div>
+        <div class="eyebrow" style="margin-bottom:8px">Required follow-up questions</div>
+        <div class="followups">${g.fu.map(q=>`<div class="fu"><span class="q"></span>${q}</div>`).join('')}</div>
+        <div class="gap-foot">
+          <span class="due">${ic('calendar')} Due ${g.due}</span>
+          <span class="spill" style="background:${(g.conf>=60?'#3FB950':'#FF6B35')}22;color:${g.conf>=60?'#3FB950':'#FF6B35'}"><span class="spill-dot" style="background:${g.conf>=60?'#3FB950':'#FF6B35'}"></span>${g.conf}% confidence</span>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" data-task="${gi}">${ic('pin','width=\"15\" height=\"15\"')} Create Field Task</button>
+          <button class="btn btn-ghost btn-sm" data-assign="${gi}">${ic('user','width=\"15\" height=\"15\"')} Assign to Agent</button>
+        </div>
+      </div>`).join('');
+    $('#gapList').querySelectorAll('[data-task]').forEach(b=>b.addEventListener('click',()=>{ toast('Creating field task…','ok'); setTimeout(()=>location.href='tasks.html',700); }));
+    $('#gapList').querySelectorAll('[data-assign]').forEach(b=>b.addEventListener('click',()=>toast('Assigned to field agent','ok')));
+  }
+  render();
+  $('#fPrio').addEventListener('change',render);
+  $('#newGap').onclick=()=>toast('New gap report');
+</script>
+</body>
+</html>

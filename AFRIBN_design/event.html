@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Event Tracker</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .kpi-row { grid-template-columns:repeat(4,1fr); }
+  .ev-grid { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:22px; align-items:start; }
+  .filter-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  .filter-bar .search-inline { flex:1; min-width:180px; }
+  .day-group { margin-bottom:8px; }
+  .day-label { display:flex; align-items:center; gap:12px; margin:8px 0 14px; }
+  .day-label .d { font-weight:700; font-size:15px; } .day-label .line{flex:1;height:1px;background:var(--line);} .day-label .c{font-size:12px;color:var(--ink-3);}
+  .ev-card { display:flex; gap:16px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:12px; cursor:pointer; transition:.14s; }
+  .ev-card:hover { border-color:rgba(232,37,45,0.3); }
+  .ev-time { text-align:center; flex:none; min-width:62px; padding-right:16px; border-right:1px solid var(--line); }
+  .ev-time .t { font-family:var(--font-display); font-weight:800; font-size:16px; } .ev-time .z{font-size:11px;color:var(--ink-3);}
+  .ev-ic { width:40px; height:40px; border-radius:10px; display:grid; place-items:center; flex:none; } .ev-ic svg{width:20px;height:20px;}
+  .ev-body { flex:1; min-width:0; }
+  .ev-body h4 { font-size:16px; font-weight:600; line-height:1.3; } .ev-card:hover h4{color:var(--red-bright);}
+  .ev-body .m { display:flex; align-items:center; gap:9px; margin-top:8px; font-size:12.5px; color:var(--ink-3); flex-wrap:wrap; }
+  .ev-body .m .sep{width:3px;height:3px;border-radius:50%;background:var(--ink-4);}
+  .ev-aiv { text-align:center; flex:none; align-self:center; } .ev-aiv .v{font-family:var(--font-display);font-weight:800;font-size:24px;} .ev-aiv .l{font-size:10px;color:var(--ink-3);}
+  .w-h { font-size:12.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2); white-space:nowrap; }
+  .upcoming-li { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); } .upcoming-li:last-child{border-bottom:none;}
+  .upcoming-li .dd { text-align:center; flex:none; min-width:42px; } .upcoming-li .dd .day{font-family:var(--font-display);font-weight:800;font-size:18px;} .upcoming-li .dd .mo{font-size:10px;color:var(--ink-3);text-transform:uppercase;}
+  .upcoming-li .t { font-size:13.5px; font-weight:500; line-height:1.3; } .upcoming-li .s{font-size:11.5px;color:var(--ink-3);margin-top:2px;}
+  .rank-li { display:flex; align-items:center; gap:12px; padding:9px 0; } .rank-li .nm{font-size:13.5px;min-width:80px;} .rank-li .bar{flex:1;} .rank-li .vl{font-weight:700;min-width:22px;text-align:right;}
+  .head-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .approval-panel { display:none; margin-bottom:18px; border-color:rgba(232,37,45,.26); }
+  .approval-panel.show { display:block; }
+  .approval-list { display:grid; gap:10px; margin-top:12px; }
+  .approval-item { display:grid; grid-template-columns:1fr auto; gap:14px; align-items:center; background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .approval-item h4 { font-size:15px; font-weight:750; margin-bottom:5px; }
+  .approval-item .m { color:var(--ink-3); font-size:12.5px; }
+  .approval-actions { display:flex; gap:8px; }
+  .event-modal-back { position:fixed; inset:0; background:rgba(0,0,0,.58); opacity:0; pointer-events:none; transition:.18s; z-index:110; }
+  .event-modal-back.open { opacity:1; pointer-events:auto; }
+  .event-modal { position:fixed; inset:4vh 0 auto 50%; transform:translate(-50%,-18px); width:min(920px,calc(100vw - 28px)); max-height:92vh; overflow:auto; background:var(--bg); border:1px solid var(--line-2); border-radius:18px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:.18s; z-index:111; }
+  .event-modal.open { opacity:1; pointer-events:auto; transform:translate(-50%,0); }
+  .event-modal .mh { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:22px 24px; border-bottom:1px solid var(--line); }
+  .event-modal h2 { font-size:24px; font-weight:850; }
+  .event-form { padding:22px 24px 24px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+  .event-form .full { grid-column:1/-1; }
+  .event-form label { display:block; color:var(--ink-3); font-size:12px; font-weight:750; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .event-form input,.event-form textarea,.event-form select { width:100%; min-height:42px; border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:10px; padding:10px 12px; outline:none; font:inherit; }
+  .event-form textarea { min-height:92px; resize:vertical; line-height:1.5; }
+  .event-form input:focus,.event-form textarea:focus,.event-form select:focus { border-color:rgba(232,37,45,.5); box-shadow:0 0 0 3px rgba(232,37,45,.12); }
+  .event-form .form-actions { grid-column:1/-1; display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+  @media (max-width:1200px){ .kpi-row{grid-template-columns:repeat(2,1fr)} .ev-grid{grid-template-columns:1fr} }
+  @media (max-width:780px){ .event-form{grid-template-columns:1fr} .approval-item{grid-template-columns:1fr} }
+  @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:.3} } .live-dot{animation:pulseDot 1.2s infinite;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1400px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Event Tracker</h1>
+          <div class="page-sub">Chronological intelligence events across Africa, ranked by impact.</div></div>
+        <div class="head-actions">
+          <button class="btn btn-ghost" id="pastBtn"><span id="pasti"></span> Explore Past Events</button>
+          <button class="btn btn-primary" id="addEventBtn"><span id="addi"></span> Add Event</button>
+          <div class="seg-toggle"><button class="on" id="vTime"><span id="tmi"></span> Timeline</button><button id="vMap"><span id="mpi"></span> Map</button></div>
+        </div>
+      </div>
+      <div class="kpi-row" id="stats"></div>
+      <div class="panel approval-panel" id="approvalPanel">
+        <div class="row" style="justify-content:space-between;gap:12px;align-items:center">
+          <div><div class="w-h">Pending Event Approvals</div><div class="muted" style="font-size:13px;margin-top:4px">Client and team submissions waiting for admin review.</div></div>
+          <span class="pill high-impact" id="pendingCount">0 pending</span>
+        </div>
+        <div class="approval-list" id="approvalList"></div>
+      </div>
+      <div class="ev-grid">
+        <div>
+          <div class="filter-bar">
+            <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search events..."></div>
+            <select class="select" id="fType"><option>All Event Types</option><option>Political</option><option>Economic</option><option>Security</option><option>Energy</option><option>Diplomatic</option></select>
+            <select class="select" id="fStatus"><option>All Statuses</option><option>Live now</option><option>Upcoming</option><option>Completed</option><option>Past due</option></select>
+            <select class="select" id="fCountry"><option>All Countries</option><option>Kenya</option><option>Nigeria</option><option>Sudan</option><option>DR Congo</option></select>
+          </div>
+          <div id="timeline"></div>
+        </div>
+        <div class="stack gap-16">
+          <div class="panel"><div class="w-h">Upcoming Events</div><div id="upcoming" style="margin-top:8px"></div></div>
+          <div class="panel"><div class="w-h">Events by Type</div><div class="row gap-16" style="margin-top:14px;align-items:center"><div id="typeDonut"></div><div class="grow" id="typeLegend" style="min-width:0"></div></div></div>
+          <div class="panel"><div class="w-h">Most Active Countries</div><div id="topCountries" style="margin-top:10px"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="event-modal-back" id="eventModalBack"></div>
+<section class="event-modal" id="eventModal" aria-modal="true" role="dialog">
+  <div class="mh">
+    <div><div class="eyebrow red">Manual Event Submission</div><h2>Add an AFRIBN event</h2><p class="muted" style="margin-top:6px">Non-admin submissions enter admin review before appearing as approved events.</p></div>
+    <button class="icon-btn" id="eventModalClose" style="width:38px;height:38px"></button>
+  </div>
+  <form class="event-form" id="eventForm">
+    <div class="full"><label>Event title</label><input id="evTitle" required placeholder="Africa Energy Forum 2026"></div>
+    <div><label>Country / Region</label><input id="evCountry" required placeholder="Nigeria, Kenya, Pan-African"></div>
+    <div><label>Sector</label><select id="evSector"><option>Energy</option><option>Politics</option><option>Economy</option><option>Security</option><option>Trade</option><option>Technology</option><option>Infrastructure</option></select></div>
+    <div><label>Type</label><select id="evType"><option>Conference</option><option>Summit</option><option>Policy Briefing</option><option>Deal Roadshow</option><option>Webinar</option><option>Security Briefing</option><option>Event</option></select></div>
+    <div><label>Format</label><select id="evFormat"><option value="in_person">In person</option><option value="live">Live / virtual</option><option value="hybrid">Hybrid</option></select></div>
+    <div><label>Starts</label><input id="evStarts" type="datetime-local" required></div>
+    <div><label>Ends</label><input id="evEnds" type="datetime-local"></div>
+    <div><label>Organizer</label><input id="evOrganizer" placeholder="African Union, Energy Chamber..."></div>
+    <div><label>Venue</label><input id="evVenue" placeholder="Venue name"></div>
+    <div><label>Access link</label><input id="evLink" placeholder="https://..."></div>
+    <div class="full"><label>Address</label><input id="evAddress" placeholder="Physical address for in-person events"></div>
+    <div class="full"><label>Summary</label><textarea id="evDescription" required placeholder="What the event is about, why it matters, and who should monitor it."></textarea></div>
+    <div class="full"><label>Speakers</label><textarea id="evSpeakers" placeholder="One speaker per line, e.g. Amina Diallo — AU Commissioner"></textarea></div>
+    <div class="full"><label>Key documents</label><textarea id="evDocs" placeholder="One per line. Use: Agenda | https://example.com/agenda.pdf"></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" type="button" id="eventCancel">Cancel</button>
+      <button class="btn btn-primary" type="submit"><span id="savei"></span> Submit Event</button>
+    </div>
+  </form>
+</section>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('calendar');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML=ic('calendar'); $('#si').innerHTML=ic('search'); $('#tmi').innerHTML=ic('feed','width="15" height="15"'); $('#mpi').innerHTML=ic('globe','width="15" height="15"'); $('#pasti').innerHTML=ic('history','width="16" height="16"'); $('#addi').innerHTML=ic('plus','width="16" height="16"'); $('#savei').innerHTML=ic('send','width="16" height="16"'); $('#eventModalClose').innerHTML=ic('x');
+
+  $('#stats').innerHTML=[['calendar','#E8252D','204','Events Tracked','+24'],['flame','#FF6B35','38','High Impact','+9'],['clock','#E3B341','12','Upcoming','+3'],['globe','#3FB950','31','Countries Active','+2']]
+    .map(([i,c,v,l,d])=>`<div class="stat"><div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div><div class="num">${v}</div><div class="lbl">${l}</div><div class="delta up" style="font-size:12.5px;white-space:nowrap">${d} <span class="muted" style="font-weight:400">vs last 7 days</span></div></div>`).join('');
+
+  const TYPE={ Political:['file','#E8252D','politics'],Economic:['bank','#3FB950','economy'],Security:['shield','#A371F7','security'],Energy:['zap','#FF8A3D','energy'],Diplomatic:['globe','#4493F8','trade'] };
+  const EVENTS=[
+    {day:'Today · May 16',items:[
+      {time:'10:24',zone:'GMT',type:'Energy',flag:'kenya',country:'Kenya',t:'Kenya signs $2.1bn renewable energy agreement with UAE consortium',src:'Reuters Africa',org:'Ministry of Energy (KE)',status:'Live now',aiv:85},
+      {time:'08:40',zone:'WAT',type:'Political',flag:'nigeria',country:'Nigeria',t:'Nigeria approves ₦6.2tn supplementary budget',src:'The Guardian Nigeria',org:'Presidency',status:'Completed',aiv:78},
+      {time:'07:20',zone:'CAT',type:'Security',flag:'sudan',country:'Sudan',t:'Sudan army and RSF agree to ceasefire talks in Jeddah',src:'AFP Afrique',org:'Saudi MFA',status:'Live now',aiv:80},
+    ]},
+    {day:'Yesterday · May 15',items:[
+      {time:'16:10',zone:'WAT',type:'Economic',flag:'drcongo',country:'DR Congo',t:'DR Congo introduces new mining code',src:'Reuters Africa',org:'Ministry of Mines (CD)',status:'Completed',aiv:75},
+      {time:'14:02',zone:'EAT',type:'Economic',flag:'ethiopia',country:'Ethiopia',t:'Ethiopia launches national industrial parks plan',src:'ENA',org:'Industrial Parks Dev. Corp.',status:'Completed',aiv:60},
+      {time:'09:30',zone:'GMT',type:'Diplomatic',flag:'regional',country:'Pan-African',t:'AfCFTA trade facilitation portal goes live',src:'AfCFTA Secretariat',org:'AfCFTA Secretariat',status:'Completed',aiv:68},
+    ]},
+  ];
+  const STC = { 'Live now':'#E5252A', Upcoming:'#4493F8', Completed:'#3FB950', 'Past due':'#E3B341' };
+
+  function render(){
+    const kw=($('#kw').value||'').toLowerCase(), ft=$('#fType').value, fc=$('#fCountry').value, fst=$('#fStatus').value;
+    let html='';
+    EVENTS.forEach(g=>{
+      const items=g.items.filter(e=>(!kw||e.t.toLowerCase().includes(kw))&&(ft==='All Event Types'||e.type===ft)&&(fc==='All Countries'||e.country===fc)&&(fst==='All Statuses'||e.status===fst));
+      if(!items.length) return;
+      html+=`<div class="day-group"><div class="day-label"><span class="d">${g.day}</span><span class="line"></span><span class="c">${items.length} events</span></div>`;
+      html+=items.map(e=>{const[ei,ec,ep]=TYPE[e.type];return `<div class="ev-card">
+        <div class="ev-time"><div class="t">${e.time}</div><div class="z">${e.zone}</div></div>
+        <span class="ev-ic" style="background:${ec}22;color:${ec}">${ic(ei)}</span>
+        <div class="ev-body"><div class="row gap-8" style="flex-wrap:wrap;margin-bottom:6px"><span class="pill ${ep}">${e.type}</span>${e.status==='Live now'?`<span class="spill" style="background:#E5252A22;color:#E5252A"><span class="spill-dot live-dot" style="background:#E5252A"></span>Live now</span>`:AFRIBN.statusPill(e.status, STC[e.status])}</div><h4>${e.t}</h4><div class="m">${AFRIBN.flag(e.flag)} ${e.country} <span class="sep"></span> ${e.org} <span class="sep"></span> ${e.src}</div></div>
+        <div class="ev-aiv"><div class="v" style="color:${e.aiv>=80?'#E8252D':e.aiv>=70?'#FF8A3D':'#E3B341'}">${e.aiv}</div><div class="l">AIV</div></div>
+      </div>`;}).join('');
+      html+='</div>';
+    });
+    $('#timeline').innerHTML=html||`<div class="empty">${ic('calendar')}<div>No events match your filters.</div></div>`;
+    $('#timeline').querySelectorAll('.ev-card').forEach(c=>c.addEventListener('click',()=>location.href='story.html'));
+  }
+  render(); ['#kw'].forEach(s=>$(s).addEventListener('input',render)); ['#fType','#fCountry','#fStatus'].forEach(s=>$(s).addEventListener('change',render));
+
+  const UP=[['18','MAY','Kenya energy FID — phase 1','Garissa 400MW'],['20','MAY','DRC mining code effective','Kinshasa'],['22','MAY','SADC summit opens','Harare'],['28','MAY','Nigeria MPC rate decision','Abuja']];
+  $('#upcoming').innerHTML=UP.map(([d,m,t,s])=>`<div class="upcoming-li"><div class="dd"><div class="day">${d}</div><div class="mo">${m}</div></div><div><div class="t">${t}</div><div class="s">${s}</div></div></div>`).join('');
+  const TD=[['Political','#E8252D',58,'28%'],['Economic','#3FB950',48,'24%'],['Security','#A371F7',42,'21%'],['Energy','#FF8A3D',34,'17%'],['Diplomatic','#4493F8',22,'10%']];
+  $('#typeDonut').innerHTML=AFRIBN.donut(TD.map(t=>({value:t[2],color:t[1]})),{size:118,thick:18});
+  $('#typeLegend').innerHTML=TD.map(([n,c,v,p])=>`<div class="legend-li" style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13.5px"><span class="cdot" style="background:${c}"></span><span style="color:var(--ink-2)">${n}</span><span style="margin-left:auto;font-weight:600">${v}</span><span style="color:var(--ink-3);font-size:12.5px;width:40px;text-align:right">(${p})</span></div>`).join('');
+  const TC=[['Nigeria','nigeria',32],['Kenya','kenya',24],['Sudan','sudan',18],['DR Congo','drcongo',16],['Ethiopia','ethiopia',12]];
+  $('#topCountries').innerHTML=TC.map(([n,f,v])=>`<div class="rank-li">${AFRIBN.flag(f)}<span class="nm">${n}</span><span class="bar"><span style="width:${v/32*100}%;background:#E8252D"></span></span><span class="vl">${v}</span></div>`).join('');
+
+  $('#vMap').onclick=()=>toast('Map view'); $('#vTime').onclick=()=>toast('Timeline view');
+</script>
+</body>
+</html>

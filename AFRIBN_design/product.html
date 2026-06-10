@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Product</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> The Platform</span>
+    <h1>One platform for the<br>whole intelligence <span class="r">pipeline</span>.</h1>
+    <p class="lede">From raw signal to decision-grade intelligence — collection, source reliability, scoring, verification and publishing, surfaced through the products your teams actually use.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="request-access.html" style="height:52px;padding:0 24px">Request Access <span id="h1"></span></a><a class="btn btn-ghost" href="home.html" style="height:52px;padding:0 22px">Explore the app</a></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:20px">
+  <div class="wrap-m">
+    <div class="sec-head"><div class="ek">Capabilities</div><h2>Everything you need to monitor Africa</h2><p>Eleven integrated modules, one operating picture.</p></div>
+    <div class="mgrid c3" id="caps"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m stack gap-24" id="splits"></div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="stat-band" id="stats"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="sec-head"><div class="ek">How it works</div><h2>Signal in, intelligence out</h2><p>The production pipeline behind every published item.</p></div>
+    <div class="mgrid c4" id="pipe"></div>
+  </div>
+</section>
+
+<section class="wrap-m">
+  <div class="cta-box"><h2>See the platform on<br>your priorities.</h2><p>We'll tailor a workspace to your countries, sectors and risk questions.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="request-access.html" style="height:54px;padding:0 28px;font-size:16px">Request Access</a><a class="btn btn-ghost" href="pricing.html" style="height:54px;padding:0 24px;font-size:16px">View pricing</a></div></div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing('Product');
+  $('#h1').innerHTML = ic('arrowRight','width="17" height="17"');
+
+  const CAPS=[
+    ['feed','Real-time Feed','Live, filterable stream of published intelligence with impact, reliability and signal scores on every item.','feed.html'],
+    ['globe','Country Intelligence','Deep economic, political and security profiles for all 54 countries, continuously updated.','country.html'],
+    ['gauge','Risk Dashboard','An interactive continental risk map scored across political, security, economic, regulatory and social dimensions.','risk.html'],
+    ['file','Reports & Briefs','AI-curated daily executive briefs and a full report library with measurable Signal Scores.','brief.html'],
+    ['policy','Policy Monitor','Track policy shifts and regulation before they move markets.','policy.html'],
+    ['deal','Deal Tracker','Monitor major deals and projects — value, stage and status — across every sector.','deal.html'],
+    ['calendar','Event Tracker','A chronological, impact-ranked timeline of events across the continent.','event.html'],
+    ['bell','Alerts','Rule-based alerts by country, topic, source, score, watchlist or risk change — in-app, email or SMS.','alerts.html'],
+    ['star','Watchlists & Dashboards','Follow countries, companies, topics and people; build configurable dashboards.','watchlist.html'],
+  ];
+  $('#caps').innerHTML = CAPS.map(([i,t,d,h])=>`<a class="mcard" href="${h}"><div class="mi">${ic(i)}</div><h3>${t}</h3><p>${d}</p><span class="lnk">Explore ${ic('arrowRight')}</span></a>`).join('');
+
+  const SPLITS=[
+    ['Source reliability you can defend','Every source is scored by a transparent engine — trust record, authoritativeness, corroboration, bias and conflict penalties — so you know exactly why an item can be trusted.',['Source Reliability, Credibility & Collection Priority scores','Whitelist / probation / suppression decisions','Full audit log on every source'],'database',false],
+    ['Verification before it reaches you','Nothing publishes without passing a verifier — score summary, source reliability, agent evidence and contradiction checks all in one workspace.',['Human-in-the-loop verification queue','Linked field evidence & agent reports','Approve, reject, request clarification or publish'],'listChecks',true],
+    ['Scoring that explains itself','The AFRIBN Intelligence Value is computed from impact, confidence, signal and decision-relevance — with every factor visible and adjustable.',['Transparent factor breakdown','Impact, confidence, signal, risk & gap penalty','Versioned score history'],'target',false],
+  ];
+  $('#splits').innerHTML = SPLITS.map(([h,p,checks,icn,rev])=>`
+    <div class="split ${rev?'rev':''}">
+      <div><div class="tag-pill" style="margin-bottom:14px">${ic(icn,'width="13" height="13"')} Production-grade</div><h2>${h}</h2><p>${p}</p>
+        <ul class="checks">${checks.map(c=>`<li>${ic('checkCircle')} ${c}</li>`).join('')}</ul></div>
+      <div class="split-media" style="display:grid;place-items:center"><div style="text-align:center;color:var(--ink-3)"><div style="width:74px;height:74px;border-radius:18px;background:var(--red-tint);color:var(--red-bright);display:grid;place-items:center;margin:0 auto 14px">${ic(icn,'width="36" height="36"')}</div><div style="font-weight:600;color:var(--ink-2)">${h.split(' ').slice(0,3).join(' ')}…</div></div></div>
+    </div>`).join('');
+
+  $('#stats').innerHTML = [['54','Countries covered'],['1,248','Active sources'],['12','Languages'],['99.9%','Platform uptime']].map(([n,l])=>`<div class="s"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+
+  const PIPE=[['database','Collect','Scrape sources by reliability & priority'],['inbox','Review','Analysts triage raw articles'],['target','Score','Impact, confidence & signal computed'],['send','Publish','Verified intelligence powers products']];
+  $('#pipe').innerHTML = PIPE.map(([i,t,d],idx)=>`<div class="mcard"><div class="mi">${ic(i)}</div><div class="muted" style="font-size:12px;font-weight:700">STEP ${idx+1}</div><h3 style="margin-top:4px">${t}</h3><p>${d}</p></div>`).join('');
+</script>
+</body>
+</html>

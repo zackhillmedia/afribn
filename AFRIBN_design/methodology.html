@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Methodology</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> Methodology</span>
+    <h1>How we turn signal<br>into <span class="r">trusted</span> intelligence.</h1>
+    <p class="lede">Transparency is the foundation of trust. Here's exactly how AFRIBN collects, scores, verifies and publishes every piece of intelligence.</p>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:10px">
+  <div class="wrap-m">
+    <div class="sec-head"><div class="ek">The pipeline</div><h2>Eight stages, fully auditable</h2></div>
+    <div class="mgrid c4" id="pipe"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="sec-head"><div class="ek">Scoring</div><h2>Every score, explained</h2><p>No black boxes — each metric is computed from named, weighted factors.</p></div>
+    <div class="mgrid c2" id="scores"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-narrow">
+    <div class="sec-head left"><div class="ek">Source reliability</div><h2>Why a source can be trusted</h2></div>
+    <div class="doc-body">
+      <p>Every source carries a <strong style="color:#fff">Source Reliability Score (SRS)</strong> computed from a transparent formula: trust record, correction accuracy, authoritativeness, timeliness, recent accuracy, corroboration and independence — net of bias and conflict-of-interest penalties.</p>
+      <p>Sources are continuously re-evaluated and assigned a collection decision — whitelisted, normal, enhanced, partial, probation, suppressed or blacklisted — which governs how their content is weighted and surfaced. Every change is written to an audit log.</p>
+    </div>
+    <div class="mgrid c3" id="relfac" style="margin-top:26px"></div>
+  </div>
+</section>
+
+<section class="wrap-m">
+  <div class="cta-box"><h2>Read intelligence you<br>can defend.</h2><p>See the methodology in action across the platform.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="request-access.html" style="height:54px;padding:0 28px;font-size:16px">Request Access</a><a class="btn btn-ghost" href="sample-reports.html" style="height:54px;padding:0 24px;font-size:16px">See sample reports</a></div></div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing(null);
+  const PIPE=[['database','Source','Reliability-scored collection'],['refresh','Collect','Scheduled scrape jobs'],['inbox','Raw review','Analyst triage & dedup'],['edit','Intelligence','Story / event creation'],['target','Score','Impact, confidence, signal'],['alertTri','Gap report','Identify what's missing'],['pin','Field task','Verify on the ground'],['listChecks','Verify & publish','Editorial sign-off']];
+  $('#pipe').innerHTML=PIPE.map(([i,t,d],idx)=>`<div class="mcard"><div class="mi">${ic(i)}</div><div class="muted" style="font-size:11.5px;font-weight:700">STAGE ${idx+1}</div><h3 style="margin-top:4px;font-size:16px">${t}</h3><p style="font-size:13.5px">${d}</p></div>`).join('');
+  const SC=[
+    ['AFRIBN Intelligence Value (AIV)','The headline score — a weighted blend of impact, confidence, signal and decision-relevance, net of any gap penalty.'],
+    ['Impact Score','How materially the development affects the region, sector or markets in scope.'],
+    ['Confidence Score','How well-corroborated and reliably sourced the intelligence is.'],
+    ['Signal Score','How urgent and consequential the item is relative to the noise.'],
+    ['Decision Relevance','How directly the item bears on the decisions our audiences face.'],
+    ['Gap Penalty','A deduction reflecting missing facts, contradictions or unverified claims.'],
+  ];
+  $('#scores').innerHTML=SC.map(([t,d])=>`<div class="mcard" style="display:flex;gap:14px;align-items:flex-start"><div class="mi" style="margin:0;flex:none">${ic('target')}</div><div><h3 style="font-size:16.5px">${t}</h3><p>${d}</p></div></div>`).join('');
+  const RF=[['Trust Record','Historical reliability'],['Authoritativeness','Domain standing'],['Corroboration','Agreement with independent sources'],['Timeliness','Speed vs events'],['Independence','Editorial & ownership'],['Bias / Conflict','Penalty adjustments']];
+  $('#relfac').innerHTML=RF.map(([t,d])=>`<div class="mcard" style="padding:18px"><h3 style="font-size:15px">${t}</h3><p style="font-size:13px">${d}</p></div>`).join('');
+</script>
+</body>
+</html>

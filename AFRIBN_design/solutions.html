@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Solutions</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> Solutions</span>
+    <h1>Built for the people who<br><span class="r">shape</span> the continent.</h1>
+    <p class="lede">Governments, investors, diplomats, corporations, development institutions and researchers — each gets a workspace tuned to the decisions they make.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="request-access.html" style="height:52px;padding:0 24px">Request Access <span id="h1"></span></a></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:20px">
+  <div class="wrap-m">
+    <div class="mgrid c3" id="aud"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="sec-head"><div class="ek">Use cases</div><h2>From signal to decision</h2></div>
+    <div class="mgrid c2" id="cases"></div>
+  </div>
+</section>
+
+<section class="wrap-m">
+  <div class="cta-box"><h2>Tell us your mandate.</h2><p>We'll configure AFRIBN around the countries, sectors and risks you're accountable for.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="request-access.html" style="height:54px;padding:0 28px;font-size:16px">Request Access</a><a class="btn btn-ghost" href="contact.html" style="height:54px;padding:0 24px;font-size:16px">Talk to us</a></div></div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing('Solutions');
+  $('#h1').innerHTML = ic('arrowRight','width="17" height="17"');
+
+  const AUD=[
+    ['bank','Governments','Monitor stability, policy and security across borders with sovereign-grade intelligence and dedicated analysts.',['Cross-border risk monitoring','Policy & regulatory tracking','Secure, procurement-ready deployment']],
+    ['trendUp','Investors','De-risk capital allocation with deal flow, country fundamentals and early signal on the events that move markets.',['Investment due diligence','Deal & sector tracking','Country & sovereign risk']],
+    ['globe','Diplomats','Stay ahead of developments across your portfolio with verified, source-scored intelligence and event timelines.',['Bilateral & regional monitoring','Event & relations tracking','Briefing-ready reports']],
+    ['deal','Corporates','Protect operations and seize opportunity with sector intelligence, risk scoring and real-time alerts.',['Operational risk alerts','Market & competitor intel','Supply-chain exposure']],
+    ['users','Development Partners','Track governance, economic and humanitarian indicators to target and measure programs across the continent.',['Program targeting','Governance indicators','Field-verified evidence']],
+    ['file','Researchers & Media','Access reliable, scored sourcing and structured intelligence with a transparent methodology you can cite.',['Reliable, scored sourcing','Structured data & API','Transparent methodology']],
+  ];
+  $('#aud').innerHTML = AUD.map(([i,t,d,checks])=>`<div class="mcard"><div class="mi">${ic(i)}</div><h3>${t}</h3><p>${d}</p>
+    <ul class="checks" style="margin-top:16px;gap:9px">${checks.map(c=>`<li style="font-size:13.5px">${ic('checkCircle')} ${c}</li>`).join('')}</ul></div>`).join('');
+
+  const CASES=[
+    ['gauge','Sovereign risk monitoring','Track political, security and economic risk for every country you operate in, with movers and alerts when posture shifts.'],
+    ['handshake','Investment due diligence','Validate a thesis with country fundamentals, deal history, policy direction and verified on-the-ground signal.'],
+    ['shield','Security & duty of care','Real-time security alerts and event tracking to protect people, assets and operations across the continent.'],
+    ['policy','Regulatory foresight','See policy and regulation forming — public consultations, amendments and implementation — before they bite.'],
+  ];
+  $('#cases').innerHTML = CASES.map(([i,t,d])=>`<div class="mcard" style="display:flex;gap:16px;align-items:flex-start"><div class="mi" style="margin:0;flex:none">${ic(i)}</div><div><h3>${t}</h3><p>${d}</p></div></div>`).join('');
+</script>
+</body>
+</html>

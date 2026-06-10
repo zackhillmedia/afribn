@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Resources</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> Resources</span>
+    <h1>Sharpen your view of<br>the <span class="r">continent</span>.</h1>
+    <p class="lede">Reports, methodology, data and guides from the AFRIBN intelligence team.</p>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:20px">
+  <div class="wrap-m">
+    <div class="mgrid c4" id="quick"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="sec-head left"><div class="ek">Latest</div><h2>Featured insights</h2></div>
+    <div class="mgrid c3" id="insights"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="stat-band" style="grid-template-columns:1.4fr 1fr;align-items:center">
+      <div><div class="eyebrow red" style="margin-bottom:8px">Newsletter</div><h2 style="font-size:26px;font-weight:800;letter-spacing:-0.02em">The Africa Brief, weekly</h2><p class="muted" style="margin-top:10px;font-size:15px">The week's most consequential developments, scored and contextualized — in your inbox every Monday.</p></div>
+      <form class="row gap-8" id="nlForm" style="flex-wrap:wrap"><input class="input" id="nlEmail" placeholder="Work email" style="flex:1;min-width:180px;height:48px"><button class="btn btn-primary" style="height:48px">Subscribe</button></form>
+    </div>
+  </div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing('Resources');
+
+  const QUICK=[['file','Sample Reports','See the depth of our intelligence','sample-reports.html'],['policy','Methodology','How we score & verify','methodology.html'],['sliders','API & Data','Build on AFRIBN','api.html'],['message','Help Center','Guides & support','help.html']];
+  $('#quick').innerHTML=QUICK.map(([i,t,d,h])=>`<a class="mcard" href="${h}"><div class="mi">${ic(i)}</div><h3>${t}</h3><p>${d}</p><span class="lnk">Open ${ic('arrowRight')}</span></a>`).join('');
+
+  const INS=[
+    ['energy','Energy','Africa\'s clean-energy capital flows in 2024','How Gulf and Asian capital is reshaping the continent\'s power sector.','8 min read'],
+    ['security','Security','The Sahel security outlook','A scored assessment of shifting risk across the region.','12 min read'],
+    ['economy','Economy','Currency & inflation tracker','What central bank moves signal for the year ahead.','6 min read'],
+    ['policy','Policy','AfCFTA implementation, one year on','Where continental free trade is real — and where it stalls.','10 min read'],
+    ['industry','Industry','Critical minerals & the new scramble','Cobalt, copper and lithium across the Copperbelt.','9 min read'],
+    ['trade','Trade','Ports, corridors & logistics','The infrastructure quietly rewiring African trade.','7 min read'],
+  ];
+  $('#insights').innerHTML=INS.map(([sc,cat,t,d,r])=>`<a class="mcard" href="sample-reports.html"><img src="${AFRIBN.scene(sc,400,200)}" style="width:100%;height:150px;object-fit:cover;border-radius:11px;margin-bottom:16px" alt=""><span class="pill ${({Energy:'energy',Security:'security',Economy:'economy',Policy:'politics',Industry:'industry',Trade:'trade'})[cat]}">${cat}</span><h3 style="margin-top:12px;font-size:17px">${t}</h3><p>${d}</p><div class="muted" style="font-size:12.5px;margin-top:12px">${r}</div></a>`).join('');
+
+  $('#nlForm').addEventListener('submit',e=>{ e.preventDefault(); if(!/.+@.+\..+/.test($('#nlEmail').value)){AFRIBN.toast('Enter a valid email','warn');return;} AFRIBN.toast('Subscribed to The Africa Brief','ok'); $('#nlEmail').value=''; });
+</script>
+</body>
+</html>

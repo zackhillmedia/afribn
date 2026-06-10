@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Source Reliability</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .rel-grid { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 22px; align-items: start; }
+  .score-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 16px; }
+  .score-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+  .score-card .meta .l { font-size: 12.5px; color: var(--ink-3); }
+  .score-card .meta .x { font-size: 12px; color: var(--ink-4); margin-top: 6px; }
+  .ind-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .ind { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .ind .v { font-family: var(--font-display); font-weight: 800; font-size: 28px; }
+  .ind .l { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  .back { display: inline-flex; align-items: center; gap: 9px; color: var(--ink-2); font-weight: 600; font-size: 14px; margin-bottom: 16px; }
+  .back svg { width: 17px; height: 17px; color: var(--red-bright); } .back:hover { color: #fff; }
+  .mini-rank { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .mini-rank:last-child { border-bottom: none; }
+  .mini-rank .nm { font-size: 13.5px; font-weight: 500; } .mini-rank .nm small { display:block; color:var(--ink-3); font-size:11.5px; }
+  .mini-rank .sc { margin-left: auto; font-family: var(--font-display); font-weight: 800; }
+  @media (max-width:1100px){ .rel-grid{grid-template-columns:1fr} .score-cards{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+
+      <a class="back" href="sources.html"><span id="bk"></span> Back to Sources</a>
+      <div class="page-head" style="margin-bottom:20px">
+        <div>
+          <div class="eyebrow red">Source Reliability Engine</div>
+          <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.025em;margin-top:8px">Reuters Africa</h1>
+          <div class="row gap-8" style="margin-top:10px">
+            <span id="decPill"></span>
+            <span class="muted" style="font-size:13px">reuters.com/africa · API · Pan-African</span>
+          </div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="override"><span id="ovi"></span> Override Score</button>
+          <button class="btn btn-ghost btn-sm" id="white"><span id="wi"></span> Whitelist</button>
+          <button class="btn btn-ghost btn-sm" id="black" style="color:#ff6b6b"><span id="bi"></span> Blacklist</button>
+        </div>
+      </div>
+
+      <div class="rel-grid">
+        <!-- MAIN -->
+        <div>
+          <div class="score-cards" id="scoreCards"></div>
+          <div class="ind-cards" id="indCards"></div>
+
+          <div class="panel panel-pad-lg" style="margin-bottom:16px">
+            <div class="row between" style="margin-bottom:8px"><div class="eyebrow">Formula Factor Breakdown</div><span class="muted" style="font-size:12.5px">Weighted contributions to SRS</span></div>
+            <div id="factors"></div>
+          </div>
+
+          <div class="panel panel-pad-lg" style="margin-bottom:16px">
+            <div class="eyebrow" style="margin-bottom:12px">Explanation</div>
+            <p style="color:var(--ink-2);line-height:1.65;font-size:14.5px">Reuters Africa maintains a <strong style="color:#fff">Source Reliability Score of 94</strong>, driven by a long trust record, high authoritativeness, and consistently accurate recent reporting. Corroboration with independent sources is strong (SCV 0.82) and timeliness is excellent. A small bias penalty and a minor conflict-of-interest penalty are applied but do not materially affect the collection decision. The engine recommends <strong style="color:var(--green)">whitelisted</strong> status with enhanced import priority.</p>
+          </div>
+
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:16px">Audit Log</div>
+            <div class="timeline" id="audit"></div>
+          </div>
+        </div>
+
+        <!-- SIDE -->
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:6px">Reliability Decision</div>
+            <div id="decisionBox"></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="row between" style="margin-bottom:10px"><div class="eyebrow">On Probation</div><a class="muted" style="font-size:12px" href="sources.html">View all</a></div>
+            <div id="probation"></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="row between" style="margin-bottom:10px"><div class="eyebrow">Top Priority Sources</div><a class="muted" style="font-size:12px" href="sources.html">View all</a></div>
+            <div id="priority"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('database');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#bk').innerHTML = ic('arrowLeft'); $('#ovi').innerHTML = ic('sliders','width="16" height="16"'); $('#wi').innerHTML = ic('check','width="15" height="15"'); $('#bi').innerHTML = ic('ban','width="15" height="15"');
+  $('#decPill').innerHTML = AFRIBN.statusPill('Whitelisted','#3FB950');
+
+  // score cards
+  const SC = [
+    ['Source Reliability Score','SRS',94,'#3FB950','Overall trust in this source'],
+    ['Information Credibility Score','ICS',88,'#3FB950','Credibility of content produced'],
+    ['Collection Priority Score','CPS',91,'#E8252D','Scrape scheduling priority'],
+  ];
+  $('#scoreCards').innerHTML = SC.map(([l,a,v,c,x])=>`
+    <div class="score-card">${AFRIBN.ring(v,{size:78,stroke:8,color:c})}<div class="meta"><div class="l">${l}</div><div class="x">${x}</div></div></div>`).join('');
+
+  $('#indCards').innerHTML = `
+    <div class="ind"><div class="v" style="color:#3FB950">96%</div><div class="l">AIR · Article Import Rate</div></div>
+    <div class="ind"><div class="v">0.82</div><div class="l">SCV · Source Corroboration Value</div></div>`;
+
+  // factors
+  const F = [
+    ['Trust Record','Historical reliability over time',92,1],
+    ['Correction Accuracy','Speed & accuracy of corrections',88,1],
+    ['Authoritativeness','Domain authority & standing',95,1],
+    ['Timeliness Window','Speed of publication vs events',90,1],
+    ['Recent Accuracy','Accuracy in last 30 days',93,1],
+    ['Corroboration Offset','Agreement with independent sources',84,1],
+    ['Independence','Editorial & ownership independence',90,1],
+    ['Reliability Volatility','Variance in reliability (lower better)',12,-1],
+    ['Bias Penalty','Detected slant adjustment',6,-1],
+    ['Conflict Penalty','Conflict-of-interest adjustment',3,-1],
+  ];
+  $('#factors').innerHTML = F.map(([n,d,v,sign])=>{
+    const col = sign<0 ? 'var(--orange)' : (v>=85?'#3FB950':v>=65?'#E3B341':'#FF6B35');
+    return `<div class="factor"><div class="fn">${n}<small>${d}</small></div><div class="ftrack"><span style="width:${v}%;background:${col}"></span></div><div class="fv" style="color:${sign<0?'var(--orange)':'inherit'}">${sign<0?'−':''}${v}</div></div>`;
+  }).join('');
+
+  // audit
+  const AU = [
+    ['done','Whitelisted by engine','Auto-decision · SRS crossed 90 threshold','2h ago'],
+    ['','Score recalculated: 91 → 94','Recent accuracy improved (+3)','1d ago'],
+    ['','Corroboration check passed','Matched 4 independent sources on Kenya energy deal','2d ago'],
+    ['muted','Bias penalty applied: −6','Editorial slant detected on 2 articles','5d ago'],
+    ['muted','Source onboarded','Added by admin@afribn.local','30d ago'],
+  ];
+  $('#audit').innerHTML = AU.map(([cls,t,m,tm])=>`<div class="tl-item"><span class="tl-dot ${cls}"></span><div class="tl-t">${t}</div><div class="tl-m">${m} · <span class="muted">${tm}</span></div></div>`).join('');
+
+  // decision box
+  $('#decisionBox').innerHTML = `
+    <div style="text-align:center;padding:8px 0 14px">${AFRIBN.ring(94,{size:120,stroke:11,color:'#3FB950',label:'SRS'})}</div>
+    <div style="text-align:center;margin-bottom:14px">${AFRIBN.statusPill('Whitelisted','#3FB950')}</div>
+    <div class="kv"><span class="k">Import mode</span><span class="v" style="color:var(--green)">Enhanced</span></div>
+    <div class="kv"><span class="k">Threshold</span><span class="v">≥ 90 SRS</span></div>
+    <div class="kv"><span class="k">Next review</span><span class="v">in 7 days</span></div>`;
+
+  const PROB = [['Sahara Reporters','Nigeria · Politics',48],['@AfricaIntel','Pan-African',35],['Daily Trust Op-eds','Nigeria',52],['West Africa Wire','Regional',44]];
+  $('#probation').innerHTML = PROB.map(([n,c,s])=>`<div class="mini-rank"><div class="nm">${n}<small>${c}</small></div><span class="sc" style="color:${s>=50?'#E3B341':'#FF6B35'}">${s}</span></div>`).join('');
+  const PRIO = [['ACLED','Pan-African · Security',96],['Reuters Africa','Pan-African',94],['AFP Afrique','Pan-African',92],['Bloomberg Africa','Economy',91]];
+  $('#priority').innerHTML = PRIO.map(([n,c,s])=>`<div class="mini-rank"><div class="nm">${n}<small>${c}</small></div><span class="sc" style="color:#3FB950">${s}</span></div>`).join('');
+
+  $('#override').onclick=()=>toast('Manual score override panel');
+  $('#white').onclick=()=>toast('Source whitelisted','ok');
+  $('#black').onclick=()=>toast('Source blacklisted','warn');
+</script>
+</body>
+</html>

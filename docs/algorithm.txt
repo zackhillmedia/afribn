@@ -1,0 +1,94 @@
+
+
+--- PAGE 1 ---
+You  are  a  senior  backend  architect  and  AI  systems  engineer.   I  am  building  AFRIBN,  an  African  intelligence  platform.  The  backend  already  follows  this  
+architecture:
+  Sources  →  Scraping  →  AI  Distillation  →  Confidence  Scoring  →  Gap  Detection  →  Human  
+Verification
+ 
+→
+ 
+Knowledge
+ 
+Graph
+ 
+→
+ 
+Published
+ 
+Intelligence
+ 
+→
+ 
+Dashboards
+ 
+/
+ 
+Alerts
+ 
+/
+ 
+Reports.
+  I  need  you  to  implement  a  backend  scoring  module  that  calculates  AFRIBN  Intelligence  
+Value,
+ 
+Signal
+ 
+Score,
+ 
+Impact
+ 
+Score,
+ 
+Confidence
+ 
+Score,
+ 
+Risk
+ 
+Score,
+ 
+Gap
+ 
+Penalty,
+ 
+and
+ 
+Decision
+ 
+Relevance.
+  Use  a  modular  monolith  architecture.   Tech  assumptions:  -  Backend:  FastAPI  -  Database:  PostgreSQL  -  ORM:  SQLAlchemy  -  Queue  workers:  Celery  -  Cache:  Redis  -  Search:  OpenSearch  -  API  output:  JSON   Create  a  new  backend  module:   backend/modules/scoring/   It  should  include:  -  models.py  -  schemas.py  -  service.py  -  formulas.py  -  routes.py  -  tasks.py  -  tests/   Core  master  formula:   AIV  =  [(P  ×  I  ×  A  ×  T  ×  C)  +  (O  ×  E)  -  K]   Where:  P  =  Probability  I  =  Impact  A  =  Actionability  T  =  Time  Sensitivity  C  =  Confidence  O  =  Opportunity  E  =  Stakeholder  Exposure  
+
+
+--- PAGE 2 ---
+K  =  Knowledge  Gap  Penalty   Normalize  final  AFRIBN  Intelligence  Value  to  0–100.   Also  calculate:   Impact  Score  =  0.25  strategic_impact  +  0.20  economic_impact  +  0.15  political_impact  +  0.15  security_impact  +  0.10  regulatory_impact  +  0.10  cross_border_impact  +  0.05  human_social_impact   Confidence  Score  =  0.40  source_reliability  +  0.25  corroboration  +  0.20  human_verification  +  0.10  documentary_evidence  -  0.15  contradiction_penalty   Signal  Score  =  Impact  Score  ×  Confidence  Modifier  ×  Urgency  Modifier  ×  Novelty  Modifier  ×  Decision  Relevance  Modifier  ×  Negotiation  Leverage  Modifier  ×  Scenario  Risk  Modifier   Decision  Relevance  =  0.35  geography_match  +  0.25  sector_match  +  0.20  watchlist_match  +  0.20  user_profile_match   Negotiation  Leverage  =  0.30  BATNA  +  0.20  counterparty_dependency  +  0.15  strategic_scarcity  +  0.15  timeline_pressure  +  0.10  political_constraint  +  0.10  concession_pattern   Scenario  Risk  =  weighted  expected  value  of  best_case,  base_case,  worst_case,  and  wildcard  scenarios.   
+
+
+--- PAGE 3 ---
+Build  the  system  so  every  score  stores:  -  raw  input  factors  -  normalized  factor  values  -  final  score  -  formula  version  -  explanation  -  confidence  level  -  created_at  -  updated_at   Database  tables  needed:  -  scoring_profiles  -  impact_scores  -  confidence_scores  -  signal_scores  -  risk_scores  -  decision_relevance_scores  -  negotiation_leverage_scores  -  scenario_scores  -  intelligence_value_scores  -  scoring_audit_logs   Each  score  should  link  to  one  of:  -  story_id  -  event_id  -  policy_id  -  deal_id  -  country_id  -  entity_id  -  published_intelligence_id   Create  APIs:   POST  /scoring/calculate  GET  /scoring/{object_type}/{object_id}  POST  /scoring/recalculate/{object_type}/{object_id}  GET  /scoring/{object_type}/{object_id}/explanation  GET  /scoring/top-signals  GET  /scoring/risk/countries  GET  /scoring/version   The  scoring  service  should:  1.  Fetch  the  object  being  scored.  2.  Pull  source  evidence,  entities,  country,  sector,  watchlist,  user  context,  verification  state,  
+and
+ 
+gap
+ 
+reports.
+ 3.  Normalize  all  values  to  0–100.  4.  Calculate  sub-scores.  5.  Calculate  AFRIBN  Intelligence  Value.  
+
+
+--- PAGE 4 ---
+6.  Store  each  score.  7.  Generate  a  human-readable  explanation.  8.  Emit  an  event  called  score.updated.  9.  Trigger  downstream  updates  for  feed  ranking,  alerts,  dashboards,  reports,  and  knowledge  
+graph.
+  Create  Celery  tasks:  -  calculate_score_for_story(story_id)  -  calculate_score_for_event(event_id)  -  calculate_score_for_policy(policy_id)  -  calculate_score_for_deal(deal_id)  -  calculate_country_risk(country_id)  -  recalculate_all_scores()  -  recalculate_scores_for_source(source_id)  -  recalculate_scores_after_verification(verification_id)   Design  the  code  to  support  formula  versioning  so  future  proprietary  AFRIBN  formulas  can  be  
+added
+ 
+without
+ 
+breaking
+ 
+old
+ 
+scores.
+  Include:  -  SQLAlchemy  models  -  Pydantic  schemas  -  FastAPI  routes  -  service-layer  logic  -  pure  Python  formula  functions  -  unit  tests  for  formula  correctness  -  integration  tests  for  route  behavior  -  example  JSON  requests  and  responses   Important  engineering  principles:  -  Formula  calculations  must  be  pure  functions.  -  Database  writes  must  happen  only  in  the  service  layer.  -  Routes  should  be  thin.  -  All  scores  must  be  explainable.  -  All  scores  must  be  auditable.  -  Never  overwrite  historical  scores  without  logging  previous  values.  -  Use  Decimal  where  financial/weighted  precision  matters.  -  Clamp  all  final  scores  to  0–100.  -  Handle  missing  data  gracefully  with  gap  penalties.  -  Missing  information  should  reduce  confidence  and  increase  gap  penalty.  -  Human  verification  should  increase  confidence.  -  Contradictions  should  reduce  confidence.  -  Watchlist  match  should  increase  decision  relevance.  -  High  tail  risk  should  increase  scenario  risk.   Also  create  example  scoring  for:  1.  Kenya  signs  $2.1bn  renewable  energy  deal  with  UAE  consortium.  2.  Nigeria  approves  ₦6.2tn  supplementary  budget.  
+
+
+--- PAGE 5 ---
+3.  Security  attack  on  mining  site  in  eastern  DRC.  4.  New  mining  code  amendment  in  DR  Congo.  5.  Central  Bank  of  Kenya  cuts  policy  rate.   Return  the  complete  backend  implementation  plan  and  then  generate  the  actual  code  files.  

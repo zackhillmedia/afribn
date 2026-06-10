@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Event Detail</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .story-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; gap:16px; }
+  .back { display:inline-flex; align-items:center; gap:10px; color:var(--ink); font-weight:650; font-size:16px; }
+  .back svg { width:20px; height:20px; color:var(--red-bright); }
+  .back:hover { color:var(--red-bright); }
+  .act-row { display:flex; gap:10px; }
+  .tag-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .tag-row .when { color:var(--ink-3); font-size:14px; margin-left:4px; }
+  .headline { font-size:clamp(34px,4vw,54px); font-weight:850; line-height:1.04; max-width:18ch; margin-bottom:30px; }
+  .story-grid { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:26px; align-items:start; }
+  .sect-label { font-size:13px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--red-bright); margin-bottom:12px; white-space:nowrap; }
+  .lead-p { font-size:17px; line-height:1.65; color:var(--ink-2); }
+  .card-red { background:rgba(232,37,45,.045); border:1px solid rgba(232,37,45,.18); border-radius:var(--r-lg); padding:24px; margin-top:22px; }
+  .detail-list { display:grid; gap:4px; }
+  .impact-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:1px solid var(--line); }
+  .impact-row:last-child { border-bottom:none; }
+  .impact-row .lbl { color:var(--ink-3); font-size:14px; }
+  .leader-li { display:flex; align-items:flex-start; gap:13px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .leader-li:last-child { border-bottom:none; }
+  .leader-li .li-ic { width:34px; height:34px; border-radius:9px; display:grid; place-items:center; background:var(--red-tint); color:var(--red-bright); flex:none; }
+  .leader-li .li-ic svg { width:17px; height:17px; }
+  .leader-li .tx { font-size:14.5px; line-height:1.5; color:var(--ink-2); }
+  .leader-li a { color:var(--red-bright); }
+  .access-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .access-grid .full { grid-column:1/-1; }
+  .kv { background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .kv .k { display:block; color:var(--ink-3); font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; font-weight:750; }
+  .kv .v { color:var(--ink); line-height:1.45; overflow-wrap:anywhere; }
+  .kv a { color:var(--red-bright); }
+  @media (max-width:1180px){ .story-grid{grid-template-columns:1fr} }
+  @media (max-width:720px){ .story-top{align-items:flex-start;flex-direction:column} .access-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <main class="content" style="max-width:1280px" id="eventDetail">
+      <div class="empty"><div>Loading event...</div></div>
+    </main>
+  </div>
+</div>
+<script src="assets/afribn.js"></script>
+<script>AFRIBN.shell('calendar');</script>
+</body>
+</html>

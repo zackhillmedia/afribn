@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Checkout</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<div class="wrap-m" style="padding-top:40px;padding-bottom:60px;max-width:1080px">
+  <a class="muted-link" href="pricing.html" style="display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;margin-bottom:22px"><span id="bk"></span> Back to pricing</a>
+  <h1 style="font-size:32px;font-weight:800;letter-spacing:-0.025em;margin-bottom:6px">Checkout</h1>
+  <p class="muted" style="margin-bottom:30px">Complete your subscription. Cancel anytime.</p>
+
+  <div class="checkout-grid">
+    <!-- left: details -->
+    <div class="stack gap-20">
+      <div class="form-card">
+        <div class="eyebrow" style="margin-bottom:16px">1 · Choose plan</div>
+        <div class="choice-grid" id="planPick" style="grid-template-columns:1fr"></div>
+        <div class="row gap-8" style="margin-top:14px;justify-content:flex-end">
+          <div class="billing" id="billing" style="margin:0;background:var(--panel-2);border:1px solid var(--line-2);border-radius:40px;padding:4px;display:inline-flex">
+            <button class="on" data-cycle="monthly" style="border:none;background:none;color:var(--ink-3);font-weight:600;font-size:13px;padding:7px 16px;border-radius:40px;cursor:pointer">Monthly</button>
+            <button data-cycle="annual" style="border:none;background:none;color:var(--ink-3);font-weight:600;font-size:13px;padding:7px 16px;border-radius:40px;cursor:pointer">Annual −20%</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="eyebrow" style="margin-bottom:16px">2 · Billing details</div>
+        <div class="field-row"><div class="field"><label>Full name</label><input id="bName" placeholder="Jane Okafor"></div><div class="field"><label>Work email</label><input id="bEmail" type="email" placeholder="jane@org.org"></div></div>
+        <div class="field"><label>Organization</label><input placeholder="Ministry of Finance"></div>
+        <div class="field-row"><div class="field"><label>Country</label><select><option>Nigeria</option><option>Kenya</option><option>South Africa</option><option>Egypt</option><option>Morocco</option><option>Other</option></select></div><div class="field"><label>VAT / Tax ID <span class="muted" style="font-weight:400">(optional)</span></label><input placeholder="—"></div></div>
+      </div>
+
+      <div class="form-card">
+        <div class="eyebrow" style="margin-bottom:16px">3 · Payment</div>
+        <div class="pay-method" id="payMethod">
+          <div class="pm on" data-m="card"><span id="pmCard"></span> Card</div>
+          <div class="pm" data-m="invoice"><span id="pmInv"></span> Invoice / PO</div>
+          <div class="pm" data-m="mobile"><span id="pmMob"></span> Mobile money</div>
+        </div>
+        <div id="cardForm">
+          <div class="field"><label>Card number</label><input id="ccNum" placeholder="1234 5678 9012 3456" inputmode="numeric"></div>
+          <div class="field-row three"><div class="field"><label>Expiry</label><input placeholder="MM / YY"></div><div class="field"><label>CVC</label><input placeholder="123"></div><div class="field"><label>ZIP</label><input placeholder="—"></div></div>
+        </div>
+        <div id="invoiceForm" style="display:none"><p class="muted" style="font-size:14px;line-height:1.6">We'll email a pro-forma invoice with bank transfer details and PO instructions. Access is provisioned on confirmation. Net-30 terms available for institutions.</p></div>
+        <div id="mobileForm" style="display:none"><div class="field"><label>Mobile money number</label><input placeholder="+254 ..."></div><p class="muted" style="font-size:13px">Supported: M-Pesa, MTN MoMo, Airtel Money. You'll receive a prompt to authorize.</p></div>
+      </div>
+    </div>
+
+    <!-- right: summary -->
+    <div class="summary">
+      <div class="eyebrow" style="margin-bottom:16px">Order summary</div>
+      <div class="row gap-12" style="margin-bottom:16px"><span class="pi" id="sumIcon" style="width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:var(--red-tint);color:var(--red-bright);flex:none"></span><div><div style="font-weight:700" id="sumName">Professional</div><div class="muted" style="font-size:12.5px" id="sumWho">Teams</div></div></div>
+      <div class="line"><span id="sumPlanLbl">Professional (monthly)</span><span id="sumBase">$1,900</span></div>
+      <div class="line" id="discLine" style="display:none;color:var(--green)"><span>Annual discount (20%)</span><span id="sumDisc">−$0</span></div>
+      <div class="line"><span>Taxes</span><span class="muted">Calculated next</span></div>
+      <div class="line total"><span>Due today</span><span id="sumTotal">$1,900</span></div>
+      <button class="btn btn-primary" id="payBtn" style="width:100%;height:50px;margin-top:18px">Pay &amp; activate <span id="payi"></span></button>
+      <div class="row gap-8 muted" style="font-size:12px;justify-content:center;margin-top:14px"><span id="lock"></span> Secured with 256-bit encryption</div>
+      <p class="muted center" style="font-size:12px;margin-top:10px">Prefer a tailored setup? <a class="muted-link" href="request-access.html" style="font-weight:600">Request access</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- success overlay -->
+<div class="modal-back" id="okBack"><div class="modal" style="max-width:460px;text-align:center">
+  <div class="modal-b" style="padding:38px 30px">
+    <div class="success"><div class="badge" id="okB2"></div><h1>You're all set</h1>
+    <p>Your <b id="okPlan">Professional</b> subscription is active. We've emailed your receipt and a secure sign-in link.</p>
+    <div class="hero-cta" style="justify-content:center;margin-top:24px"><a class="btn btn-primary" href="home.html">Enter platform</a><a class="btn btn-ghost" href="index.html">Back to home</a></div></div>
+  </div>
+</div></div>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.marketing(null);
+  const ic = AFRIBN.ic;
+  $('#bk').innerHTML=ic('arrowLeft','width="16" height="16"'); $('#payi').innerHTML=ic('check','width="17" height="17"');
+  $('#pmCard').innerHTML=ic('deal','width="16" height="16"'); $('#pmInv').innerHTML=ic('file','width="16" height="16"'); $('#pmMob').innerHTML=ic('message','width="16" height="16"');
+  $('#lock').innerHTML=ic('shield','width="14" height="14"'); $('#okB2').innerHTML=ic('check');
+
+  const PLANS={ Analyst:{m:490,who:'Individual',icon:'user'}, Professional:{m:1900,who:'Teams',icon:'users'}, Enterprise:{m:null,who:'Institutions',icon:'bank'} };
+  let plan='Professional', cycle='monthly';
+  $('#planPick').innerHTML=Object.entries(PLANS).map(([n,p])=>`<div class="choice ${n===plan?'sel':''}" data-p="${n}"><span class="ci">${ic(p.icon)}</span><div><div class="ct">${n}</div><div class="cd">${p.who}${p.m?' · $'+p.m.toLocaleString()+'/mo':' · Custom'}</div></div><span class="chk">${ic('checkCircle')}</span></div>`).join('');
+  $('#planPick').querySelectorAll('.choice').forEach(c=>c.addEventListener('click',()=>{ $('#planPick').querySelectorAll('.choice').forEach(x=>x.classList.remove('sel')); c.classList.add('sel'); plan=c.dataset.p; render(); }));
+  $('#billing').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ $('#billing').querySelector('.on').classList.remove('on'); b.classList.add('on'); b.style.color='#fff'; cycle=b.dataset.cycle; render(); }));
+
+  function render(){
+    const p=PLANS[plan]; $('#sumIcon').innerHTML=ic(p.icon); $('#sumName').textContent=plan; $('#sumWho').textContent=p.who;
+    if(p.m===null){ $('#sumPlanLbl').textContent=plan+' (custom)'; $('#sumBase').textContent='Custom'; $('#discLine').style.display='none'; $('#sumTotal').textContent='Contact sales'; $('#payBtn').innerHTML=`Contact sales ${ic('arrowRight','width=\"16\" height=\"16\"')}`; return; }
+    const base=p.m, annual=cycle==='annual'; const monthly=annual?Math.round(base*0.8):base;
+    $('#sumPlanLbl').textContent=`${plan} (${annual?'annual':'monthly'})`;
+    $('#sumBase').textContent='$'+base.toLocaleString();
+    $('#discLine').style.display=annual?'flex':'none'; $('#sumDisc').textContent='−$'+(base-monthly).toLocaleString();
+    $('#sumTotal').textContent='$'+(annual?monthly*12:monthly).toLocaleString()+(annual?' /yr':'');
+    $('#payBtn').innerHTML=`Pay &amp; activate ${ic('check','width=\"17\" height=\"17\"')}`;
+  }
+  render();
+
+  $('#payMethod').querySelectorAll('.pm').forEach(m=>m.addEventListener('click',()=>{
+    $('#payMethod').querySelector('.on').classList.remove('on'); m.classList.add('on');
+    const v=m.dataset.m; $('#cardForm').style.display=v==='card'?'':'none'; $('#invoiceForm').style.display=v==='invoice'?'':'none'; $('#mobileForm').style.display=v==='mobile'?'':'none';
+  }));
+  // light card formatting
+  $('#ccNum').addEventListener('input',e=>{ e.target.value=e.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim(); });
+
+  $('#payBtn').addEventListener('click',()=>{
+    if(PLANS[plan].m===null){ location.href='request-access.html'; return; }
+    AFRIBN.toast('Processing payment…','ok'); $('#okPlan').textContent=plan;
+    setTimeout(()=>$('#okBack').classList.add('open'),700);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Request Access</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<div class="auth-wrap">
+  <div class="auth-card wide">
+    <div class="center" style="margin-bottom:24px">
+      <span class="eyebrow-pill"><span class="lv"></span> Request Access</span>
+      <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.025em;margin:16px 0 6px">Tell us what you need to monitor</h1>
+      <p class="muted" style="font-size:15px;max-width:520px;margin:0 auto">We tailor each workspace by hand. Share your role and priorities and our team will provision access that fits — usually within one business day.</p>
+    </div>
+
+    <div class="form-card">
+      <div class="steps" id="steps"></div>
+
+      <!-- STEP 1 -->
+      <div class="step-pane on" data-step="0">
+        <div class="step-h">About you</div>
+        <div class="step-sub">So we know who we're setting up.</div>
+        <div class="field-row"><div class="field"><label>Full name *</label><input id="f_name" placeholder="Jane Okafor"></div><div class="field"><label>Job title *</label><input id="f_title" placeholder="Director of Strategy"></div></div>
+        <div class="field-row"><div class="field"><label>Work email *</label><input id="f_email" type="email" placeholder="jane@organization.org"></div><div class="field"><label>Phone <span class="muted" style="font-weight:400">(optional)</span></label><input id="f_phone" placeholder="+234 ..."></div></div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step-pane" data-step="1">
+        <div class="step-h">Your organization</div>
+        <div class="step-sub">This helps us match the right access tier and compliance posture.</div>
+        <div class="field"><label>Organization type *</label>
+          <div class="choice-grid" id="orgType"></div>
+        </div>
+        <div class="field-row"><div class="field"><label>Organization name *</label><input id="f_org" placeholder="e.g. Ministry of Finance"></div><div class="field"><label>Country / HQ *</label><input id="f_country" placeholder="e.g. Nigeria"></div></div>
+        <div class="field-row"><div class="field"><label>Team size</label><select id="f_team"><option>Just me</option><option>2–10</option><option>11–50</option><option>51–200</option><option>200+</option></select></div><div class="field"><label>Website <span class="muted" style="font-weight:400">(optional)</span></label><input id="f_web" placeholder="https://"></div></div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step-pane" data-step="2">
+        <div class="step-h">What you need</div>
+        <div class="step-sub">Pick the capabilities and coverage that matter — the admin provisions exactly these.</div>
+        <div class="field"><label>Products of interest *</label>
+          <div class="choice-grid" id="products"></div>
+        </div>
+        <div class="field"><label>Countries / regions to monitor</label><input id="f_regions" placeholder="e.g. Nigeria, Kenya, Sahel, Pan-African"></div>
+        <div class="field"><label>Primary use case *</label><textarea id="f_use" placeholder="What decisions will this intelligence support? e.g. sovereign risk monitoring, investment due diligence, security planning…"></textarea></div>
+        <div class="field"><label>Plan interest</label><select id="f_plan"><option>Not sure yet — advise me</option><option>Analyst</option><option>Professional</option><option>Enterprise / Government</option></select></div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="step-pane" data-step="3">
+        <div class="step-h">Review &amp; submit</div>
+        <div class="step-sub">Confirm your details. We'll be in touch shortly.</div>
+        <div id="review"></div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="step-pane" data-step="4">
+        <div class="success">
+          <div class="badge" id="okBadge"></div>
+          <h1>Request received</h1>
+          <p>Thanks <b id="okName">there</b> — your access request is in our queue. An AFRIBN admin will review your needs and provision a workspace tailored to them.</p>
+          <div class="next">
+            <div class="nt">What happens next</div>
+            <div class="ni"><span class="num">1</span><div>Our team reviews your role, organization and coverage needs.</div></div>
+            <div class="ni"><span class="num">2</span><div>We provision access and configure your countries, products and alerts.</div></div>
+            <div class="ni"><span class="num">3</span><div>You receive a secure sign-in link and a guided onboarding walkthrough.</div></div>
+          </div>
+          <div class="hero-cta" style="justify-content:center">
+            <a class="btn btn-primary" href="index.html">Back to home</a>
+            <a class="btn btn-ghost" href="signup.html">Create your profile</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions" id="actions">
+        <button class="btn btn-ghost" id="backBtn" style="display:none">Back</button>
+        <span class="grow"></span>
+        <button class="btn btn-primary" id="nextBtn">Continue <span id="nbi"></span></button>
+      </div>
+    </div>
+    <p class="center muted" style="font-size:12.5px;margin-top:16px">Already have access? <a class="muted-link" href="login.html" style="font-weight:600">Log in</a> · Prefer to talk? <a class="muted-link" href="contact.html" style="font-weight:600">Contact us</a></p>
+  </div>
+</div>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.marketing(null);
+  const ic = AFRIBN.ic;
+  $('#nbi').innerHTML = ic('arrowRight','width="17" height="17"');
+  $('#okBadge').innerHTML = ic('check');
+
+  const STEPS = ['You','Organization','Needs','Review'];
+  let step = 0;
+  function renderSteps(){
+    $('#steps').innerHTML = STEPS.map((s,i)=>`<div class="st ${i===step?'on':i<step?'done':''}"><span class="dot">${i<step?ic('check','width=\"15\" height=\"15\"'):i+1}</span><span class="lbl">${s}</span></div>${i<STEPS.length-1?'<span class="bar"></span>':''}`).join('');
+  }
+
+  // org type choices
+  const ORG = [['bank','Government / Public sector'],['trendUp','Investor / Asset manager'],['deal','Corporate / Multinational'],['globe','Diplomatic mission'],['users','Development / NGO'],['file','Research / Academia'],['feed','Media / Journalism'],['shield','Security / Risk advisory']];
+  let orgSel = null;
+  $('#orgType').innerHTML = ORG.map(([i,l],idx)=>`<div class="choice" data-i="${idx}"><span class="ci">${ic(i)}</span><span class="ct">${l}</span><span class="chk">${ic('checkCircle')}</span></div>`).join('');
+  $('#orgType').querySelectorAll('.choice').forEach(c=>c.addEventListener('click',()=>{ $('#orgType').querySelectorAll('.choice').forEach(x=>x.classList.remove('sel')); c.classList.add('sel'); orgSel=ORG[+c.dataset.i][1]; }));
+
+  // product choices (multi)
+  const PROD = [['feed','Real-time Feed'],['globe','Country Intelligence'],['gauge','Risk Dashboard'],['file','Reports & Briefs'],['policy','Policy Monitor'],['deal','Deal Tracker'],['calendar','Event Tracker'],['sliders','API / Data access']];
+  const prodSel = new Set();
+  $('#products').innerHTML = PROD.map(([i,l],idx)=>`<div class="choice" data-i="${idx}"><span class="ci">${ic(i)}</span><span class="ct">${l}</span><span class="chk">${ic('checkCircle')}</span></div>`).join('');
+  $('#products').querySelectorAll('.choice').forEach(c=>c.addEventListener('click',()=>{ const l=PROD[+c.dataset.i][1]; if(prodSel.has(l)){prodSel.delete(l);c.classList.remove('sel');}else{prodSel.add(l);c.classList.add('sel');} }));
+
+  const val = id => ($('#'+id).value||'').trim();
+  function validate(){
+    if(step===0){ if(!val('f_name')||!val('f_title')||!val('f_email')){ AFRIBN.toast('Please complete the required fields','warn'); return false; } if(!/.+@.+\..+/.test(val('f_email'))){ AFRIBN.toast('Enter a valid work email','warn'); return false; } }
+    if(step===1){ if(!orgSel){ AFRIBN.toast('Select your organization type','warn'); return false; } if(!val('f_org')||!val('f_country')){ AFRIBN.toast('Organization name & country are required','warn'); return false; } }
+    if(step===2){ if(!prodSel.size){ AFRIBN.toast('Pick at least one product','warn'); return false; } if(!val('f_use')){ AFRIBN.toast('Tell us your primary use case','warn'); return false; } }
+    return true;
+  }
+  function renderReview(){
+    const rows = [
+      ['Name', val('f_name')],['Job title', val('f_title')],['Email', val('f_email')],['Phone', val('f_phone')||'—'],
+      ['Organization', `${val('f_org')} · ${orgSel||''}`],['Country', val('f_country')],['Team size', $('#f_team').value],
+      ['Products', [...prodSel].join(', ')],['Regions', val('f_regions')||'—'],['Use case', val('f_use')],['Plan interest', $('#f_plan').value],
+    ];
+    $('#review').innerHTML = rows.map(([k,v])=>`<div class="review-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+  }
+
+  function show(){
+    document.querySelectorAll('.step-pane').forEach(p=>p.classList.toggle('on', +p.dataset.step===step));
+    renderSteps();
+    $('#backBtn').style.display = step>0 && step<4 ? '' : 'none';
+    const nb=$('#nextBtn');
+    if(step===3){ nb.innerHTML = `Submit request ${ic('send','width=\"16\" height=\"16\"')}`; }
+    else { nb.innerHTML = `Continue ${ic('arrowRight','width=\"17\" height=\"17\"')}`; }
+    if(step===4){ $('#actions').style.display='none'; $('#steps').style.display='none'; }
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  $('#nextBtn').addEventListener('click', ()=>{
+    if(step<3){ if(!validate())return; step++; if(step===3)renderReview(); show(); }
+    else if(step===3){ $('#okName').textContent = val('f_name').split(' ')[0]||'there'; step=4; show(); AFRIBN.toast('Request submitted','ok'); }
+  });
+  $('#backBtn').addEventListener('click', ()=>{ if(step>0){ step--; show(); } });
+
+  renderSteps();
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Alerts</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .kpi-row { grid-template-columns: repeat(5,1fr); }
+  .al-grid { display:grid; grid-template-columns:minmax(0,1fr) 312px; gap:20px; align-items:start; }
+  .filter-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+  .filter-bar .search-inline { flex:1; min-width:160px; }
+  .al-cell { display:flex; align-items:flex-start; gap:13px; }
+  .al-cell .ai { width:34px; height:34px; border-radius:9px; display:grid; place-items:center; flex:none; } .al-cell .ai svg{width:17px;height:17px;}
+  .al-cell .nm { font-weight:600; line-height:1.3; }
+  .al-cell .ds { font-size:12.5px; color:var(--ink-3); margin-top:3px; max-width:300px; line-height:1.4; }
+  .tbl th:first-child, .tbl td:first-child { min-width: 320px; }
+  .prio { font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px; white-space:nowrap; }
+  .w-h { font-size:12.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2); white-space:nowrap; }
+  .w-sub { font-size:12.5px; color:var(--ink-3); margin-top:2px; }
+  .legend-li { display:flex; align-items:center; gap:10px; padding:7px 0; font-size:13.5px; } .legend-li .vl{margin-left:auto;font-weight:600;} .legend-li .pc{color:var(--ink-3);font-size:12.5px;width:40px;text-align:right;flex:none;}
+  .rank-li { display:flex; align-items:center; gap:12px; padding:10px 0; } .rank-li .nm{font-size:13.5px;min-width:96px;} .rank-li .bar{flex:1;} .rank-li .vl{font-weight:700;min-width:22px;text-align:right;}
+  .row-more{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:transparent;border:none;color:var(--ink-3);} .row-more:hover{background:var(--panel-3);color:var(--ink);} .row-more svg{width:16px;height:16px;}
+  @media (max-width:1300px){ .kpi-row{grid-template-columns:repeat(3,1fr)} .al-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1460px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Alerts</h1>
+          <div class="page-sub">Monitor critical updates and stay informed about important developments.</div></div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="prefs"><span id="pri"></span> Alert Preferences</button>
+          <button class="btn btn-primary" id="createAlert"><span id="cai"></span> Create Alert</button>
+        </div>
+      </div>
+      <div class="kpi-row" id="stats"></div>
+      <div class="al-grid">
+        <div class="panel panel-pad-lg">
+          <div class="filter-bar">
+            <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search alerts..."></div>
+            <select class="select" id="fPrio"><option>All Priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
+            <select class="select" id="fStatus"><option>All Statuses</option><option>New</option><option>In Progress</option><option>Acknowledged</option><option>Resolved</option></select>
+          </div>
+          <div class="tbl-scroll"><table class="tbl" style="margin-top:8px;min-width:760px">
+            <thead><tr><th>Alert</th><th>Category</th><th>Country</th><th>Priority</th><th>Status</th><th>Triggered</th><th></th></tr></thead>
+            <tbody id="body"></tbody>
+          </table></div>
+        </div>
+        <div class="stack gap-16">
+          <div class="panel"><div class="row between" style="align-items:flex-start"><div><div class="w-h">Alerts Over Time</div><div class="w-sub">Last 7 days</div></div><div style="text-align:right"><div style="font-family:var(--font-display);font-weight:800;font-size:26px">19</div><div style="color:var(--red-bright);font-weight:700;font-size:12.5px">+6 (46.2%)</div></div></div><div id="alChart" style="margin-top:8px"></div></div>
+          <div class="panel"><div class="w-h">Alerts by Priority</div><div class="row gap-16" style="margin-top:14px;align-items:center"><div id="prioDonut"></div><div class="grow" id="prioLegend" style="min-width:0"></div></div></div>
+          <div class="panel"><div class="w-h">Top Alert Categories</div><div id="topCats" style="margin-top:10px"></div></div>
+          <div class="panel"><div class="row between" style="margin-bottom:4px"><div class="w-h">Delivery Log</div><a class="muted" style="font-size:12px" href="#">View all</a></div><div id="deliveryLog" style="margin-top:6px"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Alert modal -->
+<div class="modal-back" id="modalBack"><div class="modal">
+  <div class="modal-h"><h3>Create Alert Rule</h3><button class="icon-btn" id="mClose" style="width:36px;height:36px"></button></div>
+  <div class="modal-b">
+    <div class="field"><label>Alert name</label><input placeholder="e.g. Nigeria energy policy changes"></div>
+    <div class="eyebrow" style="margin:6px 0 12px">Trigger when</div>
+    <div class="field-row"><div class="field"><label>Country</label><select><option>Any</option><option>Nigeria</option><option>Kenya</option></select></div><div class="field"><label>Topic</label><select><option>Any</option><option>Energy</option><option>Security</option></select></div></div>
+    <div class="field-row"><div class="field"><label>Source</label><select><option>Any</option><option>Reuters</option></select></div><div class="field"><label>Signal score ≥</label><input type="number" value="70"></div></div>
+    <div class="field"><label>Watchlist item / Risk change</label><select><option>Any watchlist match</option><option>Risk level increase</option></select></div>
+    <div class="eyebrow" style="margin:10px 0 12px">Delivery channels</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <label class="aud-chip" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;background:var(--red-tint);color:var(--red-bright)"><input type="checkbox" checked style="accent-color:var(--red)"> In-app</label>
+      <label class="aud-chip" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer"><input type="checkbox"> Email</label>
+      <label class="aud-chip" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer"><input type="checkbox"> SMS</label>
+    </div>
+  </div>
+  <div class="modal-f"><button class="btn btn-ghost" id="mCancel">Cancel</button><button class="btn btn-primary" id="mSave">Create Alert</button></div>
+</div></div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('bell');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML=ic('bell'); $('#pri').innerHTML=ic('settings','width="16" height="16"'); $('#cai').innerHTML=ic('plus','width="16" height="16"'); $('#si').innerHTML=ic('search'); $('#mClose').innerHTML=ic('x');
+
+  $('#stats').innerHTML=[['bell','#E8252D','19','Total Alerts','+6'],['flame','#FF6B35','6','High Priority','+2'],['alertTri','#E3B341','8','Medium Priority','+1'],['feed','#4493F8','5','Low Priority','-1'],['checkCircle','#3FB950','12','Acknowledged','+3']]
+    .map(([i,c,v,l,d])=>`<div class="stat"><div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div><div class="num">${v}</div><div class="lbl">${l}</div><div class="delta ${d[0]==='-'?'down':'up'}" style="font-size:12.5px;white-space:nowrap">${d} <span class="muted" style="font-weight:400">vs last 7 days</span></div></div>`).join('');
+
+  const PR={High:'#E5252A',Medium:'#E3B341',Low:'#4493F8'}, STC={New:'#E5252A','In Progress':'#E3B341',Acknowledged:'#8B949E',Resolved:'#3FB950'};
+  const CAT={ 'Policy Change':['file','#E8252D'],Regulation:['bank','#E3B341'],'Corporate Update':['barChart','#A371F7'],Partnership:['handshake','#4493F8'],Security:['shield','#E5252A'],Economic:['globe','#3FB950'] };
+  const AL=[
+    ['New energy policy amendment in Nigeria','Govt proposed changes to Renewable Energy Policy 2024.','Policy Change','Nigeria','nigeria','High','New','2h ago'],
+    ['Ethiopia raises import tariff on steel','New 15% tariff on steel imports effective June 1, 2024.','Regulation','Ethiopia','ethiopia','Medium','New','4h ago'],
+    ['Dangote Refinery expansion update','Construction reached 78%, ahead of schedule.','Corporate Update','Nigeria','nigeria','Medium','Acknowledged','6h ago'],
+    ['DR Congo–Zambia infrastructure MoU signed','Agreement to develop cross-border transport corridor.','Partnership','DR Congo','drcongo','Low','New','8h ago'],
+    ['Security alert: Political unrest in South Sudan','Protests reported in Juba; increased security presence.','Security','South Sudan','southsudan','High','In Progress','10h ago'],
+    ['IMF revises growth forecast for Africa','Sub-Saharan growth revised to 3.2% for 2024.','Economic','Pan-African','regional','Low','Resolved','1d ago'],
+  ];
+  function render(){
+    const kw=($('#kw').value||'').toLowerCase(), fp=$('#fPrio').value, fs=$('#fStatus').value;
+    const rows=AL.filter(a=>(!kw||(a[0]+a[1]).toLowerCase().includes(kw))&&(fp==='All Priorities'||a[5]===fp)&&(fs==='All Statuses'||a[6]===fs));
+    $('#body').innerHTML=rows.map(([t,d,cat,ctry,flag,prio,status,trig])=>{const[ci,cc]=CAT[cat];return `<tr style="cursor:pointer">
+      <td><div class="al-cell"><span class="ai" style="background:${cc}22;color:${cc}">${ic(ci)}</span><div><div class="nm">${t}</div><div class="ds">${d}</div></div></div></td>
+      <td class="muted-2" style="white-space:nowrap">${cat}</td>
+      <td><span style="display:flex;align-items:center;gap:8px;white-space:nowrap">${AFRIBN.flag(flag)} ${ctry}</span></td>
+      <td><span class="prio" style="background:${PR[prio]}22;color:${PR[prio]}">${prio}</span></td>
+      <td>${AFRIBN.statusPill(status,STC[status])}</td>
+      <td class="muted-2" style="white-space:nowrap">${trig}</td>
+      <td><button class="row-more" onclick="event.stopPropagation()">${ic('more')}</button></td></tr>`;}).join('');
+    $('#body').querySelectorAll('.row-more').forEach(b=>b.addEventListener('click',()=>toast('Acknowledge · Resolve · Mute · View')));
+    $('#body').querySelectorAll('tr').forEach(r=>r.addEventListener('click',()=>{ if(r.querySelector('.nm')) toast('Opening: '+r.querySelector('.nm').textContent); }));
+  }
+  render(); ['#kw'].forEach(s=>$(s).addEventListener('input',render)); ['#fPrio','#fStatus'].forEach(s=>$(s).addEventListener('change',render));
+
+  $('#alChart').innerHTML=AFRIBN.lineChart([{color:'#E8252D',vals:[10,12,11,14,13,17,15,18,16,14,17,19],fill:true,dots:true}],['May 9','May 11','May 13','May 15'],{w:300,h:160,max:25,pad:26});
+  const PRD=[['High','#E5252A',6,'32%'],['Medium','#E3B341',8,'42%'],['Low','#4493F8',5,'26%']];
+  $('#prioDonut').innerHTML=AFRIBN.donut(PRD.map(p=>({value:p[2],color:p[1]})),{size:118,thick:18});
+  $('#prioLegend').innerHTML=PRD.map(([n,c,v,p])=>`<div class="legend-li"><span class="cdot" style="background:${c}"></span><span class="nm" style="color:var(--ink-2)">${n}</span><span class="vl">${v}</span><span class="pc">(${p})</span></div>`).join('');
+  const TC=[['Policy Change',5,'#E8252D'],['Regulation',4,'#E3B341'],['Corporate Update',3,'#A371F7'],['Security',3,'#4493F8'],['Economic',2,'#3FB950']];
+  $('#topCats').innerHTML=TC.map(([n,v,c])=>`<div class="rank-li"><span class="nm">${n}</span><span class="bar"><span style="width:${v/5*100}%;background:${c}"></span></span><span class="vl">${v}</span></div>`).join('');
+
+  // delivery log
+  const DLOG=[['in-app','feed','#3FB950','Delivered','David Okoye','2m ago'],['email','file','#3FB950','Delivered','d.okoye@afribn.local','5m ago'],['sms','message','#E3B341','Pending','+254 7•• ••• 318','6m ago'],['email','file','#E5252A','Failed','gov.analyst@… (bounced)','22m ago'],['in-app','feed','#3FB950','Delivered','S. Bello','1h ago']];
+  $('#deliveryLog').innerHTML=DLOG.map(([ch,icn,c,st,who,tm])=>`<div class="wl-alert" style="display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)"><span class="al-cell"><span class="ai" style="width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:${c}22;color:${c}">${ic(icn,'width="15" height="15"')}</span></span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${ch.toUpperCase()} · <span style="color:${c};font-weight:600">${st}</span></div><div style="font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${who}</div></div><span style="font-size:11.5px;color:var(--ink-4);white-space:nowrap">${tm}</span></div>`).join('');
+
+  const mb=$('#modalBack');
+  $('#createAlert').onclick=()=>mb.classList.add('open'); $('#mClose').onclick=$('#mCancel').onclick=()=>mb.classList.remove('open'); mb.addEventListener('click',e=>{if(e.target===mb)mb.classList.remove('open');});
+  $('#mSave').onclick=()=>{ mb.classList.remove('open'); toast('Alert rule created','ok'); };
+  $('#prefs').onclick=()=>toast('Alert preferences');
+</script>
+</body>
+</html>

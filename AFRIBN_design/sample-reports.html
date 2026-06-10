@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Sample Reports</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> Sample Reports</span>
+    <h1>See the depth of<br>our <span class="r">intelligence</span>.</h1>
+    <p class="lede">A selection of AFRIBN reports and briefs — the same rigor your team would receive, free to preview.</p>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:10px">
+  <div class="wrap-m"><div class="mgrid c3" id="reports"></div></div>
+</section>
+
+<section class="wrap-m">
+  <div class="cta-box"><h2>Get reports built for you.</h2><p>Request access for intelligence scoped to your countries, sectors and questions.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="request-access.html" style="height:54px;padding:0 28px;font-size:16px">Request Access</a><a class="btn btn-ghost" href="brief.html" style="height:54px;padding:0 24px;font-size:16px">View a live brief</a></div></div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing(null);
+  const R=[
+    ['bridge','Special Report','Africa Economic Outlook 2024','Growth projections, capital flows and the macro themes shaping the year.','42 pages','May 2024'],
+    ['security','Risk Report','West Africa Security Review Q2','A scored assessment of conflict, governance and cross-border threats.','28 pages','May 2024'],
+    ['energy','Sector Report','Energy Transition in North Africa','Green hydrogen, solar mega-projects and the export thesis.','34 pages','Apr 2024'],
+    ['finance','Data Report','African Central Banks Policy Tracker','Rate decisions, inflation and FX across every monetary authority.','Live dataset','Apr 2024'],
+    ['city','Briefing','DR Congo Mining Sector Outlook','Cobalt, copper and the new investment code.','18 pages','Apr 2024'],
+    ['industry','Special Report','Infrastructure Investment 2024','Corridors, ports and the deals rewiring African trade.','38 pages','Mar 2024'],
+  ];
+  $('#reports').innerHTML=R.map(([sc,tag,t,d,pg,dt])=>`<div class="mcard"><img src="${AFRIBN.scene(sc,400,210)}" style="width:100%;height:160px;object-fit:cover;border-radius:11px;margin-bottom:16px" alt=""><span class="tag-pill">${tag}</span><h3 style="margin-top:12px;font-size:18px">${t}</h3><p>${d}</p><div class="row between" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"><span class="muted" style="font-size:12.5px">${pg} · ${dt}</span><span class="lnk" onclick="AFRIBN.toast('Downloading sample PDF…','ok')" style="cursor:pointer">${ic('download')} PDF</span></div></div>`).join('');
+</script>
+</body>
+</html>

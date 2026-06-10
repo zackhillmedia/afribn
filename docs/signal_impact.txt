@@ -1,0 +1,237 @@
+
+
+--- PAGE 1 ---
+Below  is  a  practical  AFRIBN  Signal  &  Impact  Scoring  Algorithm .  
+It  separates  two  things:  
+Impact  Score  =  How  big  are  the  consequences?   Signal  Score  =  How  important  is  this  item  right  now  for  decision  makers?   
+Impact  is  about  consequence .  
+Signal
+ 
+is
+ 
+about
+ 
+decision
+ 
+relevance
+.
+ 
+ 
+AFRIBN  Signal  &  Impact  Algorithm  
+1.  Core  formula  Signal  Score  =  Impact  Score  ×  Urgency  Modifier  ×  Confidence  Modifier  ×  Novelty  Modifier  ×  Decision-Relevance  Modifier   
+Final  score  is  normalized  to:  
+0–100   
+This  follows  the  logic  of  decision-making  under  uncertainty:  decision  value  depends  on  
+probability,
+ 
+consequence,
+ 
+timing,
+ 
+and
+ 
+utility
+ 
+to
+ 
+the
+ 
+decision
+ 
+maker.
+ 
+Expected-utility
+ 
+theory
+ 
+and
+ 
+signal-detection
+ 
+theory
+ 
+both
+ 
+support
+ 
+combining
+ 
+likelihood,
+ 
+consequence,
+ 
+and
+ 
+decision
+ cost  when  ranking  uncertain  signals.  (Stanford  University)  
+ 
+2.  Impact  Score  
+Impact  measures  the  size  of  the  consequence.  
+Impact  Score  =  0.25  Strategic  Impact  +  0.20  Economic  Impact  +  0.15  Political  Impact  
+
+
+--- PAGE 2 ---
++  0.15  Security  Impact  +  0.10  Regulatory  Impact  +  0.10  Cross-Border  Impact  +  0.05  Human/Social  Impact   
+Each  category  is  scored  from  0–100.  
+ 
+Impact  category  definitions  
+Strategic  Impact  
+Measures  whether  this  changes  power,  leverage,  positioning,  or  long-term  direction.  
+Examples:  
+New  military  agreement  Major  infrastructure  corridor  Port  concession  Energy  security  deal  Regional  alliance  shift   
+Economic  Impact  
+Measures  financial  size  and  market  consequence.  
+Inputs:  
+Deal  value  FDI  effect  Trade  impact  Currency  impact  Jobs  Fiscal  impact  Sector  exposure   
+Political  Impact  
+Measures  effect  on  government  stability,  elections,  elite  bargaining,  legitimacy,  or  policy  
+direction.
+ 
+Security  Impact  
+
+
+--- PAGE 3 ---
+Measures  instability,  violence,  conflict,  terrorism,  border  risks,  maritime  risks,  or  critical  
+infrastructure
+ 
+exposure.
+ 
+Regulatory  Impact  
+Measures  effect  on  rules,  taxes,  licensing,  compliance,  procurement,  ownership  limits,  or  
+investment
+ 
+conditions.
+ 
+Cross-Border  Impact  
+Measures  whether  the  signal  affects  multiple  countries,  regional  blocs,  trade  corridors,  
+migration,
+ 
+energy
+ 
+grids,
+ 
+or
+ 
+diplomatic
+ 
+relations.
+ 
+Human/Social  Impact  
+Measures  effect  on  communities,  livelihoods,  displacement,  protests,  labor,  health,  or  public  
+sentiment.
+ 
+ 
+3.  Urgency  Modifier  
+Urgency  answers:  
+How  soon  must  a  decision  maker  act?   Urgency  Modifier:  Immediate  action  required:  1.25  Decision  needed  within  7  days:  1.15  Decision  needed  within  30  days:  1.05  Long-term  monitoring  only:  0.95  Background  context:  0.85   
+Examples:  
+Coup  attempt:  1.25  New  tender  deadline  in  5  days:  1.15  Policy  consultation  closing  in  30  days:  1.05  Long-term  industrial  plan:  0.95    
+4.  Confidence  Modifier  
+
+
+--- PAGE 4 ---
+Confidence  should  not  be  the  same  as  impact.  
+A  major  rumor  can  have  high  impact  but  low  confidence.  
+Confidence  Modifier:  90–100  confidence:  1.05  75–89  confidence:  1.00  60–74  confidence:  0.90  40–59  confidence:  0.75  Below  40  confidence:  0.55   
+Confidence  uses:  
+source  reliability  corroboration  document  evidence  human  verification  contradictions  AI  uncertainty   
+This  matches  intelligence-analysis  practice:  separate  the  strength  of  evidence  from  the  analytic  judgment,  and  use  structured  techniques  to  reduce  bias.  (stat.berkeley.edu)  
+ 
+5.  Novelty  Modifier  
+Novelty  answers:  
+Is  this  new  information,  or  just  repetition?   Novelty  Modifier:  First  report  of  major  development:  1.15  New  verified  detail  on  existing  story:  1.10  Important  update  to  ongoing  story:  1.00  Repeated  article  with  no  new  facts:  0.70  Duplicate:  0.20   
+This  prevents  your  feed  from  over-ranking  recycled  stories.  
+ 
+6.  Decision-Relevance  Modifier  
+
+
+--- PAGE 5 ---
+This  is  where  AFRIBN  becomes  personalized.  
+Decision-Relevance  Modifier  =  Audience  Relevance  ×  Watchlist  Relevance  ×  Sector  Relevance  ×  Geography  Relevance   
+Example  values:  
+Directly  affects  user  watchlist:  1.25  Relevant  to  user  sector:  1.15  Relevant  to  user  country:  1.10  General  interest:  1.00  Low  relevance:  0.75   
+So  the  same  story  may  score:  
+85  for  an  energy  investor  62  for  a  general  diplomatic  user  40  for  a  user  focused  only  on  health  policy    
+7.  Negotiation  &  Deal  Intelligence  Layer  
+For  deals,  concessions,  diplomacy,  tenders,  partnerships,  and  investment  talks,  add  a  
+Negotiation
+ 
+Leverage
+ 
+Score
+.
+ 
+Negotiation  Leverage  Score  =  0.30  BATNA  Strength  +  0.20  Counterparty  Dependency  +  0.15  Timeline  Pressure  +  0.15  Strategic  Scarcity  +  0.10  Political  Constraint  +  0.10  Concession  Pattern   
+BATNA  and  ZOPA  are  useful  because  they  provide  a  structured  way  to  judge  bargaining  power,  acceptable  outcomes,  and  likely  negotiation  space.  (Karrass)  
+Use  this  for:  
+Deal  Tracker  Policy  negotiations  Debt  talks  
+
+
+--- PAGE 6 ---
+Mining  contracts  Infrastructure  concessions  Peace  negotiations  Trade  agreements   
+Example:  
+If  Kenya  has  multiple  alternative  energy  investors,  Kenya  BATNA  is  strong.  If  the  UAE  consortium  needs  the  project  for  regional  positioning,  counterparty  dependency  is  
+high.
+ If  financing  expires  soon,  timeline  pressure  is  high.   
+Then  adjust  Signal  Score:  
+If  Negotiation  Leverage  Score  >  80:  Signal  Score  +  5   If  leverage  is  rapidly  shifting:  Signal  Score  +  8   If  deal  collapse  risk  rises:  Signal  Score  +  10    
+8.  Scenario  Handling  Layer  
+Each  signal  should  be  assessed  against  possible  scenarios.  
+Best  Case  Base  Case  Worst  Case  Wild  Card   
+For  each  scenario:  
+Scenario  Risk  Value  =  Probability  ×  Consequence   
+Then:  
+Scenario  Score  =  Base  Case  Value  +  Worst  Case  Tail  Risk  Bonus  
+
+
+--- PAGE 7 ---
++  Wild  Card  Bonus   
+Example:  
+Story:  Sudan  ceasefire  talks  resume   Best  case:  temporary  ceasefire  Base  case:  talks  stall  Worst  case:  talks  fail  and  fighting  escalates  Wild  card:  external  actor  changes  position   
+If  the  worst-case  consequence  is  severe,  the  signal  should  stay  high  even  if  probability  is  
+moderate.
+ 
+This  is  useful  for:  
+security  alerts  political  transitions  election  risk  debt  distress  supply-chain  disruption  regulatory  shocks    
+9.  Full  Scoring  Pseudocode  
+def  calculate_impact_score(item):      return  (          0.25  *  item.strategic_impact  +          0.20  *  item.economic_impact  +          0.15  *  item.political_impact  +          0.15  *  item.security_impact  +          0.10  *  item.regulatory_impact  +          0.10  *  item.cross_border_impact  +          0.05  *  item.human_social_impact      )    def  confidence_modifier(confidence):      if  confidence  >=  90:          return  1.05      if  confidence  >=  75:          return  1.00      if  confidence  >=  60:  
+
+
+--- PAGE 8 ---
+        return  0.90      if  confidence  >=  40:          return  0.75      return  0.55    def  calculate_signal_score(item,  user_context=None):      impact  =  calculate_impact_score(item)       score  =  (          impact          *  item.urgency_modifier          *  confidence_modifier(item.confidence_score)          *  item.novelty_modifier          *  item.decision_relevance_modifier      )       if  item.negotiation_leverage_shift:          score  +=  8       if  item.tail_risk_high:          score  +=  7       if  item.watchlist_match:          score  +=  5       return  min(round(score),  100)    
+10.  Score  interpretation  
+90–100:  Critical  Signal  Immediate  executive  attention  required   75–89:  High  Signal  Important  for  decision  makers   60–74:  Medium-High  Signal  Track  closely   40–59:  Medium  Signal  Useful  context   20–39:  Low  Signal  Archive,  search,  background  monitoring  
+
+
+--- PAGE 9 ---
+ 0–19:  Noise  Do  not  surface  unless  requested    
+11.  Example  
+Story:  
+Kenya  signs  $2.1bn  renewable  energy  agreement  with  UAE  consortium   
+Impact:  
+Strategic:  80  Economic:  85  Political:  60  Security:  45  Regulatory:  55  Cross-Border:  70  Human/Social:  50   
+Impact  Score:  
+70.75   
+Modifiers:  
+Urgency:  1.05  Confidence:  1.00  Novelty:  1.10  Decision  relevance:  1.10  Negotiation  shift  bonus:  +5   
+Signal:  
+70.75  ×  1.05  ×  1.00  ×  1.10  ×  1.10  +  5  =  95   
+For  an  energy  investor,  this  is  a  Critical  Signal .  
+For  a  health-policy  user,  decision  relevance  may  be  0.75:  
+70.75  ×  1.05  ×  1.00  ×  1.10  ×  0.75  +  5  =  66  
+
+
+--- PAGE 10 ---
+ 
+Same  story.  Different  relevance.  That  is  how  AFRIBN  becomes  intelligent,  not  just  
+chronological.
+ 
+ 
+12.  What  makes  this  proprietary  
+The  real  proprietary  layer  is  not  just  the  formula.  
+It  is:  
+AFRIBN-labeled  African  intelligence  dataset  analyst  feedback  country-agent  verification  source  reliability  history  entity  graph  sector-specific  impact  weights  client-specific  relevance  profiles  negotiation  outcome  tracking   
+Over  time,  the  algorithm  should  learn:  
+Which  signals  actually  mattered  Which  early  indicators  predicted  later  outcomes  Which  sources  were  reliable  Which  negotiation  patterns  led  to  signed  deals  Which  policy  signals  created  market  movement  Which  security  indicators  preceded  escalation   
+That  becomes  AFRIBN’s  defensible  intelligence  advantage.  
+ 

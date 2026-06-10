@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Field Tasks</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .seg-toggle { margin-left: auto; }
+  .kcard .kt { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .kcard .km { display: flex; align-items: center; gap: 8px; margin-top: 9px; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; }
+  .kcard .km .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-4); }
+  .kcard .kf { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .prio { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+  .check-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .check-item:last-child{border-bottom:none;}
+  .check-box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--line-2); display: grid; place-items: center; flex: none; transition:.15s; }
+  .check-item.done .check-box { background: var(--green); border-color: var(--green); }
+  .check-box svg { width: 14px; height: 14px; color: #fff; opacity: 0; } .check-item.done .check-box svg { opacity: 1; }
+  .check-item.done .ct { color: var(--ink-3); text-decoration: line-through; }
+  .ct { font-size: 14px; }
+  .file-chip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; margin-top: 8px; font-size: 13px; }
+  .file-chip svg { width: 16px; height: 16px; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1500px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Field Tasks</h1>
+          <div class="page-sub">Assigned field collection tasks and evidence submission.</div></div>
+        <div class="seg-toggle"><button class="on" id="vBoard"><span id="bi"></span> Board</button><button id="vList"><span id="li"></span> List</button></div>
+      </div>
+      <div class="kanban" id="kanban"></div>
+    </div>
+  </div>
+</div>
+
+<div class="drawer-back" id="drawerBack"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('pin');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('pin'); $('#bi').innerHTML = ic('grid','width="15" height="15"'); $('#li').innerHTML = ic('listChecks','width="15" height="15"');
+
+  const PRIO = { Critical:'#E5252A', High:'#FF6B35', Medium:'#E3B341', Low:'#4493F8' };
+  const COLS = [
+    ['Assigned','#4493F8'],['In Progress','#E3B341'],['Submitted','#A371F7'],['Accepted','#3FB950'],['Rejected','#E5252A'],
+  ];
+  let TASKS = [
+    { id:'FT-2201', t:'Confirm Mogadishu port explosion', country:'Somalia', flag:'somalia', topic:'Security', due:'May 17', prio:'Critical', col:'Assigned',
+      evidence:['Ground photo / video of site','Statement from Port Authority','Casualty figures from hospital'], notes:'' },
+    { id:'FT-2202', t:'Verify Kenya UAE consortium members', country:'Kenya', flag:'kenya', topic:'Energy', due:'May 18', prio:'High', col:'Assigned',
+      evidence:['Signed agreement copy','List of consortium members','Ministry confirmation'], notes:'' },
+    { id:'FT-2203', t:'Photograph Garissa solar site', country:'Kenya', flag:'kenya', topic:'Energy', due:'May 19', prio:'Medium', col:'In Progress',
+      evidence:['Site overview photos','GPS coordinates','Construction status note'], notes:'On site, awaiting access permit.' },
+    { id:'FT-2204', t:'Obtain Sudan ceasefire communiqué', country:'Sudan', flag:'sudan', topic:'Security', due:'May 17', prio:'High', col:'In Progress',
+      evidence:['Official communiqué document','Mediator confirmation'], notes:'' },
+    { id:'FT-2205', t:'DR Congo mining gazette date', country:'DR Congo', flag:'drcongo', topic:'Industry', due:'May 16', prio:'Medium', col:'Submitted',
+      evidence:['Gazette scan','Publication date confirmation'], notes:'Submitted gazette scan + date.' },
+    { id:'FT-2198', t:'Lagos budget document scan', country:'Nigeria', flag:'nigeria', topic:'Politics', due:'May 14', prio:'Medium', col:'Accepted',
+      evidence:['Budget PDF','Source attribution'], notes:'Accepted — high quality scan.' },
+    { id:'FT-2190', t:'Unverified Sahel troop movement', country:'Sahel', flag:'regional', topic:'Security', due:'May 12', prio:'High', col:'Rejected',
+      evidence:['Photo evidence','Second source'], notes:'Rejected — insufficient corroboration.' },
+  ];
+
+  function render(){
+    $('#kanban').innerHTML = COLS.map(([name,c])=>{
+      const tasks=TASKS.filter(t=>t.col===name);
+      return `<div class="kcol"><div class="kcol-h"><span class="spill-dot" style="background:${c}"></span>${name}<span class="cnt">${tasks.length}</span></div>
+        ${tasks.map(t=>`<div class="kcard" data-id="${t.id}">
+          <div class="kt">${t.t}</div>
+          <div class="km">${AFRIBN.flag(t.flag)} ${t.country} <span class="sep"></span> ${t.topic}</div>
+          <div class="kf"><span class="prio" style="background:${PRIO[t.prio]}22;color:${PRIO[t.prio]}">${t.prio}</span><span class="muted" style="font-size:11px">Due ${t.due} · ${t.id}</span></div>
+        </div>`).join('')||'<div class="muted" style="font-size:12.5px;padding:8px 2px">No tasks</div>'}</div>`;
+    }).join('');
+    $('#kanban').querySelectorAll('.kcard').forEach(c=>c.addEventListener('click',()=>openDrawer(c.dataset.id)));
+  }
+  render();
+
+  function openDrawer(id){
+    const t=TASKS.find(x=>x.id===id); if(!t) return;
+    t._files=t._files||(t.col==='Submitted'||t.col==='Accepted'?['evidence_01.jpg']:[]);
+    t._checked=t._checked||t.evidence.map(()=>t.col==='Submitted'||t.col==='Accepted');
+    $('#drawer').innerHTML=`
+      <div class="drawer-h"><div><div class="eyebrow red">Field Task · ${t.id}</div><h2 style="font-size:21px;font-weight:800;margin-top:6px;line-height:1.2">${t.t}</h2>
+        <div class="km" style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:var(--ink-3)">${AFRIBN.flag(t.flag)} ${t.country} · ${t.topic} · Due ${t.due}</div></div>
+        <button class="icon-btn" id="dClose" style="width:36px;height:36px">${ic('x')}</button></div>
+      <div class="drawer-b">
+        <div style="margin-bottom:18px">${AFRIBN.statusPill(t.col, COLS.find(c=>c[0]===t.col)[1])} <span class="prio" style="background:${PRIO[t.prio]}22;color:${PRIO[t.prio]};margin-left:6px">${t.prio}</span></div>
+        <div class="eyebrow" style="margin-bottom:6px">Required evidence checklist</div>
+        <div id="checklist"></div>
+        <div class="eyebrow" style="margin:20px 0 10px">Upload evidence</div>
+        <div class="dropzone" id="drop">${ic('upload')}<div>Drag files here or click to upload</div><div class="muted" style="font-size:12px;margin-top:4px">Photos, documents, video · max 50MB</div></div>
+        <div id="files"></div>
+        <div class="field" style="margin-top:18px"><label>Notes</label><textarea id="notes" placeholder="Field notes, context, observations…">${t.notes}</textarea></div>
+        <button class="btn btn-primary" style="width:100%;height:48px" id="submit">${ic('send','width=\"16\" height=\"16\"')} Submit Agent Report</button>
+      </div>`;
+    $('#drawerBack').classList.add('open'); $('#drawer').classList.add('open');
+    $('#dClose').onclick=closeDrawer;
+    const renderCheck=()=>{ $('#checklist').innerHTML = t.evidence.map((e,i)=>`<div class="check-item ${t._checked[i]?'done':''}" data-i="${i}"><span class="check-box">${ic('check')}</span><span class="ct">${e}</span></div>`).join('');
+      $('#checklist').querySelectorAll('.check-item').forEach(ci=>ci.addEventListener('click',()=>{ t._checked[+ci.dataset.i]=!t._checked[+ci.dataset.i]; renderCheck(); })); };
+    renderCheck();
+    const renderFiles=()=>{ $('#files').innerHTML = t._files.map(f=>`<div class="file-chip">${ic('image')} ${f}<span style="margin-left:auto;color:var(--ink-4)">2.4 MB</span></div>`).join(''); };
+    renderFiles();
+    $('#drop').onclick=()=>{ t._files.push('evidence_0'+(t._files.length+1)+'.jpg'); renderFiles(); toast('File uploaded','ok'); };
+    $('#submit').onclick=()=>{ t.col='Submitted'; t.notes=$('#notes').value; closeDrawer(); render(); toast(`${t.id} submitted for verification`,'ok'); };
+  }
+  function closeDrawer(){ $('#drawerBack').classList.remove('open'); $('#drawer').classList.remove('open'); }
+  $('#drawerBack').addEventListener('click',closeDrawer);
+  $('#vList').onclick=()=>toast('List view'); $('#vBoard').onclick=()=>toast('Board view');
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Real-time Feed</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); margin-bottom: 20px; }
+  .filter-bar .search-inline { flex: 1; min-width: 200px; }
+  .live-toggle { display: flex; align-items: center; gap: 10px; margin-left: auto; font-size: 14px; font-weight: 500; white-space: nowrap; }
+  .switch { width: 44px; height: 26px; border-radius: 20px; background: var(--panel-3); position: relative; cursor: pointer; transition: background .2s; flex: none; }
+  .switch.on { background: var(--red); }
+  .switch i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .switch.on i { transform: translateX(18px); }
+
+  .feed-grid { display: grid; grid-template-columns: 1fr 340px; gap: 22px; align-items: start; }
+
+  .feed-list { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  .feed-item { display: flex; align-items: flex-start; gap: 16px; padding: 20px 22px; border-bottom: 1px solid var(--line); position: relative; cursor: pointer; transition: background .12s; }
+  .feed-item:hover { background: rgba(255,255,255,0.022); }
+  .feed-item .impact { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 7px; }
+  .feed-item .ftile { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; flex: none; }
+  .feed-item .ftile svg { width: 21px; height: 21px; }
+  .feed-item .body { flex: 1; min-width: 0; }
+  .feed-item .ttl { font-size: 16.5px; font-weight: 600; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; line-height: 1.3; }
+  .feed-item:hover .ttl { color: #fff; }
+  .feed-item .desc { color: var(--ink-3); font-size: 14px; margin: 7px 0 11px; line-height: 1.45; }
+  .feed-item .meta { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--ink-3); flex-wrap: wrap; }
+  .feed-item .meta .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-4); }
+  .feed-item .right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex: none; }
+  .feed-item .tm { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+  .feed-item .more { color: var(--ink-4); }
+  .feed-item .more:hover { color: var(--ink-2); }
+  @keyframes flashin { 0%{ background: rgba(232,37,45,0.14); } 100%{ background: transparent; } }
+  .feed-item.new { animation: flashin 2.5s ease; }
+
+  .load-more { display: flex; justify-content: center; padding: 18px; }
+  .load-more button { display: inline-flex; align-items: center; gap: 8px; }
+
+  /* sidebar widgets */
+  .w-h { font-size: 12.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+  .w-sub { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
+  .bignum { font-family: var(--font-display); font-weight: 800; font-size: 40px; letter-spacing: -0.02em; }
+  .legend-li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; }
+  .legend-li .nm { color: var(--ink-2); white-space: nowrap; } .legend-li .vl { margin-left: auto; font-weight: 600; }
+  .rank-li { display: flex; align-items: center; gap: 12px; padding: 11px 0; }
+  .rank-li .nm { font-size: 14px; min-width: 78px; }
+  .rank-li .bar { flex: 1; }
+  .rank-li .vl { font-weight: 700; font-size: 14px; min-width: 26px; text-align: right; }
+  .link-r { color: var(--red-bright); font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; margin-top: 14px; }
+  .link-r svg { width: 14px; height: 14px; } .link-r:hover { color: #fff; }
+  .reddot-btn { position: relative; }
+  .reddot-btn::after { content:''; position:absolute; top:10px; right:12px; width:7px; height:7px; border-radius:50%; background:var(--red); }
+
+  @media (max-width: 1180px){ .feed-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1340px">
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-title"><span class="tic" id="tic"></span> Real-time Feed</h1>
+          <div class="page-sub">Live updates and critical intelligence as it happens across Africa.</div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost btn-sm" id="customize"><span id="cog"></span> Customize Feed</button>
+          <button class="btn btn-ghost btn-sm reddot-btn" id="filters"><span id="fil"></span> Filters</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Filter by keywords..."></div>
+        <select class="select" id="fCountry"><option>All Countries</option><option>Nigeria</option><option>Kenya</option><option>DR Congo</option><option>Ethiopia</option><option>Ghana</option><option>Pan-African</option></select>
+        <select class="select" id="fTopic"><option>All Topics</option><option>Politics</option><option>Energy</option><option>Economy</option><option>Security</option><option>Trade</option><option>Industry</option><option>Finance</option></select>
+        <select class="select"><option>All Categories</option><option>High Impact</option><option>Medium</option><option>Low</option></select>
+        <select class="select"><option>All Sources</option><option>Reuters</option><option>The Guardian Nigeria</option><option>Business Day</option></select>
+        <div class="live-toggle">Live updates <div class="switch on" id="liveSwitch"><i></i></div></div>
+      </div>
+
+      <div class="feed-grid">
+        <div>
+          <div class="feed-list" id="feed"></div>
+          <div class="load-more"><button class="btn btn-ghost btn-sm" id="loadMore">Load more <span id="lm"></span></button></div>
+        </div>
+
+        <div class="stack gap-20">
+          <div class="panel">
+            <div class="w-h">Live Feed Summary</div>
+            <div class="w-sub">Last 24 hours</div>
+            <div class="row between" style="align-items:center;margin:16px 0 12px">
+              <div><div class="bignum" id="totalUpdates">128</div><div class="muted" style="font-size:12.5px">Total updates</div></div>
+              <div id="summarySpark" style="width:124px"></div>
+            </div>
+            <div id="summaryLegend"></div>
+          </div>
+
+          <div class="panel">
+            <div class="w-h">Top Countries</div>
+            <div class="w-sub">Last 24 hours</div>
+            <div id="topCountries" style="margin-top:10px"></div>
+            <a class="link-r" href="#">View all countries <span id="vc"></span></a>
+          </div>
+
+          <div class="panel">
+            <div class="w-h">Top Topics</div>
+            <div class="w-sub">Last 24 hours</div>
+            <div id="topTopics" style="margin-top:10px"></div>
+            <a class="link-r" href="#">View all topics <span id="vt"></span></a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel-2);border:1px solid var(--line-2);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transition:.25s;z-index:80;box-shadow:var(--shadow);pointer-events:none"></div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('feed');
+  const ic = AFRIBN.ic;
+  $('#tic').innerHTML = ic('feed'); $('#cog').innerHTML = ic('settings','width="16" height="16"'); $('#fil').innerHTML = ic('filter','width="16" height="16"');
+  $('#si').innerHTML = ic('search'); $('#lm').innerHTML = ic('chevDown','width="15" height="15"');
+  $('#vc').innerHTML = ic('arrowRight','width="14" height="14"'); $('#vt').innerHTML = ic('arrowRight','width="14" height="14"');
+
+  // category meta: [tileIcon, tileColor, pillClass, impactColor]
+  const CAT = {
+    Politics:['file','#e5484d','politics','#e5484d'],
+    Energy:['barChart','#f0883e','energy','#f0883e'],
+    Security:['shield','#a371f7','security','#a371f7'],
+    Trade:['handshake','#4493f8','trade','#4493f8'],
+    Economy:['bank','#3fb950','economy','#3fb950'],
+    Industry:['megaphone','#8b949e','industry','#8b949e'],
+    Finance:['file','#e3b341','finance','#e3b341'],
+  };
+
+  const ITEMS = [
+    {t:'Nigeria approves ₦6.2tn supplementary budget', hi:true, d:'The budget focuses on infrastructure, defense, and social investment priorities.', c:'Nigeria', cat:'Politics', src:'The Guardian Nigeria', tm:'2m ago'},
+    {t:'Dangote Refinery begins diesel exports to West Africa', d:'First cargoes shipped to Ghana and Togo as supply chain expands across the region.', c:'Nigeria', cat:'Energy', src:'Business Day', tm:'5m ago'},
+    {t:'Security alert: Attack on mining site in eastern DRC', d:'Armed attack reported in Ituri province; several injuries confirmed.', c:'DR Congo', cat:'Security', src:'Reuters', tm:'8m ago'},
+    {t:'AfCFTA: New trade facilitation portal goes live', d:'Digital platform aims to simplify cross-border trade documentation and payments.', c:'Pan-African', cat:'Trade', src:'AfCFTA Secretariat', tm:'12m ago'},
+    {t:'Kenya Central Bank cuts policy rate to 12.0%', d:'Move aims to boost private sector lending and support economic growth.', c:'Kenya', cat:'Economy', src:'Central Bank of Kenya', tm:'15m ago'},
+    {t:'Ethiopia launches national industrial parks development plan', d:'Plan targets 10 new industrial parks over the next 5 years.', c:'Ethiopia', cat:'Industry', src:'ENA', tm:'18m ago'},
+    {t:"S&P upgrades Ghana's credit rating outlook to positive", d:'Upgrade reflects improved fiscal performance and debt sustainability.', c:'Ghana', cat:'Finance', src:'S&P Global', tm:'21m ago'},
+    {t:'Morocco opens largest desalination plant in Africa', d:'Facility to supply water to Casablanca region amid drought concerns.', c:'Morocco', cat:'Industry', src:'MAP', tm:'28m ago'},
+    {t:'South Africa unveils new cybersecurity regulations', d:'Framework strengthens protection of critical national infrastructure.', c:'South Africa', cat:'Industry', src:'GovZA', tm:'34m ago'},
+  ];
+
+  // pool of incoming "live" items
+  const INCOMING = [
+    {t:'Breaking: Uganda signs $1.2bn road infrastructure deal with AfDB', hi:true, d:'Financing covers 740km of regional transport corridors.', c:'Pan-African', cat:'Trade', src:'AfDB', tm:'just now'},
+    {t:'Mozambique launches gas production at Coral Sul FLNG', d:'First LNG cargoes expected within the quarter.', c:'Pan-African', cat:'Energy', src:'Reuters', tm:'just now'},
+    {t:'DR Congo and Rwanda hold fresh peace talks in Nairobi', d:'Mediators report cautious optimism on a phased de-escalation.', c:'DR Congo', cat:'Politics', src:'AP', tm:'just now'},
+    {t:'Senegal awards offshore oil block to international consortium', d:'Deal expected to accelerate first-oil timeline.', c:'Pan-African', cat:'Energy', src:'Bloomberg', tm:'just now'},
+    {t:'Tanzania reports record tourism receipts in Q1', d:'Arrivals up 18% year-on-year, boosting FX reserves.', c:'Pan-African', cat:'Economy', src:'TBS', tm:'just now'},
+  ];
+
+  let pool = ITEMS.slice();
+  let extra = 0;
+
+  function itemHTML(it){
+    const [tIc,tColor,pill,impact] = CAT[it.cat];
+    return `<a class="feed-item${it._new?' new':''}" href="story.html">
+      <span class="impact" style="background:${impact}"></span>
+      <span class="ftile" style="background:${tColor}22;color:${tColor}">${ic(tIc)}</span>
+      <div class="body">
+        <div class="ttl">${it.t} ${it.hi?'<span class="pill high-impact">High Impact</span>':''}</div>
+        <div class="desc">${it.d}</div>
+        <div class="meta">${AFRIBN.flag(it.c.replace(/[^a-z]/gi,'').toLowerCase())} ${it.c} <span class="sep"></span> ${it.cat} <span class="sep"></span> ${it.src}</div>
+      </div>
+      <div class="right">
+        <span class="tm">${it.tm}</span>
+        <span class="pill ${pill}">${it.cat}</span>
+        <span class="more" onclick="event.preventDefault();event.stopPropagation()">${ic('more','width="18" height="18"')}</span>
+      </div>
+    </a>`;
+  }
+
+  function renderFeed(){
+    const kw = ($('#kw').value||'').toLowerCase();
+    const fc = $('#fCountry').value, ft = $('#fTopic').value;
+    const filtered = pool.filter(it =>
+      (!kw || (it.t+it.d).toLowerCase().includes(kw)) &&
+      (fc==='All Countries' || it.c===fc) &&
+      (ft==='All Topics' || it.cat===ft)
+    );
+    $('#feed').innerHTML = filtered.length ? filtered.map(itemHTML).join('')
+      : `<div style="padding:48px;text-align:center;color:var(--ink-3)">No updates match your filters.</div>`;
+    pool.forEach(it=> it._new=false);
+  }
+  renderFeed();
+
+  // sidebar widgets
+  $('#summarySpark').innerHTML = AFRIBN.spark([60,72,66,80,74,90,84,96,88,104,98,112,128],{w:130,h:46,color:'#E8252D',fill:true,sw:2});
+  const SUM = [['High Impact','#E8252D',32],['Medium Impact','#F0883E',54],['Low Impact','#4493F8',28],['Informational','#8B949E',14]];
+  $('#summaryLegend').innerHTML = SUM.map(([n,c,v])=>`<div class="legend-li"><span class="cdot" style="background:${c}"></span><span class="nm">${n}</span><span class="vl">${v}</span></div>`).join('');
+
+  const TOPC = [['Nigeria','nigeria',42,'#E8252D'],['DR Congo','drcongo',18,'#F0883E'],['Kenya','kenya',14,'#A371F7'],['Ethiopia','ethiopia',12,'#4493F8'],['Ghana','ghana',10,'#8B949E']];
+  const maxC = 42;
+  $('#topCountries').innerHTML = TOPC.map(([n,f,v,c])=>`<div class="rank-li">${AFRIBN.flag(f)}<span class="nm">${n}</span><span class="bar"><span style="width:${v/maxC*100}%;background:${c}"></span></span><span class="vl">${v}</span></div>`).join('');
+
+  const TOPT = [['Politics',28,'#E8252D'],['Energy',26,'#F0883E'],['Economy',20,'#A371F7'],['Security',18,'#4493F8'],['Trade',16,'#3FB950']];
+  const maxT = 28;
+  $('#topTopics').innerHTML = TOPT.map(([n,v,c])=>`<div class="rank-li"><span class="nm">${n}</span><span class="bar"><span style="width:${v/maxT*100}%;background:${c}"></span></span><span class="vl">${v}</span></div>`).join('');
+
+  // filters wiring
+  ['#kw'].forEach(s=>$(s).addEventListener('input', renderFeed));
+  ['#fCountry','#fTopic'].forEach(s=>$(s).addEventListener('change', renderFeed));
+
+  // live updates
+  const toast = (msg)=>{ const t=$('#toast'); t.innerHTML=msg; t.style.opacity=1; t.style.transform='translateX(-50%) translateY(0)'; clearTimeout(t._t); t._t=setTimeout(()=>{t.style.opacity=0;t.style.transform='translateX(-50%) translateY(20px)';},2200); };
+  let live=true, liveTimer=null, inIdx=0;
+  function tick(){
+    const it = {...INCOMING[inIdx % INCOMING.length], _new:true};
+    inIdx++;
+    // age existing
+    pool.forEach(p=>{ if(p.tm==='just now') p.tm='1m ago'; });
+    pool.unshift(it);
+    if (pool.length > 14) pool.pop();
+    $('#totalUpdates').textContent = (128 + (++extra));
+    renderFeed();
+    toast(`${ic('feed','width=\"15\" height=\"15\"')} New update · ${it.c}`);
+  }
+  function startLive(){ stopLive(); liveTimer = setInterval(tick, 7000); }
+  function stopLive(){ if(liveTimer){ clearInterval(liveTimer); liveTimer=null; } }
+  startLive();
+  $('#liveSwitch').addEventListener('click', ()=>{
+    live=!live; $('#liveSwitch').classList.toggle('on', live);
+    if(live){ startLive(); toast('Live updates resumed'); } else { stopLive(); toast('Live updates paused'); }
+  });
+
+  $('#loadMore').addEventListener('click', ()=>{ toast('Loaded earlier updates'); });
+  $('#customize').addEventListener('click', ()=> toast('Customize your feed sources & topics'));
+  $('#filters').addEventListener('click', ()=> toast('Advanced filters'));
+</script>
+</body>
+</html>

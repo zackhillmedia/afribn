@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — API & Data</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+<style>
+  .code-card { background:#0c0c0f; border:1px solid var(--line-2); border-radius:14px; overflow:hidden; }
+  .code-card .ch { display:flex; align-items:center; gap:8px; padding:11px 16px; border-bottom:1px solid var(--line); background:var(--bg-2); }
+  .code-card .ch i { width:11px;height:11px;border-radius:50%;background:#2a2a30; display:inline-block; }
+  .code-card .ch .u { margin-left:10px; font-size:12px; color:var(--ink-3); }
+  .code-card pre { margin:0; padding:20px; font-family:'SF Mono',ui-monospace,Menlo,monospace; font-size:13px; line-height:1.7; color:var(--ink-2); overflow-x:auto; }
+  .code-card .k { color:#bd9bff; } .code-card .s { color:#5ed46e; } .code-card .n { color:#ffa05a; } .code-card .c { color:var(--ink-4); }
+  .ep { display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--line); font-family:'SF Mono',ui-monospace,monospace; font-size:13.5px; }
+  .ep:last-child { border-bottom:none; }
+  .ep .m { font-weight:700; font-size:11px; padding:3px 9px; border-radius:5px; background:rgba(63,185,80,0.16); color:#5ed46e; }
+  .ep .p { color:var(--ink); } .ep .d { margin-left:auto; color:var(--ink-3); font-family:var(--font-sans); font-size:13px; }
+</style>
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero left">
+  <div class="wrap-m">
+    <div class="split" style="align-items:center">
+      <div>
+        <span class="eyebrow-pill"><span class="lv"></span> API &amp; Data</span>
+        <h1 style="font-size:clamp(34px,4.5vw,52px);font-weight:800;letter-spacing:-0.03em;line-height:1.04;margin:20px 0 0">Build on AFRIBN<br><span style="color:var(--red)">intelligence</span>.</h1>
+        <p class="lede" style="margin-left:0">Bring scored, verified intelligence into your own systems — published items, scores, sources, risk and alerts, over a clean REST API.</p>
+        <div class="hero-cta" style="justify-content:flex-start"><a class="btn btn-primary" href="request-access.html" style="height:52px;padding:0 24px">Get API access <span id="h1"></span></a><a class="btn btn-ghost" href="#endpoints" style="height:52px;padding:0 22px">View endpoints</a></div>
+      </div>
+      <div class="code-card">
+        <div class="ch"><i></i><i></i><i></i><span class="u">curl · api.afribn.com</span></div>
+        <pre><span class="c"># Fetch high-impact published intelligence</span>
+curl https://<span class="n">api.afribn.com</span>/v1/intelligence \
+  -H <span class="s">"Authorization: Bearer $AFRIBN_KEY"</span> \
+  -d <span class="s">"country=NG&min_aiv=80"</span>
+
+<span class="c"># → 200 OK</span>
+{
+  <span class="k">"id"</span>: <span class="s">"PUB-3301"</span>,
+  <span class="k">"headline"</span>: <span class="s">"Kenya signs $2.1bn..."</span>,
+  <span class="k">"aiv"</span>: <span class="n">85</span>,
+  <span class="k">"confidence"</span>: <span class="n">82</span>,
+  <span class="k">"sources"</span>: [{ <span class="k">"srs"</span>: <span class="n">94</span> }]
+}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:30px">
+  <div class="wrap-m"><div class="mgrid c3" id="feat"></div></div>
+</section>
+
+<section class="sec" style="padding-top:0" id="endpoints">
+  <div class="wrap-narrow">
+    <div class="sec-head left"><div class="ek">Reference</div><h2>Core endpoints</h2></div>
+    <div class="form-card" id="eps"></div>
+  </div>
+</section>
+
+<section class="wrap-m">
+  <div class="cta-box"><h2>Ready to integrate?</h2><p>Get a key, read the docs, and ship in an afternoon.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="request-access.html" style="height:54px;padding:0 28px;font-size:16px">Get API access</a><a class="btn btn-ghost" href="help.html" style="height:54px;padding:0 24px;font-size:16px">Read the docs</a></div></div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing(null);
+  $('#h1').innerHTML=ic('arrowRight','width="17" height="17"');
+  const F=[['zap','REST & Webhooks','Clean JSON over REST, plus webhooks that fire on new matching intelligence.'],['shield','Scoped API keys','Per-environment keys with granular scopes and full request audit logs.'],['layers','Rich objects','Intelligence, scores, sources, reliability, risk, events and alerts.']];
+  $('#feat').innerHTML=F.map(([i,t,d])=>`<div class="mcard"><div class="mi">${ic(i)}</div><h3>${t}</h3><p>${d}</p></div>`).join('');
+  const EP=[['GET','/v1/intelligence','Published intelligence, filterable'],['GET','/v1/intelligence/:id','Single item with scores & sources'],['GET','/v1/countries/:iso','Country profile & indicators'],['GET','/v1/risk','Continental risk scores'],['GET','/v1/sources/:id','Source reliability record'],['POST','/v1/alerts','Create an alert rule'],['GET','/v1/events','Event timeline']];
+  $('#eps').innerHTML=EP.map(([m,p,d])=>`<div class="ep"><span class="m">${m}</span><span class="p">${p}</span><span class="d">${d}</span></div>`).join('');
+</script>
+</body>
+</html>

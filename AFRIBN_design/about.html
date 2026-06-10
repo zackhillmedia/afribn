@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — About Us</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> About Us</span>
+    <h1>Africa deserves intelligence<br>built <span class="r">for Africa</span>.</h1>
+    <p class="lede">AFRIBN — the Africa Bureau of News — is a strategic intelligence network turning the continent's news into decision-grade insight for the people who shape it.</p>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:20px">
+  <div class="wrap-narrow">
+    <div class="stat-band" id="stats" style="grid-template-columns:repeat(4,1fr)"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-narrow">
+    <div class="sec-head left"><div class="ek">Our mission</div><h2>Decision-grade intelligence, not headlines</h2></div>
+    <div class="doc-body" style="font-size:16.5px">
+      <p>Africa is the world's fastest-changing strategic landscape — yet the people making the biggest decisions about it often work from fragmented headlines, stale reports and unverified rumor. AFRIBN exists to close that gap.</p>
+      <p>We built an intelligence production system, not a news feed. Every item moves through source-reliability scoring, corroboration, analyst review, transparent scoring, field verification and editorial sign-off before it reaches a single decision-maker. The result is intelligence you can act on — and defend.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="sec-head"><div class="ek">What we value</div><h2>Principles that hold under pressure</h2></div>
+    <div class="mgrid c3" id="values"></div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="sec-head"><div class="ek">Leadership</div><h2>Built by analysts, engineers &amp; Africa hands</h2><p>A team spanning intelligence, journalism, data science and the continent's markets.</p></div>
+    <div class="mgrid c4" id="team"></div>
+  </div>
+</section>
+
+<section class="wrap-m">
+  <div class="cta-box"><h2>Work with us.</h2><p>Whether you want access or want to build the network with us — let's talk.</p>
+    <div class="hero-cta"><a class="btn btn-primary" href="request-access.html" style="height:54px;padding:0 28px;font-size:16px">Request Access</a><a class="btn btn-ghost" href="careers.html" style="height:54px;padding:0 24px;font-size:16px">See open roles</a></div></div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing('About Us');
+  $('#stats').innerHTML=[['54','Countries covered'],['1,248','Active sources'],['12','Languages'],['2021','Founded']].map(([n,l])=>`<div class="s"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+
+  const V=[
+    ['shield','Verification first','Nothing reaches a decision-maker unverified. Reliability and corroboration are non-negotiable.'],
+    ['target','Radical transparency','Every score, source and decision is explainable and auditable — no black boxes.'],
+    ['globe','Of the continent','Local sources, local languages, local analysts — intelligence grounded in African reality.'],
+    ['zap','Speed with rigor','Real-time where it matters, without trading away accuracy.'],
+    ['users','Built for decisions','We measure ourselves by the quality of the choices our intelligence enables.'],
+    ['scale','Independence','Editorial and analytical independence is the foundation of trust.'],
+  ];
+  $('#values').innerHTML=V.map(([i,t,d])=>`<div class="mcard"><div class="mi">${ic(i)}</div><h3>${t}</h3><p>${d}</p></div>`).join('');
+
+  const TEAM=[['Amara Okeke','Founder & CEO','b9763f'],['David Mensah','Head of Intelligence','7a4a26'],['Fatima Al-Sayed','Chief Data Scientist','9a5a3a'],['Joseph Kamau','Head of Field Network','6a4226']];
+  $('#team').innerHTML=TEAM.map(([n,r,c])=>`<div class="mcard" style="text-align:center"><div style="width:72px;height:72px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(135deg,#${c},#3a2415)"></div><h3 style="font-size:17px">${n}</h3><div class="muted" style="font-size:13px;margin-top:4px">${r}</div></div>`).join('');
+</script>
+</body>
+</html>

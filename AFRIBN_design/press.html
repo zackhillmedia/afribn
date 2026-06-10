@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Press</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+<style>
+  .press-item { display:flex; gap:18px; padding:20px 0; border-bottom:1px solid var(--line); }
+  .press-item:last-child { border-bottom:none; }
+  .press-item .dt { color:var(--ink-3); font-size:13px; white-space:nowrap; width:120px; flex:none; }
+  .press-item .pt { font-weight:600; font-size:16px; } .press-item:hover .pt { color:var(--red-bright); }
+  .press-item .src { color:var(--ink-3); font-size:13px; margin-top:4px; }
+</style>
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> Press</span>
+    <h1>AFRIBN in the <span class="r">news</span>.</h1>
+    <p class="lede">Media coverage, announcements and our press kit. For enquiries: <a href="mailto:press@afribn.com" style="color:var(--red-bright)">press@afribn.com</a></p>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:10px">
+  <div class="wrap-narrow">
+    <div class="mgrid c2" style="margin-bottom:40px"><div class="mcard"><div class="mi"><span id="k1"></span></div><h3>Press kit</h3><p>Logos, brand guidelines, executive bios and product imagery.</p><span class="lnk" id="dl1">Download kit</span></div><div class="mcard"><div class="mi"><span id="k2"></span></div><h3>Media enquiries</h3><p>Interviews, data requests and expert commentary on African affairs.</p><a class="lnk" href="contact.html">Contact press team</a></div></div>
+    <div class="sec-head left" style="margin-bottom:24px"><div class="ek">Coverage</div><h2>Recent press</h2></div>
+    <div id="press"></div>
+  </div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing(null);
+  $('#k1').innerHTML=ic('download'); $('#k2').innerHTML=ic('message');
+  $('#dl1').onclick=()=>AFRIBN.toast('Press kit downloading…','ok');
+  const PR=[
+    ['May 2024','AFRIBN expands coverage to all 54 African nations','Company announcement'],
+    ['Apr 2024','How an intelligence startup is rethinking African risk','TechCabal'],
+    ['Mar 2024','AFRIBN raises round to scale source-verification network','Reuters'],
+    ['Feb 2024','The case for decision-grade intelligence in emerging markets','African Business'],
+    ['Jan 2024','AFRIBN partners with development institutions on governance data','Company announcement'],
+  ];
+  $('#press').innerHTML=PR.map(([d,t,s])=>`<div class="press-item" style="cursor:pointer" onclick="AFRIBN.toast('Opening: '+this.querySelector('.pt').textContent)"><div class="dt">${d}</div><div><div class="pt">${t}</div><div class="src">${s}</div></div></div>`).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Scoring</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .sc-grid { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 22px; align-items: start; }
+  .hero-score { display: flex; align-items: center; gap: 22px; background: linear-gradient(120deg, rgba(232,37,45,0.1), transparent); border: 1px solid rgba(232,37,45,0.25); border-radius: 16px; padding: 22px; margin-bottom: 18px; }
+  .hero-score .ht .l { color: var(--ink-2); font-size: 13.5px; } .hero-score .ht .d { font-size: 13px; color:var(--ink-3); margin-top:4px; max-width:340px; line-height:1.5; }
+  .score-cards { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+  .sc-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .sc-card .l { font-size: 13px; color: var(--ink-2); display:flex; align-items:center; gap:8px; }
+  .sc-card .l svg{width:15px;height:15px;}
+  .sc-card .v { font-family: var(--font-display); font-weight: 800; font-size: 30px; letter-spacing:-0.02em; margin: 8px 0 10px; }
+  .sc-card .bar { height: 6px; border-radius:6px; background: var(--panel-3); overflow:hidden; } .sc-card .bar>span{display:block;height:100%;border-radius:6px;}
+  .factor-slider { margin-bottom: 18px; }
+  .factor-slider .top { display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:8px; }
+  .factor-slider .top b { font-variant-numeric: tabular-nums; }
+  @media (max-width:1100px){ .sc-grid{grid-template-columns:1fr} .score-cards{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow red">Scoring Workspace</div>
+          <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.02em;margin-top:8px;max-width:24ch">Kenya signs $2.1bn renewable energy agreement with UAE consortium</h1>
+          <div class="muted" style="font-size:13px;margin-top:8px">STORY-4821 · linked to Reuters Africa, AFP Afrique · v3</div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="recalc"><span id="rci"></span> Recalculate</button>
+          <button class="btn btn-primary" id="saveScore"><span id="ssi"></span> Save score</button>
+        </div>
+      </div>
+
+      <div class="sc-grid">
+        <!-- MAIN -->
+        <div>
+          <div class="hero-score">
+            <div id="aivRing"></div>
+            <div class="ht"><div class="l">AFRIBN Intelligence Value</div><div class="v" style="font-family:var(--font-display);font-weight:800;font-size:18px;margin-top:2px">High-value strategic intelligence</div><div class="d">Computed from impact, confidence, signal and decision-relevance, net of gap penalty. Updates live as factors change.</div></div>
+          </div>
+          <div class="score-cards" id="scoreCards"></div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:16px">Score Factors</div>
+            <div id="factors"></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:10px">Formula Explanation</div>
+            <p style="font-size:13.5px;color:var(--ink-2);line-height:1.6">AIV = 0.30·Impact + 0.25·Confidence + 0.20·Signal + 0.15·Decision Relevance + 0.10·Negotiation Leverage − Gap Penalty. Risk and Scenario Risk are tracked separately for the risk dashboard.</p>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:14px">Score Version History</div>
+            <div class="timeline" id="history"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('target');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#rci').innerHTML=ic('refresh','width="16" height="16"'); $('#ssi').innerHTML=ic('check','width="16" height="16"');
+
+  // factors drive the scores
+  const FACTORS = [
+    ['Source reliability', 92], ['Corroboration strength', 84], ['Impact magnitude', 88],
+    ['Time sensitivity', 76], ['Geographic scope', 70], ['Audience relevance', 82],
+  ];
+  const colFor = v => v>=80?'#3FB950':v>=60?'#E3B341':v>=45?'#FF6B35':'#E5252A';
+
+  function compute(){
+    const f = Object.fromEntries(FACTORS.map(x=>[x[0],x[1]]));
+    const impact = Math.round(f['Impact magnitude']*0.6 + f['Geographic scope']*0.4);
+    const confidence = Math.round(f['Source reliability']*0.55 + f['Corroboration strength']*0.45);
+    const signal = Math.round(impact*0.4 + f['Time sensitivity']*0.3 + f['Audience relevance']*0.3);
+    const decision = Math.round(f['Audience relevance']*0.5 + impact*0.5);
+    const negotiation = Math.round(f['Impact magnitude']*0.5 + f['Geographic scope']*0.5 - 6);
+    const scenario = Math.round(f['Time sensitivity']*0.5 + f['Impact magnitude']*0.3 + 10);
+    const risk = Math.round(100 - confidence*0.4 - f['Geographic scope']*0.2);
+    const gap = Math.max(0, Math.round((100-f['Corroboration strength'])*0.4));
+    const aiv = Math.max(0, Math.round(impact*0.30 + confidence*0.25 + signal*0.20 + decision*0.15 + negotiation*0.10 - gap));
+    return { impact, confidence, signal, decision, negotiation, scenario, risk, gap, aiv };
+  }
+  const SCORES = [
+    ['target','Impact Score','impact'],['shield','Confidence Score','confidence'],['feed','Signal Score','signal'],
+    ['user','Decision Relevance','decision'],['handshake','Negotiation Leverage','negotiation'],['alertTri','Scenario Risk','scenario'],
+    ['gauge','Risk Score','risk'],['ban','Gap Penalty','gap'],
+  ];
+  function renderScores(){
+    const s=compute();
+    $('#aivRing').innerHTML = AFRIBN.ring(s.aiv,{size:104,stroke:10,color:'#E8252D',label:'AIV'});
+    $('#scoreCards').innerHTML = SCORES.map(([i,l,k])=>{
+      const v=s[k]; const isPenalty=k==='gap'; const col=isPenalty?'#FF6B35':(k==='risk'?colFor(100-v):colFor(v));
+      return `<div class="sc-card"><div class="l">${ic(i)} ${l}</div><div class="v" style="color:${col}">${isPenalty?'−':''}${v}</div><div class="bar"><span style="width:${v}%;background:${col}"></span></div></div>`;
+    }).join('');
+  }
+
+  function renderFactors(){
+    $('#factors').innerHTML = FACTORS.map(([n,v],i)=>`
+      <div class="factor-slider"><div class="top"><span>${n}</span><b id="fv${i}" style="color:${colFor(v)}">${v}</b></div>
+      <input type="range" class="rng" min="0" max="100" value="${v}" data-i="${i}"></div>`).join('');
+    $('#factors').querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
+      FACTORS[+inp.dataset.i][1]=+inp.value; const b=$('#fv'+inp.dataset.i); b.textContent=inp.value; b.style.color=colFor(+inp.value); renderScores();
+    }));
+  }
+
+  const HIST=[['','v3 · AIV 85','Analyst recalculated after corroboration · just now'],['','v2 · AIV 79','AI initial scoring · 1h ago'],['muted','v1 · draft','Created from raw article · 2h ago']];
+  $('#history').innerHTML = HIST.map(([c,t,m])=>`<div class="tl-item"><span class="tl-dot ${c}"></span><div class="tl-t">${t}</div><div class="tl-m">${m}</div></div>`).join('');
+
+  renderScores(); renderFactors();
+  $('#recalc').onclick=()=>{ renderScores(); toast('Scores recalculated','ok'); };
+  $('#saveScore').onclick=()=>toast('Score saved as v4','ok');
+</script>
+</body>
+</html>

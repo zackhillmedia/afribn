@@ -1,0 +1,330 @@
+
+
+--- PAGE 1 ---
+ 
+You  are  a  senior  backend  engineer  and  intelligence-systems  architect.   I  am  building  AFRIBN,  an  African  intelligence  platform.  The  backend  uses  this  pipeline:   Sources  →  Scraping  →  AI  Distillation  →  Confidence  Scoring  →  Gap  Detection  →  Human  
+Verification
+ 
+→
+ 
+Knowledge
+ 
+Graph
+ 
+→
+ 
+Published
+ 
+Intelligence
+ 
+→
+ 
+Dashboards
+ 
+/
+ 
+Alerts
+ 
+/
+ 
+Reports.
+  Build  a  new  backend  module  called:   backend/modules/source_reliability/   The  module  must  implement  the  AFRIBN  Source  Reliability  Engine.   Core  principle:  Do  NOT  collapse  everything  into  one  score.   The  module  must  calculate  and  store:   1.  Source  Reliability  Score  /  SRS     Question:  Can  this  source  generally  be  trusted?   2.  Information  Credibility  Score  /  ICS     Question:  Can  this  specific  article,  report,  claim,  or  scraped  item  be  trusted?   3.  Collection  Priority  Score  /  CPS     Question:  How  aggressively  should  AFRIBN  scrape,  monitor,  or  suppress  this  source?   4.  Strategic  Collection  Value  /  SCV     Question:  How  valuable  is  this  source  to  AFRIBN’s  intelligence  mission  right  now?   Use  Python,  FastAPI,  SQLAlchemy,  PostgreSQL,  Celery,  and  Redis.   Create  these  files:   backend/modules/source_reliability/    __init__.py    models.py    schemas.py    formulas.py    service.py    routes.py    tasks.py    constants.py    explanations.py    tests/      test_formulas.py  
+
+
+--- PAGE 2 ---
+    test_service.py      test_routes.py   Implement  all  formulas  as  pure  functions  in  formulas.py.  Database  writes  must  happen  only  in  service.py.  Routes  must  be  thin.  Every  score  must  be  explainable,  versioned,  and  auditable.   FORMULA  VERSION:  Use  formula_version  =  "AFRIBN_SOURCE_RELIABILITY_V1"   ====================================================  1.  SOURCE  RELIABILITY  SCORE  ====================================================   Use  an  Admiralty  Code-inspired  system.   Grades:   A  =  85–100  =  Completely  reliable  B  =  70–84  =  Usually  reliable  C  =  55–69  =  Fairly  reliable  D  =  35–54  =  Not  usually  reliable  E  =  10–34  =  Unreliable  F  =  Unknown  /  insufficient  history   Important:  F  means  unknown,  not  bad.  Unknown  sources  should  enter  probation  sampling,  not  
+automatic
+ 
+blacklist.
+  Base  Source  Reliability:   SRS_base  =  0.40  *  TR  +  0.25  *  CA  +  0.20  *  AU  +  0.15  *  TW   Where:  TR  =  Track  Record  CA  =  Competency  /  Access  AU  =  Authenticity  TW  =  Trustworthiness  /  Motivation   Track  Record  must  use  Bayesian  smoothing:   TR  =  (T  +  alpha)  /  (T  +  F  +  alpha  +  beta)  *  100  
+
+
+--- PAGE 3 ---
+ Where:  T  =  verified  true  reports  F  =  verified  false  reports  alpha  =  prior_success,  default  1  beta  =  prior_failure,  default  1   Adjusted  Source  Reliability:   SRS_adjusted  =  SRS_base  *  RV  *  RA  *  CO  *  IN  -  BP  -  CP   Where:  RV  =  Recency  Validation  Modifier  RA  =  Recent  Accuracy  Modifier  CO  =  Consistency  Modifier  IN  =  Independence  Modifier  BP  =  Bias  Penalty  CP  =  Contradiction  Penalty   Clamp  final  score  to  0–100.   ====================================================  2.  INFORMATION  CREDIBILITY  SCORE  ====================================================   This  is  separate  from  source  reliability.   Information  credibility  grades:   1  =  85–100  =  Confirmed  2  =  70–84  =  Probably  true  3  =  55–69  =  Possibly  true  4  =  35–54  =  Doubtful  5  =  10–34  =  Improbable  6  =  Unknown  /  cannot  judge   Formula:   ICS  =  0.30  *  IC  +  0.20  *  EQ  
+
+
+--- PAGE 4 ---
++  0.15  *  SP  +  0.15  *  PL  +  0.10  *  TM  +  0.10  *  CC  -  CD   Where:  IC  =  Independent  Corroboration  EQ  =  Evidence  Quality  SP  =  Specificity  PL  =  Plausibility  TM  =  Timeliness  CC  =  Claim  Consistency  CD  =  Claim-level  Contradiction  Penalty   Important:  Corroboration  must  count  only  independent  confirmations.  Ten  copied  articles  from  the  same  original  source  must  NOT  count  as  ten  confirmations.   ====================================================  3.  CONTEXT  MODIFIER  ====================================================   Calculate  a  dynamic  context  modifier  CM  using  the  geometric  mean:   CM  =  (FR  *  VR  *  TS  *  DA  *  RL  *  CG  *  LS  *  XR  *  CS)  **  (1  /  9)   Where:  FR  =  Freshness  VR  =  Volume  Reliability  TS  =  Technical  Stability  DA  =  Domain  Authority  RL  =  Relevance  CG  =  Coverage  Gap  LS  =  Legal  Safety  XR  =  External  Reputation  CS  =  Cross-source  Support   Each  input  should  be  normalized  to  a  0.5–1.5  multiplier  before  use.  Clamp  CM  to  0.5–1.5.   ====================================================  4.  COLLECTION  PRIORITY  SCORE  ====================================================   Collection  Priority  Score  controls  scraping  behavior.   
+
+
+--- PAGE 5 ---
+CPS  =  0.35  *  SRS_adjusted  +  0.25  *  RL_score  +  0.15  *  CG_score  +  0.10  *  FR_score  +  0.10  *  TS_score  +  0.05  *  LS_score   Where  scores  are  0–100.   Scraping  decisions:   85–100:  FULL_SCRAPE_HIGH_FREQUENCY   70–84:  FULL_SCRAPE_NORMAL_FREQUENCY   55–69:  PARTIAL_SCRAPE   40–54:  MONITOR_ONLY   25–39:  PROBATION_SAMPLING_MANUAL_REVIEW   0–24:  SUPPRESS_OR_BLACKLIST   Exception:  If  source  grade  is  F,  return  PROBATION_SAMPLING_MANUAL_REVIEW  unless  manually  
+blacklisted.
+  ====================================================  5.  STRATEGIC  COLLECTION  VALUE  ====================================================   Strategic  Collection  Value  represents  the  full  value  of  a  source  to  AFRIBN.   Conceptual  formula:   SCV  =  Reliability  *  Credibility  *  Context  *  Relevance  *  Coverage  Gap  
+
+
+--- PAGE 6 ---
+*  Historical  Signal  Value   Detailed  formula:   AIR  =  sqrt(SRS_adjusted  *  ICS)  *  CM   SCV  =  AIR  *  RL_multiplier  *  CG_multiplier  *  SV_multiplier   Where:  AIR  =  AFRIBN  Intelligence  Reliability  SV  =  Historical  Signal  Value   Normalize  SCV  to  0–100.   ====================================================  6.  SOURCE  TYPE  ADJUSTMENTS  ====================================================   Support  source_type-specific  modifiers  for:   GOVERNMENT  LOCAL_MEDIA  COMPANY_PRESS_RELEASE  SOCIAL_ACCOUNT  THINK_TANK  NGO  MULTILATERAL  PARLIAMENT  TENDER_PORTAL  COURT_RECORD  REGULATOR  BLOG  FORUM   Government:  Boost  authenticity  and  access.  Penalize  selective  political  framing.   Local  media:  Boost  local  access  and  early  reporting.  Penalize  weak  corroboration  and  sensationalism.   Company  press  release:  
+
+
+--- PAGE 7 ---
+Boost  direct  access  and  named  counterparties.  Penalize  promotional  motivation.   Social  account:  Boost  early  signal  potential.  Penalize  identity  uncertainty  and  manipulation  risk.   Think  tank  /  NGO:  Boost  methodology  and  expertise.  Penalize  advocacy  or  donor  bias.   Implement  these  as  configurable  adjustment  rules,  not  hardcoded  magic  scattered  across  
+service
+ 
+logic.
+  ====================================================  7.  DATABASE  TABLES  ====================================================   Create  SQLAlchemy  models  for:   sources  source_reliability_scores  source_probe_results  source_validation_history  source_topic_reliability  source_country_reliability  source_collection_decisions  source_blacklist  source_whitelist  information_credibility_scores  corroboration_clusters  source_audit_logs   Minimum  fields  for  source_reliability_scores:   id  source_id  base_reliability_score  adjusted_reliability_score  source_grade  track_record_score  competency_access_score  authenticity_score  trustworthiness_score  recency_modifier  recent_accuracy_modifier  consistency_modifier  independence_modifier  
+
+
+--- PAGE 8 ---
+bias_penalty  contradiction_penalty  formula_version  explanation  created_at  updated_at   Minimum  fields  for  information_credibility_scores:   id  source_id  object_type  object_id  credibility_score  credibility_grade  independent_corroboration_score  evidence_quality_score  specificity_score  plausibility_score  timeliness_score  claim_consistency_score  contradiction_penalty  formula_version  explanation  created_at  updated_at   Minimum  fields  for  source_collection_decisions:   id  source_id  collection_priority_score  strategic_collection_value  decision  reason  scrape_frequency  scrape_depth  manual_review_required  formula_version  created_at  updated_at   Minimum  fields  for  source_audit_logs:   id  source_id  event_type  previous_values  
+
+
+--- PAGE 9 ---
+new_values  reason  created_by  created_at   ====================================================  8.  API  ENDPOINTS  ====================================================   Create  FastAPI  routes:   POST  /source-reliability/calculate/{source_id}  GET  /source-reliability/{source_id}  GET  /source-reliability/{source_id}/explanation  POST  /source-reliability/{source_id}/override  POST  /source-reliability/{source_id}/blacklist  POST  /source-reliability/{source_id}/whitelist  POST  /source-reliability/credibility/calculate  GET  /source-reliability/collection-priority/{source_id}  GET  /source-reliability/top-priority-sources  GET  /source-reliability/probation-sources  GET  /source-reliability/version   ====================================================  9.  CELERY  TASKS  ====================================================   Create  Celery  tasks:   calculate_source_reliability(source_id)  calculate_information_credibility(object_type,  object_id,  source_id)  calculate_collection_priority(source_id)  recalculate_all_source_reliability()  recalculate_sources_by_country(country_id)  recalculate_sources_by_topic(topic)  update_source_after_verification(source_id,  verification_result)  update_source_after_scrape_failure(source_id,  failure_reason)  promote_or_demote_source(source_id)   ====================================================  10.  SERVICE  BEHAVIOR  ====================================================   The  service  should:   1.  Fetch  source  metadata.  2.  Fetch  source  history.  3.  Calculate  Bayesian  track  record.  
+
+
+--- PAGE 10 ---
+4.  Calculate  base  reliability.  5.  Apply  dynamic  modifiers.  6.  Assign  Admiralty-style  source  grade.  7.  Calculate  information  credibility  for  specific  content.  8.  Calculate  collection  priority.  9.  Calculate  strategic  collection  value.  10.  Store  all  scores.  11.  Store  explanations.  12.  Write  audit  logs.  13.  Emit  events:     -  source.reliability.updated     -  source.collection.priority.updated     -  source.blacklisted     -  source.whitelisted     -  source.promoted     -  source.demoted   Downstream  modules  listening  to  these  events:  -  scraping  scheduler  -  confidence  scoring  -  feed  ranking  -  alert  engine  -  gap  detection  -  knowledge  graph   ====================================================  11.  EXPLANATIONS  ====================================================   Every  score  must  generate  a  human-readable  explanation.   Example:   "This  source  is  graded  B  because  it  has  a  strong  historical  verification  record,  high  
+authenticity,
+ 
+and
+ 
+consistent
+ 
+original
+ 
+reporting.
+ 
+It
+ 
+was
+ 
+slightly
+ 
+penalized
+ 
+for
+ 
+recent
+ 
+contradictions
+ 
+and
+ 
+moderate
+ 
+political
+ 
+bias.
+ 
+Collection
+ 
+priority
+ 
+is
+ 
+HIGH
+ 
+because
+ 
+the
+ 
+source
+ 
+covers
+ 
+an
+ 
+underreported
+ 
+country
+ 
+and
+ 
+has
+ 
+strong
+ 
+relevance
+ 
+to
+ 
+energy
+ 
+and
+ 
+policy
+ 
+monitoring."
+  ====================================================  12.  TEST  REQUIREMENTS  ====================================================   Add  unit  tests  for:   -  Bayesian  track  record  -  base  reliability  calculation  -  adjusted  reliability  modifiers  -  information  credibility  calculation  
+
+
+--- PAGE 11 ---
+-  context  modifier  geometric  mean  -  collection  priority  calculation  -  source  grade  assignment  -  credibility  grade  assignment  -  scraping  decision  mapping  -  F  source  probation  exception  -  SCV  normalization   Add  integration  tests  for:   -  calculate  reliability  endpoint  -  override  endpoint  -  blacklist  endpoint  -  credibility  calculation  endpoint  -  collection  priority  endpoint   ====================================================  13.  ENGINEERING  PRINCIPLES  ====================================================   -  Pure  formula  functions.  -  Service  layer  owns  persistence.  -  Routes  stay  thin.  -  Every  score  is  versioned.  -  Every  manual  override  is  audited.  -  Never  overwrite  historical  scoring  without  audit  logs.  -  Keep  source  reliability  separate  from  information  credibility.  -  Keep  legal/technical  scraping  risk  separate  from  truth/reliability.  -  Unknown  sources  are  probationary,  not  automatically  bad.  -  Support  country-specific  and  topic-specific  reliability.  -  Support  future  ML  model  replacement  without  changing  API  contracts.   Return:  1.  Backend  implementation  plan.  2.  Database  models.  3.  Pydantic  schemas.  4.  Formula  functions.  5.  Service  code.  6.  FastAPI  routes.  7.  Celery  tasks.  8.  Tests.  9.  Example  JSON  requests  and  responses.        
+
+
+--- PAGE 12 ---
+At  this  point,  the  AFRIBN  Source  Reliability  Engine  is  no  longer  a  simple  scoring  model.  It  is  
+a
+ 
+multi-layer
+ 
+decision
+ 
+system
+.
+ 
+The  best  way  to  describe  it  mathematically  is  as  a  hierarchy  of  equations.  
+ 
+AFRIBN  Source  Reliability  Engine  Master  
+Formula
+ 
+The  engine  should  output:  
+SRS  =  Source  Reliability  Score   ICS  =  Information  Credibility  Score   CPS  =  Collection  Priority  Score   
+where:  
+SRS  =  Can  we  trust  the  source?   ICS  =  Can  we  trust  this  specific  claim?   CPS  =  Should  we  spend  resources  collecting  from  this  source?    
+Level  1:  Source  Reliability  
+Source  Reliability  is  composed  of:  
+Track  Record  Competency  Authenticity  Trustworthiness   
+Formula:  
+SRS_base  =  0.40  TR  +  0.25  CA  
+
+
+--- PAGE 13 ---
++  0.20  AU  +  0.15  TW   
+where:  
+TR  =  Track  Record  CA  =  Competency  &  Access  AU  =  Authenticity  TW  =  Trustworthiness  /  Motivation    
+Bayesian  Track  Record  
+For  a  source:  
+T  =  verified  true  reports   F  =  verified  false  reports   α  =  prior  successes   β  =  prior  failures   
+Then:  
+TR  =  (T  +  α)  /  (T  +  F  +  α  +  β)   
+This  prevents  overrating  new  sources.  
+ 
+Level  2:  Reliability  Modifiers  
+Reliability  must  evolve  over  time.  
+Define:  
+
+
+--- PAGE 14 ---
+RV  =  Recency  Validation  Modifier   RA  =  Recent  Accuracy  Modifier   CO  =  Consistency  Modifier   IN  =  Independence  Modifier   BP  =  Bias  Penalty   CP  =  Contradiction  Penalty   
+Then:  
+SRS_adjusted   =  SRS_base  ×  RV  ×  RA  ×  CO  ×  IN   −  BP   −  CP   
+This  becomes:  
+0  ≤  SRS  ≤  100    
+Level  3:  Information  Credibility  
+This  evaluates  a  specific  story.  
+Define:  
+IC  =  Independent  Corroboration   EQ  =  Evidence  Quality   SP  =  Specificity   
+
+
+--- PAGE 15 ---
+PL  =  Plausibility   TM  =  Timeliness   CC  =  Claim  Consistency   CD  =  Contradiction  Penalty   
+Then:  
+ICS   =  0.30  IC  +  0.20  EQ  +  0.15  SP  +  0.15  PL  +  0.10  TM  +  0.10  CC   −  CD   
+This  produces:  
+0  ≤  ICS  ≤  100    
+Level  4:  Context  Modifiers  
+These  are  the  modifiers  you  introduced.  
+Define:  
+FR  =  Freshness   VR  =  Volume  Reliability   TS  =  Technical  Stability   
+
+
+--- PAGE 16 ---
+DA  =  Domain  Authority   RL  =  Relevance   CG  =  Coverage  Gap   LS  =  Legal  Safety   XR  =  External  Reputation   CS  =  Cross-source  Support   
+These  create  a  dynamic  multiplier:  
+CM   =  (  FR  ×  VR  ×  TS  ×  DA  ×  RL  ×  CG  ×  LS  ×  XR  ×  CS  )  ^(1/9)   
+The  geometric  mean  prevents  any  one  modifier  from  dominating.  
+ 
+Level  5:  Collection  Priority  
+Now  we  combine  reliability  and  context.  
+Define:  
+CPS   =  0.35  SRS  +  
+
+
+--- PAGE 17 ---
+0.25  RL  +  0.15  CG  +  0.10  FR  +  0.10  TS  +  0.05  LS   
+This  drives:  
+full  scrape  partial  scrape  monitor  probation  blacklist    
+Level  6:  AFRIBN  Intelligence  Reliability  
+This  is  where  AFRIBN  becomes  unique.  
+A  source  is  not  useful  simply  because  it  is  reliable.  
+A  source  is  useful  because  it  is:  
+Reliable  +  Credible  +  Relevant  +  Independent  +  Covering  gaps   
+Define:  
+AIR   =  AFRIBN  Intelligence  Reliability   
+
+
+--- PAGE 18 ---
+Formula:  
+AIR   =  √(  SRS  ×  ICS  )  ×  CM   
+where:  
+CM  =  Context  Modifier   
+This  gives  a  balanced  score.  
+ 
+Level  7:  Strategic  Collection  Value  
+This  is  the  actual  decision  engine.  
+Define:  
+SCV   =  Strategic  Collection  Value   
+Formula:  
+SCV   =  AIR  ×  RL  ×  CG  ×  SV   
+where:  
+
+
+--- PAGE 19 ---
+RL  =  Relevance   CG  =  Coverage  Gap   SV  =  Signal  Value  History   
+Signal  Value  History  measures:  
+How  often  this  source  produced  high-value  intelligence    
+Complete  AFRIBN  Equation  
+Putting  everything  together:  
+SCV   =   [  √(  (  (  0.40TR  +  0.25CA  +  0.20AU  +  0.15TW  )   ×  RV  ×  RA  ×  CO  ×  IN   −  BP  −  CP  )   ×   (  0.30IC  +  0.20EQ  +  0.15SP  
+
+
+--- PAGE 20 ---
++  0.15PL  +  0.10TM  +  0.10CC   −  CD  )  )  ]   ×   CM   ×   RL   ×   CG   ×   SV    
+Simplified  Conceptual  Form  
+The  entire  module  can  be  summarized  as:  
+Strategic  Collection  Value   =   Reliability  ×  Credibility  ×  Context  ×  Relevance  ×  Coverage  Gap  ×  Historical  Signal  Value   
+
+
+--- PAGE 21 ---
+or  
+SCV   =   R  ×  C  ×  X  ×  G  ×  H   
+where:  
+R  =  Reliability   C  =  Credibility   X  =  Context   G  =  Gap  Value   H  =  Historical  Intelligence  Yield    
+Why  this  is  powerful  
+Most  systems  only  ask:  
+Can  I  scrape  this  source?   
+AFRIBN  asks:  
+Can  I  trust  this  source?   Can  I  trust  this  claim?   Is  this  source  independent?   Does  this  source  fill  a  strategic  gap?   Has  this  source  historically  generated  valuable  intelligence?   Should  I  spend  resources  collecting  from  it  right  now?   
+
+
+--- PAGE 22 ---
+That  makes  the  Source  Reliability  Engine  a  true  Strategic  Collection  Decision  System ,  
+which
+ 
+is
+ 
+much
+ 
+closer
+ 
+to
+ 
+how
+ 
+intelligence
+ 
+agencies
+ 
+think
+ 
+about
+ 
+collection
+ 
+management
+ 
+than
+ 
+how
+ 
+conventional
+ 
+scraping
+ 
+systems
+ 
+operate.
+ 
+   

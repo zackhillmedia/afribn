@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Home</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .grid-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 22px; }
+  .stat.link { cursor: pointer; }
+  .stat.link:hover { border-color: rgba(232,37,45,0.35); }
+  .stat .arrow { margin-left: auto; color: var(--ink-4); transition: .15s; }
+  .stat.link:hover .arrow { color: var(--red-bright); transform: translateX(2px); }
+
+  .grid-mid { display: grid; grid-template-columns: 2fr 1fr; gap: 22px; margin-bottom: 22px; }
+  .grid-bot { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; margin-bottom: 22px; }
+  .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .panel-h h3 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
+  .link-r { color: var(--red-bright); font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
+  .link-r svg { width: 15px; height: 15px; }
+  .link-r:hover { color: #fff; }
+
+  /* top stories */
+  .stories-in { display: grid; grid-template-columns: 1.15fr 1fr; gap: 22px; }
+  .feat-story { border-radius: 14px; overflow: hidden; cursor: pointer; }
+  .feat-story .img { aspect-ratio: 16/10; width: 100%; object-fit: cover; border-radius: 14px; }
+  .feat-meta { margin-top: 16px; }
+  .feat-meta .cat { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px; }
+  .feat-meta h4 { font-size: 22px; font-weight: 700; line-height: 1.15; margin: 10px 0; letter-spacing: -0.01em; }
+  .feat-meta p { color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+  .feat-foot { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--ink-3); }
+  .dots { display: flex; gap: 6px; margin-top: 16px; }
+  .dots i { width: 24px; height: 4px; border-radius: 4px; background: var(--panel-3); cursor: pointer; }
+  .dots i.on { background: var(--red); width: 28px; }
+  .mini-story { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .mini-story:last-child { border-bottom: none; }
+  .mini-story .img { width: 96px; height: 68px; border-radius: 10px; object-fit: cover; flex: none; }
+  .mini-story .cat { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .mini-story h5 { font-size: 15px; font-weight: 600; margin: 6px 0 0; line-height: 1.3; }
+  .mini-story:hover h5 { color: var(--red-bright); }
+
+  /* risk donut */
+  .risk-wrap { display: flex; align-items: center; gap: 16px; }
+  .risk-legend { flex: 1; display: flex; flex-direction: column; gap: 11px; }
+  .risk-legend .li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .risk-legend .li .nm { color: var(--ink-2); white-space: nowrap; }
+  .risk-legend .li .vl { margin-left: auto; font-weight: 600; }
+  .risk-legend .li .pc { color: var(--ink-3); font-size: 13px; width: 42px; text-align: right; }
+  .risk-banner { display: flex; align-items: center; gap: 12px; margin-top: 20px; padding: 14px 16px; border-radius: 12px;
+    background: var(--red-tint); border: 1px solid rgba(232,37,45,0.3); color: #fff; font-weight: 500; font-size: 14px; cursor: pointer; }
+  .risk-banner svg { width: 18px; height: 18px; color: var(--red-bright); }
+  .risk-banner .chev { margin-left: auto; }
+
+  /* alerts / updates lists */
+  .alert-li { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .alert-li:last-child { border-bottom: none; }
+  .alert-li .ai { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; flex: none; }
+  .alert-li .ai svg { width: 17px; height: 17px; }
+  .alert-li .t { font-size: 14px; font-weight: 500; line-height: 1.35; }
+  .alert-li .m { font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+  .alert-li .pr { margin-left: auto; flex: none; }
+  .prtag { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; }
+  .prtag.high { background: rgba(232,37,45,0.16); color: #ff6b6b; }
+  .prtag.med { background: rgba(227,179,65,0.16); color: #f0cd6b; }
+  .prtag.low { background: rgba(68,147,248,0.16); color: #6fb0ff; }
+
+  .upd-li { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .upd-li:last-child { border-bottom: none; }
+  .upd-li .d { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; flex: none; }
+  .upd-li .t { font-size: 14px; line-height: 1.35; }
+  .upd-li .tm { margin-left: auto; font-size: 12px; color: var(--ink-3); white-space: nowrap; flex: none; }
+
+  /* trending */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line); font-size: 14px; cursor: pointer; transition: .15s; white-space: nowrap; }
+  .chip:hover { border-color: rgba(232,37,45,0.4); background: var(--red-tint); }
+  .chip .ct { font-weight: 600; }
+  .chip .cn { color: var(--ink-3); font-size: 13px; }
+  .chip .cu { color: var(--green); font-size: 12px; }
+
+  /* footer strip */
+  .foot-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; padding: 20px 22px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); }
+  .foot-strip .fs { display: flex; align-items: center; gap: 13px; }
+  .foot-strip .fi { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; flex: none; }
+  .foot-strip .fi svg { width: 21px; height: 21px; }
+  .foot-strip .fl { font-size: 12.5px; color: var(--ink-3); }
+  .foot-strip .fv { font-size: 17px; font-weight: 700; }
+
+  .date-pill { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 16px; border-radius: 11px; background: var(--panel); border: 1px solid var(--line); font-weight: 500; font-size: 14px; }
+  .date-pill svg { width: 17px; height: 17px; color: var(--ink-3); }
+
+  @media (max-width: 1280px){ .grid-stats{grid-template-columns:repeat(3,1fr)} .grid-bot{grid-template-columns:1fr} .grid-mid{grid-template-columns:1fr} .stories-in{grid-template-columns:1fr} .foot-strip{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Welcome back, David <span style="font-size:28px">👋</span></h1>
+          <div class="page-sub">Here's what's happening across Africa today.</div>
+        </div>
+        <span class="date-pill" id="datepill"></span>
+      </div>
+
+      <div class="grid-stats" id="stats"></div>
+
+      <div class="grid-mid">
+        <div class="panel panel-pad-lg">
+          <div class="panel-h"><h3>Top Stories</h3><a class="link-r" href="feed.html">View all stories <span id="va1"></span></a></div>
+          <div class="stories-in">
+            <a class="feat-story" href="story.html" id="feat"></a>
+            <div id="ministories"></div>
+          </div>
+          <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="panel panel-pad-lg">
+          <div class="panel-h"><h3>Risk Overview</h3><a class="link-r" href="#">View full report <span id="va2"></span></a></div>
+          <div class="risk-wrap">
+            <div id="riskdonut"></div>
+            <div class="risk-legend" id="risklegend"></div>
+          </div>
+          <div class="risk-banner"><span id="rbi"></span> 3 countries moved to higher risk level <span class="chev" id="rbc"></span></div>
+        </div>
+      </div>
+
+      <div class="grid-bot">
+        <div class="panel panel-pad-lg">
+          <div class="panel-h"><h3>Latest Alerts</h3><a class="link-r" href="#">View all alerts <span id="va3"></span></a></div>
+          <div id="alerts"></div>
+        </div>
+        <div class="panel panel-pad-lg">
+          <div class="panel-h"><h3>Recent Updates</h3><a class="link-r" href="feed.html">View all updates <span id="va4"></span></a></div>
+          <div id="updates"></div>
+        </div>
+        <div class="panel panel-pad-lg">
+          <div class="panel-h"><h3>Trending Topics</h3><a class="link-r" href="#">View all topics <span id="va5"></span></a></div>
+          <div class="chips" id="trending"></div>
+          <div class="row gap-8 muted" style="margin-top:18px;font-size:13px">Updated 2 minutes ago <span id="rf" style="display:inline-flex"></span></div>
+        </div>
+      </div>
+
+      <div class="foot-strip" id="footstrip"></div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('home');
+  const ic = AFRIBN.ic;
+  $('#datepill').innerHTML = ic('calendar') + ' May 15, 2024';
+  ['#va1','#va2','#va3','#va4','#va5'].forEach(s=>$(s).innerHTML = ic('arrowRight'));
+  $('#rbi').innerHTML = ic('shield'); $('#rbc').innerHTML = ic('chevRight'); $('#rf').innerHTML = ic('refresh','width="14" height="14"');
+
+  // stats
+  const STATS = [
+    ['file','#E8252D', 'Total Stories', '3,248', '+12.4%', 'up'],
+    ['bank','#E3B341', 'Policy Changes', '86', '+8.7%', 'up'],
+    ['handshake','#A371F7', 'Deals Tracked', '152', '+15.3%', 'up'],
+    ['calendar','#3FB950', 'Events Tracked', '204', '+9.1%', 'up'],
+    ['shield','#4493F8', 'Risk Level', 'Medium', 'Stable', 'flat'],
+  ];
+  $('#stats').innerHTML = STATS.map(([icn,c,l,v,d,dir])=>`
+    <div class="stat link">
+      <div class="top">
+        <div class="ic" style="background:${c}22;color:${c}">${ic(icn)}</div>
+        <div class="lbl">${l}</div>
+        <span class="arrow">${ic('chevRight','width="18" height="18"')}</span>
+      </div>
+      <div class="num"${l==='Risk Level'?' style="color:'+c+'"':''}>${v}</div>
+      <div class="delta ${dir==='up'?'up':dir==='down'?'down':'muted'}">${dir==='up'?ic('trendUp','width="14" height="14"'):dir==='flat'?'':''} ${d} <span class="muted" style="font-weight:400">vs yesterday</span></div>
+    </div>`).join('');
+
+  // featured + mini stories
+  $('#feat').innerHTML = `
+    <img class="img" src="${AFRIBN.scene('bridge',520,330)}" alt="">
+    <div class="feat-meta">
+      <div class="cat" style="color:#ff7378"><span class="cdot" style="background:#e5484d"></span> POLITICS</div>
+      <h4>Nigeria approves ₦6.2tn supplementary budget</h4>
+      <p>The budget focuses on infrastructure, defense, and social investment priorities ahead of the fiscal year.</p>
+      <div class="feat-foot">${AFRIBN.flag('nigeria')} Nigeria · 2m ago</div>
+    </div>`;
+  const MINI = [
+    ['energy','#ffa05a','#f0883e','ENERGY','5m ago','Dangote Refinery begins diesel exports to West Africa'],
+    ['security','#bd9bff','#a371f7','SECURITY','8m ago','Security alert: Attack on mining site in eastern DRC'],
+    ['finance','#5ed46e','#3fb950','ECONOMY','15m ago','Kenya Central Bank cuts policy rate to 12.0%'],
+  ];
+  $('#ministories').innerHTML = MINI.map(([sc,tc,dc,cat,tm,title])=>`
+    <div class="mini-story">
+      <img class="img" src="${AFRIBN.scene(sc,160,110)}" alt="">
+      <div>
+        <div class="cat" style="color:${tc}"><span class="cdot" style="background:${dc}"></span>${cat} · <span class="muted" style="font-weight:400;letter-spacing:0">${tm}</span></div>
+        <h5>${title}</h5>
+      </div>
+    </div>`).join('');
+
+  // risk donut + legend
+  const RISK = [
+    ['High Risk','#E8252D',8,'20%'],['Medium Risk','#FF8A3D',14,'35%'],['Low Risk','#A371F7',10,'25%'],
+    ['Stable','#4493F8',6,'15%'],['Unknown','#8B949E',2,'5%'],
+  ];
+  $('#riskdonut').innerHTML = AFRIBN.donut(RISK.map(r=>({value:r[2],color:r[1]})), {size:160,thick:22});
+  $('#risklegend').innerHTML = RISK.map(([n,c,v,p])=>`
+    <div class="li"><span class="cdot" style="background:${c}"></span><span class="nm">${n}</span><span class="vl">${v}</span><span class="pc">(${p})</span></div>`).join('');
+
+  // alerts
+  const ALERTS = [
+    ['shield','#e5484d','Security alert: Political unrest in South Sudan','10m ago','High','high'],
+    ['bank','#e3b341','Ethiopia raises import tariff on steel','25m ago','Medium','med'],
+    ['file','#a371f7','New energy policy amendment in Nigeria','45m ago','High','high'],
+    ['handshake','#4493f8','AfCFTA: New trade facilitation portal goes live','1h ago','Low','low'],
+    ['globe','#3fb950','IMF revises growth forecast for Africa','2h ago','Low','low'],
+  ];
+  $('#alerts').innerHTML = ALERTS.map(([icn,c,t,tm,pr,prc])=>`
+    <div class="alert-li">
+      <div class="ai" style="background:${c}22;color:${c}">${ic(icn)}</div>
+      <div><div class="t">${t}</div><div class="m">${tm}</div></div>
+      <span class="pr"><span class="prtag ${prc}">${pr}</span></span>
+    </div>`).join('');
+
+  // updates
+  const UPD = [
+    ['#e5484d','Mozambique launches gas production at Coral Sul FLNG','2m ago'],
+    ['#f0883e','Uganda signs $1.2bn road infrastructure deal with AfDB','30m ago'],
+    ['#a371f7','DR Congo and Rwanda hold peace talks in Nairobi','1h ago'],
+    ['#4493f8','Ghana\'s inflation drops to 23.1% in April 2024','2h ago'],
+    ['#3fb950','South Africa implements new cybersecurity regulations','3h ago'],
+  ];
+  $('#updates').innerHTML = UPD.map(([c,t,tm])=>`
+    <div class="upd-li"><span class="d" style="background:${c}"></span><div class="t">${t}</div><span class="tm">${tm}</span></div>`).join('');
+
+  // trending
+  const TR = [['Elections',128],['Oil & Gas',96],['Infrastructure',84],['AfCFTA',72],['Security',68],['Trade',54],['Energy Transition',46],['Mining',38]];
+  $('#trending').innerHTML = TR.map(([n,c])=>`<span class="chip"><span class="ct">${n}</span><span class="cn">${c}</span><span class="cu">${ic('trendUp','width="12" height="12"')}</span></span>`).join('');
+
+  // footer strip
+  const FOOT = [['globe','#E8252D','Coverage','54 Countries'],['file','#E3B341','Sources','1,248 Active'],['message','#A371F7','Languages','12 Supported'],['checkCircle','#3FB950','Last Updated','2 minutes ago']];
+  $('#footstrip').innerHTML = FOOT.map(([icn,c,l,v])=>`<div class="fs"><div class="fi" style="background:${c}22;color:${c}">${ic(icn)}</div><div><div class="fl">${l}</div><div class="fv">${v}</div></div></div>`).join('');
+</script>
+</body>
+</html>

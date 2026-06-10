@@ -1,0 +1,378 @@
+
+
+--- PAGE 1 ---
+ 
+You  are  not  building  a  news  platform.  
+You
+ 
+are
+ 
+building
+ 
+an
+ 
+Intelligence
+ 
+Operating
+ 
+System
+ 
+(Intelligence
+ 
+OS).
+ 
+When  I  analyze  the  screens,  I  see  3  distinct  layers:  
+LAYER  1  Collection  &  Intelligence  Production  (Sources  →  AI  →  Agents  →  Verification)   LAYER  2  Intelligence  Warehouse  (Knowledge  Graph  +  Intelligence  Database)   LAYER  3  Intelligence  Products  (Policy  Monitor,  Deal  Tracker,  Risk  Dashboard,  Reports,  Alerts,  etc)   
+Most  founders  make  the  mistake  of  building  Layer  3  first  because  it  looks  impressive.  
+Your  screenshots  show  Layer  3.  
+The  backend  roadmap  is  actually  about  building  Layer  1  and  Layer  2  correctly  so  Layer  3  
+becomes
+ 
+almost
+ 
+automatic.
+ 
+ 
+What  I  see  from  the  screenshots  
+Products  visible:  
+✓  Real-Time  Feed  ✓  Alerts  ✓  Watchlist  ✓  Country  Intelligence  ✓  Dashboards  ✓  Reports  ✓  Policy  Monitor  ✓  Deal  Tracker  ✓  Event  Tracker  ✓  Risk  Dashboard   
+The  mistake  would  be:  
+Build  each  separately  
+
+
+--- PAGE 2 ---
+ 
+Instead:  
+Build  one  intelligence  engine   Everything  else  reads  from  it    
+Actual  Backend  Architecture  
+I  would  structure  AFRIBN  backend  like  this:  
+AFRIBN  Platform   ├──  Identity  Module  ├──  Source  Module  ├──  Collection  Module  ├──  Intelligence  Module  ├──  Verification  Module  ├──  Knowledge  Graph  Module  ├──  Publishing  Module  ├──  Alerting  Module   Products  ├──  Feed  ├──  Country  Intelligence  ├──  Policy  Monitor  ├──  Deal  Tracker  ├──  Event  Tracker  ├──  Risk  Dashboard  ├──  Reports  ├──  Watchlists    
+PHASE  1  
+Identity  &  Access  
+You  need:  
+
+
+--- PAGE 3 ---
+Admin  Editor  Research  Analyst  Country  Agent  Verifier  Client  Enterprise  Client   
+Tables:  
+users  roles  permissions  organizations  subscriptions   
+Endpoints:  
+POST  /auth/login  POST  /auth/register  GET  /users/me   GET  /organizations  POST  /organizations   GET  /roles    
+PHASE  2  
+Source  Management  
+Admin  panel  not  shown  in  screenshots  but  required.  
+Tables:  
+sources  source_categories  source_health  source_scrape_jobs   
+Source  example:  
+
+
+--- PAGE 4 ---
+{    "name":"The  East  African",    "country":"Kenya",    "type":"News",    "frequency":"15min",    "reliability":82  }   
+Endpoints:  
+POST  /sources  GET  /sources  PATCH  /sources/{id}   POST  /sources/test    
+PHASE  3  
+Collection  Layer  
+This  powers  everything.  
+Worker  services:  
+News  Scraper   Government  Monitor   Parliament  Monitor   Tender  Monitor   Company  Monitor   Social  Monitor   Document  Collector   
+Tables:  
+raw_documents  
+
+
+--- PAGE 5 ---
+raw_articles  raw_events    
+Flow  
+Source   ↓  Collector   ↓  Raw  Article   ↓  AI  Processing  Queue    
+PHASE  4  
+Intelligence  Engine  
+This  is  your  core  asset.  
+AI  converts:  
+Article  Document  Speech  Press  Release   
+into:  
+Event  Policy  Deal  Risk  Alert  Entity    
+
+
+--- PAGE 6 ---
+Main  Tables  
+stories  events  policies  deals  risks  entities   
+This  is  where  your  screenshots  come  alive.  
+ 
+Example  
+Article:  
+Kenya  signs  $2.1bn  energy  deal   
+AI  creates:  
+{   "event_type":"Deal",   "sector":"Energy",   "country":"Kenya",   "value":"2.1B"  }   
+and  stores:  
+deals   
+automatically.  
+ 
+PHASE  5  
+Entity  Extraction  
+
+
+--- PAGE 7 ---
+The  platform  depends  on  this.  
+Every  article  becomes:  
+Countries  Companies  People  Organizations  Projects  Policies  Events   
+Tables:  
+entities  entity_aliases  entity_mentions   
+Example:  
+Dangote  Group  Nigeria  Aliko  Dangote  Refinery  Project   
+become  connected.  
+ 
+PHASE  6  
+Confidence  Engine  
+Not  visible  in  UI  but  crucial.  
+Tables:  
+confidence_scores  evidence_sources   
+Example:  
+
+
+--- PAGE 8 ---
+{   "confidence":87,   "source_count":6,   "verified":true  }    
+PHASE  7  
+Gap  Detection  
+Your  secret  weapon.  
+AI  detects:  
+Missing  value  Missing  contract  Missing  quote  Missing  implementation  timeline   
+Table:  
+gap_reports   
+Example:  
+{   "event":"Kenya  Energy  Deal",   "missing":"Contract  structure"  }    
+PHASE  8  
+Field  Operations  Module  
+This  powers  country  agents.  
+
+
+--- PAGE 9 ---
+Tables:  
+field_tasks  agent_submissions  attachments   
+Example:  
+Interview  ministry  official   Verify  contract  amount   Collect  signed  document   
+Endpoints:  
+POST  /tasks  GET  /tasks  POST  /tasks/{id}/submit    
+PHASE  9  
+Verification  Module  
+Before  publishing.  
+Tables:  
+verification_reviews   
+Workflow:  
+AI   ↓  Analyst   ↓  Country  Agent   ↓  Verifier   ↓  Published  
+
+
+--- PAGE 10 ---
+ 
+Statuses:  
+draft  review  field_verification  verified  published  rejected    
+PHASE  10  
+Knowledge  Graph  
+This  becomes  AFRIBN's  moat.  
+Tables:  
+graph_nodes  graph_edges   
+Nodes:  
+Country  Company  Person  Policy  Deal  Project  Organization   
+Relationships:  
+owns  invests_in  signed  regulates  announced  funded   
+
+
+--- PAGE 11 ---
+Example:  
+UAE  Consortium      ↓  funds  Kenya  Renewable  Project   Kenya  Renewable  Project      ↓  affects  Energy  Sector   Energy  Sector      ↓  influences  Risk  Score    
+PHASE  11  
+Publishing  Engine  
+Everything  published  here.  
+Table:  
+published_intelligence   
+Status:  
+Published  Archived  Updated  Retracted    
+PHASE  12  
+Real-Time  Feed  
+Screenshot:  
+
+
+--- PAGE 12 ---
+Real-Time  Feed   
+Backend:  
+Table:  
+feed_items   
+Generated  from:  
+Stories  Policies  Deals  Risks  Events   
+Endpoint:  
+GET  /feed   
+Filters:  
+GET  /feed?country=Nigeria  GET  /feed?sector=Energy  GET  /feed?impact=high    
+PHASE  13  
+Country  Intelligence  
+Screenshot:  
+Country  Intelligence   
+Backend  aggregates:  
+country_profiles  country_metrics  country_events  
+
+
+--- PAGE 13 ---
+country_risks   
+Endpoint:  
+GET  /countries/{country}   
+Response:  
+{   "economy":{},   "politics":{},   "security":{},   "investments":{}  }    
+PHASE  14  
+Policy  Monitor  
+Screenshot:  
+Policy  Monitor   
+Table:  
+policies   
+Policy  lifecycle:  
+Draft  Consultation  Approved  Implemented  Amended  Repealed   
+Endpoint:  
+GET  /policies  
+
+
+--- PAGE 14 ---
+  
+PHASE  15  
+Deal  Tracker  
+Screenshot:  
+Deal  Tracker   
+Table:  
+deals   
+Fields:  
+country  sector  value  stage  status  counterparties   
+Stages:  
+Rumor  Negotiation  Signed  Funding  Implementation  Completed    
+PHASE  16  
+Event  Tracker  
+
+
+--- PAGE 15 ---
+Screenshot:  
+Event  Tracker   
+Table:  
+events   
+Types:  
+Conference  Election  Summit  Parliament  Session  Tender  Deadline  Court  Hearing    
+PHASE  17  
+Risk  Dashboard  
+Screenshot:  
+Risk  Dashboard   
+This  requires  its  own  engine.  
+Tables:  
+risk_scores  risk_factors  country_risk_snapshots   
+Risk  categories:  
+Political  Economic  Security  Regulatory  Social  
+
+
+--- PAGE 16 ---
+Environmental   
+Nightly  worker:  
+calculate  risk   
+Updates:  
+country_risk_snapshots    
+PHASE  18  
+Watchlists  
+Screenshot:  
+Watchlist   
+Tables:  
+watchlists  watchlist_items   
+Users  can  watch:  
+Country  Company  Person  Sector  Topic  Policy    
+PHASE  19  
+Alerts  
+
+
+--- PAGE 17 ---
+Screenshot:  
+Alerts   
+Tables:  
+alerts  alert_rules  alert_deliveries   
+Examples:  
+Notify  if:  Nigeria  risk  >  70   New  energy  policy  in  Kenya   Deal  >  $500M   
+Worker:  
+Event  occurs   ↓  Rule  engine   ↓  Alert  generated    
+PHASE  20  
+Reports  
+Screenshot:  
+Reports   
+Tables:  
+reports  report_sections  report_exports  
+
+
+--- PAGE 18 ---
+ 
+Generation:  
+Knowledge  Graph  +  Verified  Intelligence  +  AI  Writer  =  Report    
+BACKEND  ROADMAP  
+If  I  were  CTO  of  AFRIBN,  I  would  build  in  this  exact  order:  
+step  1  Authentication  Organizations  Roles  Sources  Scraping  Raw  Data  Storage   
+step  2  AI  Distillation  Entity  Extraction  Events  Stories  Policies  Deals   
+step  3  Confidence  Scoring  Gap  Detection  Country  Agent  Workflow  Verification  Publishing   
+step  4  
+
+
+--- PAGE 19 ---
+Real-Time  Feed  Country  Intelligence  Watchlists  Alerts   
+step  5  Policy  Monitor  Deal  Tracker  Event  Tracker  Reports   
+Step  6  Knowledge  Graph  Risk  Engine  Executive  Briefs  Predictive  Intelligence   
+Feed,  Country  Intelligence,  Policy  Monitor,  Deal  Tracker,  Event  Tracker,  Reports,  
+Alerts,
+ 
+Watchlists,
+ 
+and
+ 
+Risk
+ 
+Dashboard
+ 
+are
+ 
+not
+ 
+separate
+ 
+systems.
+ 
+They
+ 
+are
+ 
+all
+ 
+different
+ 
+views
+ 
+over
+ 
+the
+ 
+same
+ 
+verified
+ 
+intelligence
+ 
+database.
+ 
+Build
+ 
+that
+ 
+intelligence
+ 
+core
+ 
+first,
+ 
+and
+ 
+the
+ 
+rest
+ 
+becomes
+ 
+much
+ 
+easier.
+ 
+ 

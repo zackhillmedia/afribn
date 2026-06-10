@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Published Intelligence</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .filter-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .filter-bar .search-inline { flex:1; min-width:200px; }
+  .pub-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .pub-card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; cursor:pointer; transition:.16s; display:flex; flex-direction:column; }
+  .pub-card:hover { border-color:rgba(232,37,45,0.35); transform:translateY(-2px); }
+  .pub-card .ph { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .pub-card h3 { font-size:16.5px; font-weight:700; line-height:1.25; letter-spacing:-0.01em; }
+  .pub-card .pm { display:flex; align-items:center; gap:8px; margin:12px 0 14px; font-size:12.5px; color:var(--ink-3); }
+  .pub-card .aiv { font-family:var(--font-display); font-weight:800; font-size:22px; }
+  .aud-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; padding-top:14px; border-top:1px solid var(--line); }
+  .aud-chip { font-size:11px; font-weight:600; padding:3px 8px; border-radius:6px; background:var(--panel-3); color:var(--ink-2); }
+  .attach-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); } .attach-row:last-child{border-bottom:none;}
+  .attach-row .nm { display:flex; align-items:center; gap:10px; font-size:14px; } .attach-row .nm svg{width:16px;height:16px;color:var(--ink-3);}
+  .sw2 { width:40px; height:23px; border-radius:20px; background:var(--panel-3); position:relative; cursor:pointer; flex:none; transition:background .2s; }
+  .sw2.on { background:var(--green); } .sw2 i{position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:transform .2s;} .sw2.on i{transform:translateX(17px);}
+  @media (max-width:1200px){ .pub-grid{grid-template-columns:1fr 1fr} } @media (max-width:760px){ .pub-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Published Intelligence</h1>
+          <div class="page-sub">Verified intelligence library powering all AFRIBN products.</div></div>
+        <div class="seg-toggle"><button class="on" id="vGrid"><span id="gi"></span> Grid</button><button id="vTable"><span id="ti2"></span> Table</button></div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search published intelligence..."></div>
+        <select class="select" id="fCountry"><option>All Countries</option><option>Kenya</option><option>Sudan</option><option>Nigeria</option><option>DR Congo</option></select>
+        <select class="select" id="fTopic"><option>All Topics</option><option>Energy</option><option>Security</option><option>Politics</option><option>Industry</option></select>
+        <select class="select" id="fProduct"><option>All Products</option><option>Feed</option><option>Reports</option><option>Country Intel</option><option>Alerts</option></select>
+        <select class="select"><option>Score: Any</option><option>80+</option><option>60–79</option></select>
+      </div>
+      <div class="pub-grid" id="grid"></div>
+    </div>
+  </div>
+</div>
+<div class="drawer-back" id="drawerBack"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('send');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('send'); $('#si').innerHTML = ic('search'); $('#gi').innerHTML = ic('grid','width="15" height="15"'); $('#ti2').innerHTML = ic('listChecks','width="15" height="15"');
+
+  const TP = { Energy:'energy', Security:'security', Politics:'politics', Industry:'industry' };
+  const PUB = [
+    { id:'PUB-3301', t:'Kenya signs $2.1bn renewable energy agreement with UAE consortium', country:'Kenya', flag:'kenya', topic:'Energy', aiv:85, date:'May 16, 2024', ver:3, aud:['Governments','Investors','Corporates'], attach:{Feed:true,Reports:true,'Country Intel':true,Alerts:true,Dashboards:true} },
+    { id:'PUB-3300', t:'Sudan army and RSF agree to ceasefire talks in Jeddah', country:'Sudan', flag:'sudan', topic:'Security', aiv:80, date:'May 16, 2024', ver:2, aud:['Governments','Diplomats'], attach:{Feed:true,Reports:true,'Country Intel':true,Alerts:true,Dashboards:false} },
+    { id:'PUB-3298', t:'Nigeria approves ₦6.2tn supplementary budget', country:'Nigeria', flag:'nigeria', topic:'Politics', aiv:78, date:'May 16, 2024', ver:1, aud:['Governments','Investors'], attach:{Feed:true,Reports:false,'Country Intel':true,Alerts:false,Dashboards:true} },
+    { id:'PUB-3295', t:'DR Congo introduces new mining code', country:'DR Congo', flag:'drcongo', topic:'Industry', aiv:75, date:'May 15, 2024', ver:2, aud:['Investors','Corporates'], attach:{Feed:true,Reports:true,'Country Intel':true,Alerts:false,Dashboards:true} },
+    { id:'PUB-3290', t:'Dangote Refinery begins diesel exports to West Africa', country:'Nigeria', flag:'nigeria', topic:'Energy', aiv:72, date:'May 15, 2024', ver:1, aud:['Investors','Corporates','Development Partners'], attach:{Feed:true,Reports:false,'Country Intel':true,Alerts:false,Dashboards:true} },
+    { id:'PUB-3285', t:'Ethiopia launches national industrial parks plan', country:'Ethiopia', flag:'ethiopia', topic:'Industry', aiv:60, date:'May 15, 2024', ver:1, aud:['Investors','Development Partners'], attach:{Feed:true,Reports:false,'Country Intel':true,Alerts:false,Dashboards:false} },
+  ];
+  const aivCol = v => v>=80?'#E8252D':v>=70?'#FF8A3D':'#E3B341';
+
+  function render(){
+    const kw=($('#kw').value||'').toLowerCase(), fc=$('#fCountry').value, ft=$('#fTopic').value;
+    const rows=PUB.filter(p=>(!kw||p.t.toLowerCase().includes(kw))&&(fc==='All Countries'||p.country===fc)&&(ft==='All Topics'||p.topic===ft));
+    $('#grid').innerHTML=rows.map(p=>`<div class="pub-card" data-id="${p.id}">
+      <div class="ph"><span class="pill ${TP[p.topic]}">${p.topic}</span><div style="text-align:right"><div class="aiv" style="color:${aivCol(p.aiv)}">${p.aiv}</div><div class="muted" style="font-size:10px">AIV</div></div></div>
+      <h3>${p.t}</h3>
+      <div class="pm">${AFRIBN.flag(p.flag)} ${p.country} · ${p.date} · v${p.ver}</div>
+      <div class="aud-chips">${p.aud.map(a=>`<span class="aud-chip">${a}</span>`).join('')}</div>
+    </div>`).join('')||`<div class="empty" style="grid-column:1/-1">${ic('send')}<div>No published intelligence matches.</div></div>`;
+    $('#grid').querySelectorAll('.pub-card').forEach(c=>c.addEventListener('click',()=>openDrawer(c.dataset.id)));
+  }
+  render();
+  ['#kw'].forEach(s=>$(s).addEventListener('input',render));
+  ['#fCountry','#fTopic','#fProduct'].forEach(s=>$(s).addEventListener('change',render));
+
+  function openDrawer(id){
+    const p=PUB.find(x=>x.id===id); if(!p) return;
+    $('#drawer').innerHTML=`<div class="drawer-h"><div><div class="row gap-8" style="margin-bottom:8px"><span class="pill ${TP[p.topic]}">${p.topic}</span>${AFRIBN.statusPill('Published','#3FB950')}</div><h2 style="font-size:21px;font-weight:800;line-height:1.2">${p.t}</h2><div class="muted" style="font-size:13px;margin-top:6px">${p.id} · ${p.country} · v${p.ver} · ${p.date}</div></div><button class="icon-btn" id="dClose" style="width:36px;height:36px">${ic('x')}</button></div>
+      <div class="drawer-b">
+        <div class="row gap-12" style="margin-bottom:18px"><div class="panel" style="flex:1;text-align:center;padding:14px"><div class="aiv" style="font-size:28px;color:${aivCol(p.aiv)}">${p.aiv}</div><div class="muted" style="font-size:11px">AIV</div></div><div class="panel" style="flex:1;text-align:center;padding:14px"><div class="aiv" style="font-size:28px">v${p.ver}</div><div class="muted" style="font-size:11px">Version</div></div></div>
+        <div class="eyebrow" style="margin-bottom:10px">Audience Visibility</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px">${['Governments','Investors','Diplomats','Corporates','Development Partners'].map(a=>`<span class="aud-chip" style="${p.aud.includes(a)?'background:var(--red-tint);color:var(--red-bright)':''}">${a}</span>`).join('')}</div>
+        <div class="eyebrow" style="margin-bottom:6px">Attach to Products</div>
+        <div id="attach"></div>
+        <div class="eyebrow" style="margin:20px 0 14px">Version History</div>
+        <div class="timeline">
+          <div class="tl-item"><span class="tl-dot done"></span><div class="tl-t">v${p.ver} · Published</div><div class="tl-m">Verified by D. Okoye · ${p.date}</div></div>
+          <div class="tl-item"><span class="tl-dot"></span><div class="tl-t">Verification approved</div><div class="tl-m">Score & sources confirmed</div></div>
+          <div class="tl-item"><span class="tl-dot muted"></span><div class="tl-t">Draft created</div><div class="tl-m">From raw article + scoring</div></div>
+        </div>
+        <div class="row gap-12" style="margin-top:22px"><button class="btn btn-ghost" style="flex:1" id="dUpdate">${ic('edit','width=\"16\" height=\"16\"')} Update</button><button class="btn btn-ghost" style="flex:1;color:#ff7378" id="dUnpub">${ic('ban','width=\"16\" height=\"16\"')} Unpublish</button></div>
+      </div>`;
+    $('#drawerBack').classList.add('open'); $('#drawer').classList.add('open');
+    $('#dClose').onclick=closeDrawer;
+    const renderAttach=()=>{ $('#attach').innerHTML=Object.entries(p.attach).map(([k,v])=>`<div class="attach-row"><span class="nm">${ic(({Feed:'feed',Reports:'file','Country Intel':'globe',Alerts:'bell',Dashboards:'grid'})[k]||'send')} ${k}</span><span class="sw2 ${v?'on':''}" data-k="${k}"><i></i></span></div>`).join('');
+      $('#attach').querySelectorAll('.sw2').forEach(s=>s.addEventListener('click',()=>{ p.attach[s.dataset.k]=!p.attach[s.dataset.k]; renderAttach(); toast(`${s.dataset.k}: ${p.attach[s.dataset.k]?'attached':'detached'}`); })); };
+    renderAttach();
+    $('#dUpdate').onclick=()=>toast('Opening editor…');
+    $('#dUnpub').onclick=()=>{ closeDrawer(); toast(`${p.id} unpublished`,'warn'); };
+  }
+  function closeDrawer(){ $('#drawerBack').classList.remove('open'); $('#drawer').classList.remove('open'); }
+  $('#drawerBack').addEventListener('click',closeDrawer);
+  $('#vTable').onclick=()=>toast('Table view'); $('#vGrid').onclick=()=>toast('Grid view');
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Admin / Operations</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .kpi-row { grid-template-columns:repeat(4,1fr); }
+  .adm-grid { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:22px; align-items:start; }
+  .pipe { display:flex; align-items:center; gap:6px; overflow-x:auto; padding-bottom:4px; }
+  .pipe-stage { flex:1; min-width:120px; background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:14px; text-align:center; }
+  .pipe-stage .v { font-family:var(--font-display); font-weight:800; font-size:24px; } .pipe-stage .l{font-size:11.5px;color:var(--ink-3);margin-top:2px;}
+  .pipe-arrow { color:var(--ink-4); flex:none; } .pipe-arrow svg{width:16px;height:16px;}
+  .health-li { display:flex; align-items:center; gap:13px; padding:13px 0; border-bottom:1px solid var(--line); } .health-li:last-child{border-bottom:none;}
+  .health-li .hi { width:36px; height:36px; border-radius:9px; display:grid; place-items:center; flex:none; } .health-li .hi svg{width:18px;height:18px;}
+  .health-li .nm { font-weight:600; font-size:14px; white-space:nowrap; } .health-li .sub{font-size:12px;color:var(--ink-3);white-space:nowrap;}
+  .health-li > div { min-width:0; }
+  .health-li .st { margin-left:auto; flex:none; }
+  .usr-cell { display:flex; align-items:center; gap:11px; } .usr-cell .ua{width:34px;height:34px;border-radius:50%;background:var(--panel-3);display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--ink-2);flex:none;} .usr-cell .nm{font-weight:600;white-space:nowrap;} .usr-cell .em{font-size:12px;color:var(--ink-3);white-space:nowrap;}
+  .role-tag { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:6px; white-space:nowrap; }
+  .audit-li { display:flex; gap:11px; padding:11px 0; border-bottom:1px solid var(--line); font-size:13px; } .audit-li:last-child{border-bottom:none;}
+  .audit-li .ad{width:7px;height:7px;border-radius:50%;margin-top:6px;flex:none;} .audit-li .tm{margin-left:auto;color:var(--ink-4);font-size:11.5px;white-space:nowrap;}
+  .gauge-stat { display:flex; align-items:center; gap:14px; }
+  @media (max-width:1200px){ .kpi-row{grid-template-columns:repeat(2,1fr)} .adm-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1440px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Admin / Operations</h1>
+          <div class="page-sub">System health, pipeline throughput, users, and audit oversight.</div></div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="settings"><span id="sti"></span> System Settings</button>
+          <button class="btn btn-primary" id="invite"><span id="ivi"></span> Invite User</button>
+        </div>
+      </div>
+      <div class="kpi-row" id="stats"></div>
+
+      <div class="adm-grid">
+        <div class="stack gap-22">
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:16px">Intelligence Pipeline Throughput <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">· last 24h</span></div>
+            <div class="pipe" id="pipe"></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="row between" style="margin-bottom:14px"><div class="eyebrow">Users & Roles</div><div class="search-inline" style="height:38px;width:200px"><span id="usi"></span><input id="ukw" placeholder="Search users..."></div></div>
+            <div class="tbl-scroll"><table class="tbl" style="min-width:600px"><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Last Active</th><th></th></tr></thead><tbody id="users"></tbody></table></div>
+          </div>
+        </div>
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:6px">System Health</div>
+            <div id="health"></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:14px">Worker Load</div>
+            <div class="gauge-stat"><div id="loadRing"></div><div><div style="font-weight:600;font-size:14px">Collection workers</div><div class="muted" style="font-size:12.5px">6 of 8 active · 2 idle</div><div class="muted" style="font-size:12.5px;margin-top:6px">Queue depth: 14 jobs</div></div></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:8px">Audit Log</div>
+            <div id="audit"></div>
+            <a class="muted" href="#" style="font-size:12.5px;display:inline-block;margin-top:10px">View full audit trail →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('sliders');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML=ic('sliders'); $('#sti').innerHTML=ic('settings','width="16" height="16"'); $('#ivi').innerHTML=ic('plus','width="16" height="16"'); $('#usi').innerHTML=ic('search'); 
+
+  $('#stats').innerHTML=[['checkCircle','#3FB950','99.96%','Uptime (30d)','+0.02%'],['database','#E8252D','1,248','Sources','+24'],['refresh','#E3B341','1,284','Jobs (24h)','+92'],['users','#A371F7','38','Active Users','+4']]
+    .map(([i,c,v,l,d])=>`<div class="stat"><div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div><div class="num">${v}</div><div class="lbl">${l}</div><div class="delta up" style="font-size:12.5px;white-space:nowrap">${d} <span class="muted" style="font-weight:400">vs prev</span></div></div>`).join('');
+
+  // pipeline
+  const stages=[['Collected','3,842'],['Raw Reviewed','2,610'],['In Production','842'],['Scored','520'],['Verified','388'],['Published','311']];
+  $('#pipe').innerHTML=stages.map((s,i)=>`<div class="pipe-stage"><div class="v">${s[1]}</div><div class="l">${s[0]}</div></div>${i<stages.length-1?`<span class="pipe-arrow">${ic('chevRight')}</span>`:''}`).join('');
+
+  // system health
+  const HEALTH=[
+    ['Collection Service','collector-worker · 8 nodes','#3FB950','Operational','server2'],
+    ['Scoring Engine','scoring-api · v3.2','#3FB950','Operational','target'],
+    ['Reliability Engine','srs-recompute','#3FB950','Operational','database'],
+    ['Notification Service','alerts-dispatch','#E3B341','Degraded','bell'],
+    ['Search Index','elastic-cluster','#3FB950','Operational','search'],
+  ];
+  $('#health').innerHTML=HEALTH.map(([n,s,c,st,i])=>`<div class="health-li"><span class="hi" style="background:${c}22;color:${c}">${ic(i)}</span><div><div class="nm">${n}</div><div class="sub">${s}</div></div><span class="st">${AFRIBN.statusPill(st,c)}</span></div>`).join('');
+
+  $('#loadRing').innerHTML=AFRIBN.ring(75,{size:84,stroke:9,color:'#E8252D',label:'load'});
+
+  // users
+  const ROLE={ Admin:'#E8252D',Analyst:'#4493F8','Field Agent':'#E3B341',Verifier:'#A371F7',Client:'#3FB950' };
+  const USERS=[
+    ['David Okoye','david@afribn.local','Admin','Active','now'],
+    ['A. Mwangi','amwangi@afribn.local','Analyst','Active','3m ago'],
+    ['K. Osman','kosman@afribn.local','Analyst','Active','12m ago'],
+    ['M. Diallo','mdiallo@afribn.local','Field Agent','Active','1h ago'],
+    ['S. Bello','sbello@afribn.local','Verifier','Active','24m ago'],
+    ['Gov Analyst','client@worldbank.org','Client','Idle','2h ago'],
+  ];
+  function renderUsers(){
+    const kw=($('#ukw').value||'').toLowerCase();
+    $('#users').innerHTML=USERS.filter(u=>!kw||(u[0]+u[1]+u[2]).toLowerCase().includes(kw)).map(([n,em,role,st,la])=>`<tr style="cursor:pointer">
+      <td><div class="usr-cell"><span class="ua">${n.split(' ').map(x=>x[0]).join('').slice(0,2)}</span><div><div class="nm">${n}</div><div class="em">${em}</div></div></div></td>
+      <td><span class="role-tag" style="background:${ROLE[role]}22;color:${ROLE[role]}">${role}</span></td>
+      <td>${AFRIBN.statusPill(st, st==='Active'?'#3FB950':'#8B949E')}</td>
+      <td class="muted-2" style="white-space:nowrap">${la}</td>
+      <td><button class="row-more" onclick="event.stopPropagation()" style="width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:transparent;border:none;color:var(--ink-3)">${ic('more','width=\"16\" height=\"16\"')}</button></td></tr>`).join('');
+    $('#users').querySelectorAll('.row-more').forEach(b=>b.addEventListener('click',()=>toast('Edit role · Suspend · Reset password')));
+  }
+  renderUsers(); $('#ukw').addEventListener('input',renderUsers);
+
+  // audit
+  const AUDIT=[
+    ['#3FB950','D. Okoye published STORY-4821','2m ago'],['#E3B341','Notification service degraded','18m ago'],
+    ['#4493F8','A. Mwangi submitted 4 items for verification','32m ago'],['#E8252D','@AfricaIntel source suppressed (SRS 35)','1h ago'],
+    ['#A371F7','S. Bello rejected STORY-4790','2h ago'],['#3FB950','New source onboarded: Nation Africa','3h ago'],
+  ];
+  $('#audit').innerHTML=AUDIT.map(([c,t,tm])=>`<div class="audit-li"><span class="ad" style="background:${c}"></span><div>${t}</div><span class="tm">${tm}</span></div>`).join('');
+
+  $('#invite').onclick=()=>toast('Invite a new user');
+  $('#settings').onclick=()=>toast('System settings');
+</script>
+</body>
+</html>

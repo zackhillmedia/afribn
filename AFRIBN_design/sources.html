@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Sources</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .kpi-row { grid-template-columns: repeat(5, 1fr); }
+  .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .filter-bar .search-inline { flex: 1; min-width: 180px; }
+  .src-cell { display: flex; align-items: center; gap: 12px; }
+  .src-cell .si2 { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--panel-3); color: var(--ink-2); }
+  .src-cell .si2 svg { width: 18px; height: 18px; }
+  .src-cell .nm { font-weight: 600; white-space: nowrap; } .src-cell .u { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+  .relscore { font-family: var(--font-display); font-weight: 800; font-size: 17px; }
+  .row-act { display: flex; gap: 4px; }
+  .row-act button { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: transparent; border: none; color: var(--ink-3); }
+  .row-act button:hover { background: var(--panel-3); color: var(--ink); }
+  .row-act button svg { width: 16px; height: 16px; }
+  .pager { display:flex; align-items:center; justify-content:space-between; padding-top:18px; margin-top:6px; border-top:1px solid var(--line); flex-wrap:wrap; gap:14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1500px">
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-title"><span class="tic" id="tic"></span> Sources</h1>
+          <div class="page-sub">Manage the data sources powering AFRIBN collection workers.</div>
+        </div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="runAll"><span id="rai"></span> Run All Scrapes</button>
+          <button class="btn btn-primary" id="addSrc"><span id="asi"></span> Add Source</button>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="stats"></div>
+
+      <div class="panel panel-pad-lg">
+        <div class="filter-bar">
+          <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search sources..."></div>
+          <select class="select" id="fType"><option>All Types</option><option>RSS</option><option>Website</option><option>API</option><option>Social</option><option>Document</option><option>Field report</option></select>
+          <select class="select" id="fDecision"><option>All Decisions</option><option>Whitelisted</option><option>Normal</option><option>Enhanced</option><option>Partial</option><option>Probation</option><option>Suppressed</option><option>Blacklisted</option></select>
+          <select class="select" id="fStatus"><option>All Status</option><option>Active</option><option>Inactive</option></select>
+        </div>
+        <div class="tbl-scroll"><table class="tbl" style="margin-top:8px;min-width:1000px">
+          <thead><tr><th>Source</th><th>Type</th><th>Coverage</th><th>Reliability</th><th>Decision</th><th>Last Scraped</th><th>Articles</th><th>Status</th><th></th></tr></thead>
+          <tbody id="srcBody"></tbody>
+        </table></div>
+        <div class="pager"><span class="muted">Showing 1 to 10 of 1,248 sources</span>
+          <div class="pages" style="display:flex;gap:6px"><button class="active" style="min-width:34px;height:34px;border-radius:8px;border:1px solid var(--red);background:var(--red);color:#fff">1</button><button style="min-width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--ink-2)">2</button><button style="min-width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--ink-2)">3</button><span class="muted" style="padding:0 4px">…</span><button style="min-width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--ink-2)">125</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Source modal -->
+<div class="modal-back" id="modalBack"><div class="modal">
+  <div class="modal-h"><h3>Add Source</h3><button class="icon-btn" id="mClose" style="width:36px;height:36px"></button></div>
+  <div class="modal-b">
+    <div class="field"><label>Source name</label><input id="m_name" placeholder="e.g. Reuters Africa"></div>
+    <div class="field"><label>URL / endpoint</label><input id="m_url" placeholder="https://..."></div>
+    <div class="field-row">
+      <div class="field"><label>Type</label><select id="m_type"><option>RSS</option><option>Website</option><option>API</option><option>Social</option><option>Document</option><option>Field report</option></select></div>
+      <div class="field"><label>Language</label><select id="m_lang"><option>English</option><option>French</option><option>Arabic</option><option>Portuguese</option><option>Swahili</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Country coverage</label><input id="m_country" placeholder="e.g. Nigeria, Pan-African"></div>
+      <div class="field"><label>Topic / sector</label><input id="m_topic" placeholder="e.g. Politics, Energy"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Scrape frequency</label><select id="m_freq"><option>Every 5 minutes</option><option>Every 15 minutes</option><option>Hourly</option><option>Every 6 hours</option><option>Daily</option></select></div>
+      <div class="field"><label>Status</label><select id="m_status"><option>Active</option><option>Inactive</option></select></div>
+    </div>
+  </div>
+  <div class="modal-f"><button class="btn btn-ghost" id="mCancel">Cancel</button><button class="btn btn-primary" id="mSave">Add Source</button></div>
+</div></div>
+
+<!-- Source health drawer -->
+<div class="drawer-back" id="drawerBack"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('database');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('database'); $('#rai').innerHTML = ic('refresh','width="16" height="16"'); $('#asi').innerHTML = ic('plus','width="16" height="16"');
+  $('#si').innerHTML = ic('search'); $('#mClose').innerHTML = ic('x');
+
+  const STATS = [
+    ['database','#E8252D','1,248','Total Sources','+24','vs last 30 days','up'],
+    ['checkCircle','#3FB950','1,094','Active','+18','vs last 30 days','up'],
+    ['target','#E3B341','78','Avg Reliability','+1.4','vs last 30 days','up'],
+    ['alertTri','#FF6B35','32','On Probation','+5','vs last 30 days','down'],
+    ['ban','#A371F7','9','Blacklisted','+2','vs last 30 days','down'],
+  ];
+  $('#stats').innerHTML = STATS.map(([i,c,v,l,d,sub,dir])=>`
+    <div class="stat"><div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div>
+      <div class="num">${v}</div><div class="lbl">${l}</div>
+      <div class="delta ${dir==='up'?'up':'down'}" style="font-size:12.5px;white-space:nowrap">${d} <span class="muted" style="font-weight:400">${sub}</span></div></div>`).join('');
+
+  const TYPE_IC = { RSS:'feed', Website:'globe', API:'server2', Social:'message', Document:'file', 'Field report':'pin' };
+  const DEC = {
+    Whitelisted:'#3FB950', Normal:'#4493F8', Enhanced:'#22b3a6', Partial:'#E3B341', Probation:'#FF6B35', Suppressed:'#A371F7', Blacklisted:'#E5252A'
+  };
+  function rc(s){ return s>=85?'#3FB950':s>=70?'#a3d44a':s>=55?'#E3B341':s>=40?'#FF6B35':'#E5252A'; }
+
+  const SRC = [
+    ['Reuters Africa','reuters.com/africa','API','Pan-African · Multi',94,'Whitelisted','2m ago','1,204','Active','English'],
+    ['The Guardian Nigeria','guardian.ng','RSS','Nigeria · Politics',86,'Normal','5m ago','842','Active','English'],
+    ['ACLED','acleddata.com','API','Pan-African · Security',96,'Whitelisted','1h ago','388','Active','English'],
+    ['Business Day','businessday.ng','Website','Nigeria · Economy',81,'Normal','8m ago','410','Active','English'],
+    ['Nation Africa','nation.africa','RSS','Kenya · Politics',74,'Enhanced','15m ago','521','Active','English'],
+    ['ENA','ena.et','RSS','Ethiopia · Government',62,'Partial','30m ago','233','Active','Amharic'],
+    ['Field Report — Sahel Desk','internal/field/sahel','Field report','Sahel · Security',88,'Normal','1d ago','18','Active','French'],
+    ['Sahara Reporters','saharareporters.com','Website','Nigeria · Politics',48,'Probation','2h ago','96','Active','English'],
+    ['@AfricaIntel','x.com/africaintel','Social','Pan-African · Security',35,'Suppressed','12m ago','41','Active','English'],
+    ['AnonLeaks Blog','anonleaks.example','Website','Regional · Misc',12,'Blacklisted','3d ago','0','Inactive','English'],
+  ];
+
+  function render(){
+    const kw=($('#kw').value||'').toLowerCase(), ft=$('#fType').value, fd=$('#fDecision').value, fs=$('#fStatus').value;
+    const rows = SRC.filter(s=> (!kw||(s[0]+s[1]+s[3]).toLowerCase().includes(kw)) && (ft==='All Types'||s[2]===ft) && (fd==='All Decisions'||s[5]===fd) && (fs==='All Status'||s[8]===fs));
+    $('#srcBody').innerHTML = rows.map((s,i)=>{
+      const [nm,u,type,cov,rel,dec,last,arts,status]=s;
+      return `<tr style="cursor:pointer" data-i="${SRC.indexOf(s)}">
+        <td><div class="src-cell"><span class="si2">${ic(TYPE_IC[type]||'globe')}</span><div><div class="nm">${nm}</div><div class="u">${u}</div></div></div></td>
+        <td><span class="pill">${type}</span></td>
+        <td class="muted-2" style="white-space:nowrap">${cov}</td>
+        <td><span class="relscore" style="color:${rc(rel)}">${rel}</span></td>
+        <td>${AFRIBN.statusPill(dec, DEC[dec])}</td>
+        <td class="muted-2" style="white-space:nowrap">${last}</td>
+        <td class="tabnum">${arts}</td>
+        <td>${AFRIBN.statusPill(status, status==='Active'?'#3FB950':'#8B949E')}</td>
+        <td><div class="row-act" onclick="event.stopPropagation()">
+          <button title="Run scrape" data-a="run">${ic('refresh')}</button>
+          <button title="Reliability" data-a="rel">${ic('target')}</button>
+          <button title="More" data-a="more">${ic('more')}</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+    $('#srcBody').querySelectorAll('tr').forEach(r=>r.addEventListener('click',()=>openDrawer(+r.dataset.i)));
+    $('#srcBody').querySelectorAll('.row-act button').forEach(b=>b.addEventListener('click',()=>{
+      const a=b.dataset.a; if(a==='run') toast(`${ic('refresh','width=\"15\" height=\"15\"')} Scrape queued`,'ok'); else if(a==='rel') location.href='reliability.html'; else toast('Edit · Disable · Blacklist · Whitelist');
+    }));
+  }
+  render();
+  ['#kw'].forEach(s=>$(s).addEventListener('input',render));
+  ['#fType','#fDecision','#fStatus'].forEach(s=>$(s).addEventListener('change',render));
+
+  // drawer
+  function openDrawer(i){
+    const s=SRC[i]; const [nm,u,type,cov,rel,dec,last,arts,status,lang]=s;
+    $('#drawer').innerHTML = `
+      <div class="drawer-h"><div><div class="eyebrow red">Source</div><h2 style="font-size:24px;font-weight:800;margin-top:6px">${nm}</h2><div class="muted" style="font-size:13px;margin-top:4px">${u}</div></div>
+        <button class="icon-btn" id="dClose" style="width:36px;height:36px">${ic('x')}</button></div>
+      <div class="drawer-b">
+        <div class="row gap-12" style="margin-bottom:20px">
+          <div class="panel" style="flex:1;text-align:center;padding:16px"><div class="relscore" style="font-size:30px;color:${rc(rel)}">${rel}</div><div class="muted" style="font-size:12px">Reliability</div></div>
+          <div class="panel" style="flex:1;text-align:center;padding:16px"><div class="relscore" style="font-size:30px">${arts}</div><div class="muted" style="font-size:12px">Articles (7d)</div></div>
+        </div>
+        <div style="margin-bottom:8px">${AFRIBN.statusPill(dec, DEC[dec])} ${AFRIBN.statusPill(status, status==='Active'?'#3FB950':'#8B949E')}</div>
+        <div class="kv"><span class="k">Type</span><span class="v">${type}</span></div>
+        <div class="kv"><span class="k">Coverage</span><span class="v">${cov}</span></div>
+        <div class="kv"><span class="k">Language</span><span class="v">${lang}</span></div>
+        <div class="kv"><span class="k">Last scraped</span><span class="v">${last}</span></div>
+        <div class="kv"><span class="k">Last successful</span><span class="v">${last}</span></div>
+        <div class="kv"><span class="k">Failure count (7d)</span><span class="v">${rel<50?'14':'0'}</span></div>
+        <div class="kv"><span class="k">Scrape frequency</span><span class="v">Every 15 minutes</span></div>
+        <div class="row gap-12" style="margin-top:22px">
+          <button class="btn btn-primary" style="flex:1" id="dRun">${ic('refresh','width=\"16\" height=\"16\"')} Run scrape</button>
+          <a class="btn btn-ghost" style="flex:1" href="reliability.html">${ic('target','width=\"16\" height=\"16\"')} Reliability engine</a>
+        </div>
+        <div class="row gap-12" style="margin-top:12px">
+          <button class="btn btn-ghost btn-sm" id="dWhite">${ic('check','width=\"15\" height=\"15\"')} Whitelist</button>
+          <button class="btn btn-ghost btn-sm" id="dBlack" style="color:#ff6b6b">${ic('ban','width=\"15\" height=\"15\"')} Blacklist</button>
+        </div>
+      </div>`;
+    $('#drawerBack').classList.add('open'); $('#drawer').classList.add('open');
+    $('#dClose').onclick=closeDrawer;
+    $('#dRun').onclick=()=>toast(`${ic('refresh','width=\"15\" height=\"15\"')} Scrape queued for ${nm}`,'ok');
+    $('#dWhite').onclick=()=>toast(`${nm} whitelisted`,'ok');
+    $('#dBlack').onclick=()=>toast(`${nm} blacklisted`,'warn');
+  }
+  function closeDrawer(){ $('#drawerBack').classList.remove('open'); $('#drawer').classList.remove('open'); }
+  $('#drawerBack').addEventListener('click',closeDrawer);
+
+  // modal
+  const mb=$('#modalBack');
+  $('#addSrc').onclick=()=>mb.classList.add('open'); $('#mClose').onclick=$('#mCancel').onclick=()=>mb.classList.remove('open');
+  mb.addEventListener('click',e=>{ if(e.target===mb) mb.classList.remove('open'); });
+  $('#mSave').onclick=()=>{ const nm=$('#m_name').value.trim()||'New Source'; SRC.unshift([nm,$('#m_url').value.trim()||'—',$('#m_type').value,($('#m_country').value||'—')+' · '+($('#m_topic').value||'—'),70,'Normal','just now','0',$('#m_status').value,$('#m_lang').value]); mb.classList.remove('open'); render(); toast(`${nm} added`,'ok'); $('#m_name').value=$('#m_url').value=''; };
+
+  $('#runAll').onclick=()=>toast(`${ic('refresh','width=\"15\" height=\"15\"')} Queued scrapes for all active sources`,'ok');
+</script>
+</body>
+</html>

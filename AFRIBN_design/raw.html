@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Raw Articles</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .raw-grid { display: grid; grid-template-columns: 400px minmax(0,1fr); gap: 22px; align-items: start; }
+  .raw-list { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .raw-list-h { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .raw-list-h .search-inline { flex: 1; height: 40px; }
+  .raw-items { max-height: calc(100vh - 280px); overflow-y: auto; }
+  .raw-item { padding: 15px 16px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .12s; border-left: 2px solid transparent; }
+  .raw-item:hover { background: rgba(255,255,255,0.02); }
+  .raw-item.active { background: var(--red-tint); border-left-color: var(--red); }
+  .raw-item .t { font-weight: 600; font-size: 14.5px; line-height: 1.3; }
+  .raw-item .m { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
+  .raw-item .m .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-4); }
+  .dup-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: rgba(227,179,65,0.18); color: #f0cd6b; }
+
+  .preview .ph { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+  .preview h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.12; max-width: 22ch; }
+  .preview .body-x { color: var(--ink-2); line-height: 1.7; font-size: 15px; margin: 18px 0; }
+  .ent-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ent { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 7px; background: var(--panel-2); border: 1px solid var(--line); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .ent .ed { width: 7px; height: 7px; border-radius: 50%; }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; }
+  .act-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+  @media (max-width:1100px){ .raw-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1500px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Raw Articles</h1>
+          <div class="page-sub">Analyst inbox — review collected content before creating intelligence.</div></div>
+        <div class="row gap-12">
+          <select class="select" id="fSource"><option>All Sources</option><option>Reuters Africa</option><option>The Guardian Nigeria</option><option>AFP Afrique</option><option>ENA</option><option>@AfricaIntel</option></select>
+          <select class="select" id="fTopic"><option>All Topics</option><option>Energy</option><option>Politics</option><option>Security</option><option>Industry</option></select>
+          <select class="select" id="fStatus"><option>All Status</option><option>New</option><option>In Review</option><option>Converted</option><option>Rejected</option></select>
+          <select class="select" id="fCountry"><option>All Countries</option><option>Kenya</option><option>Nigeria</option><option>Sudan</option><option>DR Congo</option><option>Somalia</option><option>Ethiopia</option></select>
+          <select class="select" id="fDecision"><option>All Decisions</option><option>Whitelisted</option><option>Normal</option><option>Enhanced</option><option>Partial</option><option>Suppressed</option></select>
+          <select class="select" id="fDate"><option>Any date</option><option>Today</option><option>Last 7 days</option><option>Last 30 days</option></select>
+        </div>
+      </div>
+
+      <div class="raw-grid">
+        <div class="raw-list">
+          <div class="raw-list-h"><div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search raw articles..."></div></div>
+          <div class="raw-items" id="rawItems"></div>
+        </div>
+        <div class="panel panel-pad-lg preview" id="preview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('inbox');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('inbox'); $('#si').innerHTML = ic('search');
+
+  const DEC = { Whitelisted:'#3FB950', Normal:'#4493F8', Enhanced:'#22b3a6', Partial:'#E3B341', Probation:'#FF6B35', Suppressed:'#A371F7' };
+  const ARTS = [
+    { t:'Kenya signs $2.1bn renewable energy agreement with UAE consortium', src:'Reuters Africa', dec:'Whitelisted', rel:94, country:'Kenya', topic:'Energy', status:'New', author:'Duncan Miriri', pub:'May 16, 2024 · 09:58', lang:'English', dup:false,
+      body:'Kenya has signed a $2.1 billion agreement with a UAE-led consortium to develop 1.20GW of renewable energy projects, including solar, wind, and battery storage facilities. The projects will be developed in Garissa, Turkana, and Marsabit counties over the next three years. The agreement includes power purchase agreements and knowledge-transfer initiatives, officials said.',
+      ents:[['Kenya','#4493f8','Country'],['UAE','#4493f8','Country'],['Garissa','#a371f7','Place'],['Power purchase agreement','#3fb950','Topic'],['Ministry of Energy','#e3b341','Org']] },
+    { t:'Nigeria approves ₦6.2tn supplementary budget', src:'The Guardian Nigeria', dec:'Normal', rel:86, country:'Nigeria', topic:'Politics', status:'New', author:'Staff Reporter', pub:'May 16, 2024 · 08:40', lang:'English', dup:false,
+      body:'President Bola Tinubu has approved a ₦6.2 trillion supplementary budget focused on infrastructure, defense, and social investment priorities. The supplementary appropriation will be submitted to the National Assembly for review.',
+      ents:[['Nigeria','#4493f8','Country'],['Bola Tinubu','#e3b341','Person'],['National Assembly','#e3b341','Org'],['Budget','#3fb950','Topic']] },
+    { t:'Sudan army and RSF agree to ceasefire talks in Jeddah', src:'AFP Afrique', dec:'Normal', rel:88, country:'Sudan', topic:'Security', status:'In Review', author:'AFP', pub:'May 16, 2024 · 07:20', lang:'English', dup:true,
+      body:'Sudan\'s army and the paramilitary Rapid Support Forces have agreed to resume ceasefire talks in Jeddah, mediators announced. It would be the first direct engagement in months amid a worsening humanitarian situation.',
+      ents:[['Sudan','#4493f8','Country'],['RSF','#e3b341','Org'],['Jeddah','#a371f7','Place'],['Ceasefire','#3fb950','Topic']] },
+    { t:'DR Congo introduces new mining code', src:'Reuters Africa', dec:'Whitelisted', rel:94, country:'DR Congo', topic:'Industry', status:'New', author:'Sonia Rolley', pub:'May 15, 2024 · 16:10', lang:'French', dup:false,
+      body:'The Democratic Republic of Congo has introduced a new mining code aimed at attracting investment and increasing state revenue through revised royalty rates and local-content requirements.',
+      ents:[['DR Congo','#4493f8','Country'],['Mining code','#3fb950','Topic'],['Royalty rates','#3fb950','Topic']] },
+    { t:'Ethiopia launches national industrial parks development plan', src:'ENA', dec:'Partial', rel:62, country:'Ethiopia', topic:'Industry', status:'New', author:'ENA Staff', pub:'May 15, 2024 · 14:02', lang:'Amharic', dup:false,
+      body:'Ethiopia has launched a national plan targeting ten new industrial parks over the next five years to boost manufacturing and exports.',
+      ents:[['Ethiopia','#4493f8','Country'],['Industrial parks','#3fb950','Topic']] },
+    { t:'Unverified: explosion reported near Mogadishu port', src:'@AfricaIntel', dec:'Suppressed', rel:35, country:'Somalia', topic:'Security', status:'New', author:'unverified', pub:'May 16, 2024 · 10:15', lang:'English', dup:true,
+      body:'A social post claims an explosion occurred near Mogadishu port. The report is uncorroborated and the source is currently suppressed pending verification. Do not convert without independent corroboration.',
+      ents:[['Somalia','#4493f8','Country'],['Mogadishu','#a371f7','Place']] },
+  ];
+
+  let sel = 0;
+  function renderList(){
+    const kw=($('#kw').value||'').toLowerCase(), fs=$('#fStatus').value, fc=$('#fCountry').value, fsrc=$('#fSource').value, ftp=$('#fTopic').value, fd=$('#fDecision').value;
+    const rows=ARTS.filter(a=>(!kw||a.t.toLowerCase().includes(kw))&&(fs==='All Status'||a.status===fs)&&(fc==='All Countries'||a.country===fc)&&(fsrc==='All Sources'||a.src===fsrc)&&(ftp==='All Topics'||a.topic===ftp)&&(fd==='All Decisions'||a.dec===fd));
+    $('#rawItems').innerHTML = rows.map(a=>{
+      const i=ARTS.indexOf(a);
+      return `<div class="raw-item ${i===sel?'active':''}" data-i="${i}">
+        <div class="t">${a.t}</div>
+        <div class="m">${AFRIBN.flag(a.country.replace(/[^a-z]/gi,'').toLowerCase())} ${a.country} <span class="sep"></span> ${a.src} <span class="sep"></span> ${a.pub.split('·')[1]||''} ${a.dup?'<span class="dup-tag">DUP</span>':''}</div>
+      </div>`;
+    }).join('') || `<div class="empty">${ic('inbox')}<div>No articles match.</div></div>`;
+    $('#rawItems').querySelectorAll('.raw-item').forEach(el=>el.addEventListener('click',()=>{ sel=+el.dataset.i; renderList(); renderPreview(); }));
+  }
+  function renderPreview(){
+    const a=ARTS[sel]; if(!a){ $('#preview').innerHTML='<div class="empty">Select an article</div>'; return; }
+    $('#preview').innerHTML=`
+      <div class="ph">
+        <div>
+          <div class="row gap-8" style="margin-bottom:12px;flex-wrap:wrap">
+            <span class="pill ${({Energy:'energy',Politics:'politics',Security:'security',Industry:'industry',Finance:'finance'})[a.topic]||''}">${a.topic}</span>
+            <span class="rel-badge" style="background:${DEC[a.dec]}22;color:${DEC[a.dec]}">${ic('target','width=\"12\" height=\"12\"')} ${a.dec} · ${a.rel}</span>
+            ${a.dup?`<span class="rel-badge" style="background:rgba(227,179,65,0.18);color:#f0cd6b">${ic('layers','width=\"12\" height=\"12\"')} Near-duplicate</span>`:''}
+          </div>
+          <h2>${a.t}</h2>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="#" onclick="return false">${ic('link','width=\"15\" height=\"15\"')} Open source</a>
+      </div>
+      <p class="body-x">${a.body}</p>
+      <div class="meta-grid" style="margin-bottom:20px">
+        <div class="kv"><span class="k">Source</span><span class="v">${a.src}</span></div>
+        <div class="kv"><span class="k">Author</span><span class="v">${a.author}</span></div>
+        <div class="kv"><span class="k">Published</span><span class="v">${a.pub}</span></div>
+        <div class="kv"><span class="k">Language</span><span class="v">${a.lang}</span></div>
+        <div class="kv"><span class="k">Country</span><span class="v">${a.country}</span></div>
+        <div class="kv"><span class="k">Status</span><span class="v">${a.status}</span></div>
+      </div>
+      <div class="eyebrow" style="margin-bottom:12px">Detected Entities</div>
+      <div class="ent-wrap">${a.ents.map(([n,c,k])=>`<span class="ent"><span class="ed" style="background:${c}"></span>${n} <span class="muted" style="font-weight:400">· ${k}</span></span>`).join('')}</div>
+      <div class="act-bar">
+        <button class="btn btn-primary" id="toStory">${ic('edit','width=\"16\" height=\"16\"')} Convert to Story</button>
+        <button class="btn btn-ghost" id="toEvent">${ic('calendar','width=\"16\" height=\"16\"')} Convert to Event</button>
+        <button class="btn btn-ghost" id="toAI">${ic('flask','width=\"16\" height=\"16\"')} AI Extraction</button>
+        <button class="btn btn-ghost btn-sm" id="reject" style="margin-left:auto;color:#ff7378">${ic('ban','width=\"15\" height=\"15\"')} Reject</button>
+      </div>`;
+    $('#toStory').onclick=()=>{ toast('Creating story draft…','ok'); setTimeout(()=>location.href='workspace.html',700); };
+    $('#toEvent').onclick=()=>{ toast('Creating event draft…','ok'); setTimeout(()=>location.href='workspace.html',700); };
+    $('#toAI').onclick=()=>toast(`${ic('flask','width=\"15\" height=\"15\"')} Sent to AI extraction`,'ok');
+    $('#reject').onclick=()=>{ a.status='Rejected'; toast('Article archived','warn'); renderList(); };
+  }
+  ['#kw'].forEach(s=>$(s).addEventListener('input',renderList));
+  ['#fStatus','#fCountry','#fSource','#fTopic','#fDecision','#fDate'].forEach(s=>$(s).addEventListener('change',()=>{ sel=0; renderList(); renderPreview(); }));
+  renderList(); renderPreview();
+</script>
+</body>
+</html>

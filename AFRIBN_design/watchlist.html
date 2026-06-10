@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Watchlist</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .wl-tabs { display:flex; gap:8px; margin-bottom:20px; }
+  .wl-tab { display:flex; align-items:center; gap:8px; padding:9px 15px; border-radius:10px; background:var(--panel); border:1px solid var(--line); color:var(--ink-2); font-weight:600; font-size:14px; cursor:pointer; }
+  .wl-tab svg{width:16px;height:16px;} .wl-tab .c{font-size:12px;background:var(--panel-3);padding:1px 8px;border-radius:20px;color:var(--ink-3);}
+  .wl-tab.on { background:var(--red-tint); border-color:rgba(232,37,45,0.4); color:#fff; } .wl-tab.on .c{background:var(--red);color:#fff;}
+  .wl-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .wl-layout { display:grid; grid-template-columns:minmax(0,1fr) 312px; gap:22px; align-items:start; }
+  .w-h { font-size:12.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2); white-space:nowrap; }
+  .wl-alert { display:flex; gap:11px; padding:11px 0; border-bottom:1px solid var(--line); } .wl-alert:last-child{border-bottom:none;}
+  .wl-alert .d{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none;} .wl-alert .t{font-size:13.5px;font-weight:500;line-height:1.3;} .wl-alert .m{font-size:11.5px;color:var(--ink-3);margin-top:2px;}
+  .legend-li{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13.5px;} .legend-li .vl{margin-left:auto;font-weight:600;}
+  .wl-card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; transition:.16s; cursor:pointer; }
+  .wl-card:hover { border-color:rgba(232,37,45,0.35); transform:translateY(-2px); }
+  .wl-card .h { display:flex; align-items:center; gap:13px; margin-bottom:16px; }
+  .wl-card .fi { width:44px; height:44px; border-radius:11px; display:grid; place-items:center; flex:none; background:var(--panel-3); }
+  .wl-card .fi svg{width:22px;height:22px;} .wl-card .fi .flag{width:30px;height:22px;border-radius:5px;}
+  .wl-card .nm { font-weight:700; font-size:16px; } .wl-card .sub { font-size:12.5px; color:var(--ink-3); margin-top:2px; }
+  .wl-card .star { margin-left:auto; color:var(--red); }
+  .wl-metrics { display:flex; gap:16px; padding-top:14px; border-top:1px solid var(--line); }
+  .wl-metrics .m .v { font-family:var(--font-display); font-weight:800; font-size:19px; } .wl-metrics .m .l{font-size:11px;color:var(--ink-3);}
+  .spark-row { margin-top:14px; }
+  .upd-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:5px; background:var(--red); color:#fff; }
+  @media (max-width:1200px){ .wl-grid{grid-template-columns:1fr 1fr} .wl-layout{grid-template-columns:1fr} } @media (max-width:760px){ .wl-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1340px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Watchlist</h1>
+          <div class="page-sub">Your followed countries, companies, topics and people — with live updates.</div></div>
+        <button class="btn btn-primary" id="add"><span id="ai"></span> Add to Watchlist</button>
+      </div>
+      <div class="wl-tabs" id="tabs"></div>
+      <div class="wl-layout">
+        <div class="wl-grid" id="grid"></div>
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg">
+            <div class="w-h">Watchlist Summary</div>
+            <div class="muted" style="font-size:12.5px;margin-top:2px">By type</div>
+            <div class="row gap-16" style="margin-top:14px;align-items:center"><div id="summaryDonut"></div><div class="grow" id="summaryLegend" style="min-width:0"></div></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="w-h">Recent Alerts</div>
+            <div id="recentAlerts" style="margin-top:10px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('star');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML=ic('star'); $('#ai').innerHTML=ic('plus','width="16" height="16"');
+
+  const DATA = {
+    Countries:[
+      {flag:'nigeria',nm:'Nigeria',sub:'West Africa',risk:'High',m:[['2.9%','GDP'],['33.7%','Inflation'],['12','Stories 24h']],spark:[60,62,58,65,70,68,74,72,78],upd:3},
+      {flag:'kenya',nm:'Kenya',sub:'East Africa',risk:'Medium',m:[['5.5%','GDP'],['5.0%','Inflation'],['8','Stories 24h']],spark:[50,52,55,53,58,60,62,65,64],upd:2},
+      {flag:'drcongo',nm:'DR Congo',sub:'Central Africa',risk:'High',m:[['6.1%','GDP'],['18.2%','Inflation'],['6','Stories 24h']],spark:[40,44,42,48,50,47,52,55,58],upd:1},
+    ],
+    Topics:[
+      {icon:'zap',nm:'Energy Transition',sub:'Cross-continent',risk:'—',m:[['46','Stories 7d'],['+18%','Momentum'],['12','Sources']],spark:[30,34,38,42,40,46,50,54,58],upd:4},
+      {icon:'shield',nm:'Regional Security',sub:'Sahel · Horn',risk:'Elevated',m:[['68','Stories 7d'],['+9%','Momentum'],['9','Sources']],spark:[55,52,58,60,57,62,65,63,68],upd:2},
+      {icon:'deal',nm:'AfCFTA',sub:'Pan-African',risk:'—',m:[['72','Stories 7d'],['+12%','Momentum'],['11','Sources']],spark:[40,42,46,48,52,50,56,60,62],upd:0},
+    ],
+    Companies:[
+      {icon:'factory',nm:'Dangote Group',sub:'Nigeria · Industry',risk:'—',m:[['$2.9bn','Active deal'],['78%','Project'],['5','Stories 7d']],spark:[60,64,62,68,72,70,76,80,82],upd:1},
+      {icon:'oil',nm:'TotalEnergies Africa',sub:'Pan-African · Energy',risk:'—',m:[['$3.0bn','Active deal'],['Exec','Stage'],['3','Stories 7d']],spark:[50,54,52,56,60,58,62,64,66],upd:0},
+    ],
+    People:[
+      {icon:'user',nm:'Bola Tinubu',sub:'Nigeria · President',risk:'—',m:[['18','Mentions 7d'],['+22%','Momentum'],['High','Salience']],spark:[40,44,48,52,50,58,62,66,72],upd:3},
+      {icon:'user',nm:'William Ruto',sub:'Kenya · President',risk:'—',m:[['12','Mentions 7d'],['+9%','Momentum'],['High','Salience']],spark:[35,38,40,44,46,50,52,55,58],upd:1},
+      {icon:'user',nm:'Aliko Dangote',sub:'Nigeria · Industrialist',risk:'—',m:[['7','Mentions 7d'],['+4%','Momentum'],['Med','Salience']],spark:[30,32,36,34,40,42,44,48,50],upd:0},
+    ],
+  };
+  const riskCol = r => r==='High'||r==='Elevated'?'#FF6B35':r==='Medium'?'#E3B341':'#3FB950';
+  const ALL = () => [].concat(...['Countries','Topics','Companies','People'].map(k=>DATA[k].map(x=>({...x,_k:k}))));
+
+  function renderTabs(active){
+    const counts = { All: ALL().length, ...Object.fromEntries(Object.keys(DATA).map(k=>[k,DATA[k].length])) };
+    const order = ['All','Countries','Companies','Topics','People'];
+    $('#tabs').innerHTML=order.map(k=>`<div class="wl-tab ${k===active?'on':''}" data-k="${k}">${ic(({All:'star',Countries:'globe',Topics:'feed',Companies:'factory',People:'user'})[k])} ${k} <span class="c">${counts[k]}</span></div>`).join('');
+    $('#tabs').querySelectorAll('.wl-tab').forEach(t=>t.addEventListener('click',()=>{ renderTabs(t.dataset.k); renderGrid(t.dataset.k); }));
+  }
+  function renderGrid(k){
+    const list = k==='All' ? ALL() : DATA[k];
+    $('#grid').innerHTML=list.map(d=>`<div class="wl-card">
+      <div class="h"><span class="fi">${d.flag?AFRIBN.flag(d.flag,'flag'):ic(d.icon)}</span>
+        <div><div class="nm">${d.nm}</div><div class="sub">${d.sub}</div></div>
+        <span class="star">${d.upd?`<span class="upd-badge">${d.upd} new</span>`:ic('star','width=\"18\" height=\"18\"')}</span></div>
+      ${d.risk!=='—'?`<div style="margin-bottom:12px">${AFRIBN.statusPill(d.risk, riskCol(d.risk))}</div>`:''}
+      <div class="spark-row">${AFRIBN.spark(d.spark,{w:280,h:40,color:'#E8252D',fill:true,sw:2})}</div>
+      <div class="wl-metrics">${d.m.map(([v,l])=>`<div class="m"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('')}</div>
+    </div>`).join('');
+    $('#grid').querySelectorAll('.wl-card').forEach((c,i)=>c.addEventListener('click',()=>{ const d=list[i]; if(d.flag) location.href='country.html'; else toast('Opening '+d.nm); }));
+  }
+  renderTabs('All'); renderGrid('All');
+
+  // summary donut + recent alerts
+  const SUM=[['Countries','#E8252D',DATA.Countries.length],['Companies','#4493F8',DATA.Companies.length],['Topics','#FF8A3D',DATA.Topics.length],['People','#A371F7',DATA.People.length]];
+  $('#summaryDonut').innerHTML=AFRIBN.donut(SUM.map(s=>({value:s[2],color:s[1]})),{size:116,thick:18});
+  $('#summaryLegend').innerHTML=SUM.map(([n,c,v])=>`<div class="legend-li"><span class="cdot" style="background:${c}"></span><span style="color:var(--ink-2)">${n}</span><span class="vl">${v}</span></div>`).join('');
+  const RA=[['#E5252A','Nigeria risk level raised to High','2h ago'],['#FF8A3D','Energy Transition: 4 new high-impact stories','5h ago'],['#A371F7','Bola Tinubu — new policy statement','1d ago'],['#4493F8','Dangote Group deal stage advanced','1d ago']];
+  $('#recentAlerts').innerHTML=RA.map(([c,t,m])=>`<div class="wl-alert"><span class="d" style="background:${c}"></span><div><div class="t">${t}</div><div class="m">${m}</div></div></div>`).join('');
+  $('#add').onclick=()=>toast('Add countries, topics, companies or people to your watchlist');
+</script>
+</body>
+</html>

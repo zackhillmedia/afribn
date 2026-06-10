@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Dashboards</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .db-tabs { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .db-tab { padding:9px 15px; border-radius:10px; background:var(--panel); border:1px solid var(--line); color:var(--ink-2); font-weight:600; font-size:14px; cursor:pointer; }
+  .db-tab.on { background:var(--red-tint); border-color:rgba(232,37,45,0.4); color:#fff; }
+  .grid-12 { display:grid; grid-template-columns:repeat(12,1fr); gap:18px; }
+  .widget { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .widget .wh { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .widget .wh .t { font-weight:700; font-size:15px; } .widget .wh .more{color:var(--ink-4);cursor:pointer;} .widget .wh .more:hover{color:var(--ink);}
+  .span-3{grid-column:span 3;} .span-4{grid-column:span 4;} .span-5{grid-column:span 5;} .span-6{grid-column:span 6;} .span-7{grid-column:span 7;} .span-8{grid-column:span 8;}
+  .bignum { font-family:var(--font-display); font-weight:800; font-size:38px; letter-spacing:-0.02em; }
+  .legend-li { display:flex; align-items:center; gap:10px; padding:6px 0; font-size:13.5px; } .legend-li .vl{margin-left:auto;font-weight:600;}
+  .rank-li { display:flex; align-items:center; gap:11px; padding:8px 0; } .rank-li .nm{font-size:13.5px;min-width:80px;} .rank-li .bar{flex:1;} .rank-li .vl{font-weight:700;min-width:22px;text-align:right;}
+  .heat { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .heat .cell { aspect-ratio:1; border-radius:5px; }
+  .add-w { border:1.5px dashed var(--line-2); display:grid; place-items:center; color:var(--ink-3); cursor:pointer; min-height:120px; }
+  .add-w:hover{ border-color:rgba(232,37,45,0.5); color:var(--ink-2); background:var(--red-tint); }
+  @media (max-width:1200px){ [class*=span-]{grid-column:span 6;} } @media (max-width:760px){ [class*=span-]{grid-column:span 12;} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1480px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Dashboards</h1>
+          <div class="page-sub">Configurable intelligence dashboards for your priorities.</div></div>
+        <div class="row gap-12">
+          <div class="live-toggle" style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:500;white-space:nowrap;margin-right:4px">Auto-refresh <div class="switch on" id="autoSwitch" style="width:44px;height:26px;border-radius:20px;background:var(--red);position:relative;cursor:pointer;flex:none"><i style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;transform:translateX(18px)"></i></div></div>
+          <button class="btn btn-ghost" id="customize"><span id="cui"></span> Customize</button>
+          <button class="btn btn-primary" id="newDash"><span id="ndi"></span> New Dashboard</button>
+        </div>
+      </div>
+      <div class="db-tabs" id="tabs"></div>
+      <div class="row" style="justify-content:flex-end;margin-bottom:14px"><span class="muted" id="updated" style="font-size:12.5px;display:flex;align-items:center;gap:7px"></span></div>
+      <div class="grid-12" id="grid"></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('grid');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML=ic('grid'); $('#cui').innerHTML=ic('sliders','width="16" height="16"'); $('#ndi').innerHTML=ic('plus','width="16" height="16"');
+
+  const TABS=['Executive Overview','West Africa Desk','Energy & Commodities','Security Watch'];
+  $('#tabs').innerHTML=TABS.map((t,i)=>`<div class="db-tab ${i===0?'on':''}">${t}</div>`).join('');
+  $('#tabs').querySelectorAll('.db-tab').forEach(t=>t.addEventListener('click',()=>{ $('#tabs').querySelector('.on').classList.remove('on'); t.classList.add('on'); toast('Switched to '+t.textContent); }));
+
+  function widget(span, title, body){ return `<div class="widget span-${span}"><div class="wh"><span class="t">${title}</span><span class="more">${ic('more','width=\"18\" height=\"18\"')}</span></div>${body}</div>`; }
+
+  const stat=(v,l,d)=>`<div class="bignum">${v}</div><div class="muted" style="font-size:13px">${l}</div><div class="up" style="font-size:12.5px;font-weight:600;margin-top:6px">${d}</div>`;
+  const SUM=[['High Impact','#E8252D',32],['Medium','#FF8A3D',54],['Low','#4493F8',28],['Info','#8B949E',14]];
+  const TOPC=[['Nigeria','nigeria',42],['DR Congo','drcongo',18],['Kenya','kenya',14],['Ethiopia','ethiopia',12]];
+  const riskCol=s=>s>=80?'#E5252A':s>=60?'#FF6B35':s>=40?'#E3B341':'#3FB950';
+
+  $('#grid').innerHTML=[
+    widget(3, 'Total Stories', stat('3,248','Last 30 days','+12.4%')),
+    widget(3, 'Deals Tracked', stat('152','Active','+15.3%')),
+    widget(3, 'Risk Composite', `<div class="bignum" style="color:#E3B341">54</div><div class="muted" style="font-size:13px">Medium · stable</div><div class="muted" style="font-size:12.5px;margin-top:6px">7 critical countries</div>`),
+    widget(3, 'Open Gaps', stat('24','6 critical','+3')),
+    widget(8, 'Stories Over Time', AFRIBN.lineChart([{color:'#E8252D',vals:[40,44,42,48,52,50,58,62,60,68,72,70,78,82],fill:true,dots:false},{color:'#E3B341',vals:[30,32,34,33,38,40,42,44,46,48,50,52,54,58]}],['Apr 16','Apr 23','Apr 30','May 7','May 14'],{w:560,h:220,max:100,pad:30})),
+    widget(4, 'Impact Distribution', `<div class="row gap-16" style="align-items:center">${AFRIBN.donut(SUM.map(s=>({value:s[2],color:s[1]})),{size:128,thick:20})}<div class="grow">${SUM.map(([n,c,v])=>`<div class="legend-li"><span class="cdot" style="background:${c}"></span><span style="color:var(--ink-2)">${n}</span><span class="vl">${v}</span></div>`).join('')}</div></div>`),
+    widget(5, 'Continental Risk', `<div style="max-width:260px;margin:0 auto">${AFRIBN.africaMap({w:300,h:300,mono:'#ff4d4d',glow:false,nodes:[{x:52,y:30,r:4},{x:50,y:52,r:4.5},{x:68,y:46,r:4},{x:38,y:38,r:3.5},{x:60,y:52,r:3},{x:58,y:74,r:3}],links:[[0,1],[1,2],[3,1],[1,4],[4,5]]})}</div>`),
+    widget(4, 'Top Countries', TOPC.map(([n,f,v])=>`<div class="rank-li">${AFRIBN.flag(f)}<span class="nm">${n}</span><span class="bar"><span style="width:${v/42*100}%;background:#E8252D"></span></span><span class="vl">${v}</span></div>`).join('')),
+    widget(4, 'Stories by Category', `<div class="row gap-16" style="align-items:center">${AFRIBN.donut([{value:28,color:'#E8252D'},{value:24,color:'#FF8A3D'},{value:20,color:'#A371F7'},{value:16,color:'#4493F8'},{value:12,color:'#3FB950'}],{size:120,thick:18})}<div class="grow">${[['Politics','#E8252D',28],['Energy','#FF8A3D',24],['Security','#A371F7',20],['Economy','#4493F8',16],['Trade','#3FB950',12]].map(([n,c,v])=>`<div class="legend-li"><span class="cdot" style="background:${c}"></span><span style="color:var(--ink-2)">${n}</span><span class="vl">${v}</span></div>`).join('')}</div></div>`),
+    widget(4, 'Top Topics', [['Elections',128],['Oil & Gas',96],['Infrastructure',84],['AfCFTA',72],['Security',68]].map(([n,v])=>`<div class="rank-li"><span class="nm" style="min-width:108px">${n}</span><span class="bar"><span style="width:${v/128*100}%;background:#FF8A3D"></span></span><span class="vl">${v}</span></div>`).join('')),
+    widget(5, 'Recent Alerts', [['#E5252A','New energy policy amendment in Nigeria','2h ago'],['#E3B341','Ethiopia raises import tariff on steel','4h ago'],['#A371F7','Dangote Refinery expansion update','6h ago'],['#4493F8','DR Congo–Zambia infrastructure MoU signed','8h ago']].map(([c,t,tm])=>`<div style="display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)"><span style="width:8px;height:8px;border-radius:50%;background:${c};margin-top:6px;flex:none"></span><div style="flex:1"><div style="font-size:13.5px;font-weight:500">${t}</div></div><span style="font-size:11.5px;color:var(--ink-4);white-space:nowrap">${tm}</span></div>`).join('')),
+    widget(3, 'Intelligence Summary', `<div class="bignum">311</div><div class="muted" style="font-size:13px">Published items (30d)</div><div class="kv" style="padding:8px 0"><span class="k">Avg AIV</span><span class="v">74</span></div><div class="kv" style="padding:8px 0"><span class="k">Verified rate</span><span class="v" style="color:#3FB950">92%</span></div>`),
+    widget(3, 'Activity Heatmap', `<div class="heat">${Array.from({length:35}).map(()=>{const v=Math.random();return `<div class="cell" style="background:rgba(232,37,45,${(0.12+v*0.7).toFixed(2)})"></div>`;}).join('')}</div><div class="muted" style="font-size:11.5px;margin-top:10px">Story volume · last 5 weeks</div>`),
+    `<div class="widget add-w span-3" id="addW"><div style="text-align:center">${ic('plus')}<div style="margin-top:8px;font-weight:600">Add widget</div></div></div>`,
+  ].join('');
+
+  $('#addW').onclick=()=>toast('Widget library — drag to add');
+  $('#customize').onclick=()=>toast('Drag widgets to rearrange your dashboard');
+  $('#newDash').onclick=()=>toast('Create a new dashboard');
+  $('#grid').querySelectorAll('.more').forEach(m=>m.addEventListener('click',()=>toast('Configure · Duplicate · Remove')));
+
+  // auto-refresh + updated timestamp
+  let secs=0, auto=true;
+  function tick(){ const u=$('#updated'); if(!u) return; u.innerHTML=`${ic('refresh','width="14" height="14"')} Updated ${secs===0?'just now':secs+'s ago'}${auto?' · auto-refresh on':''}`; }
+  tick();
+  setInterval(()=>{ if(!auto){ return; } secs+=5; if(secs>=30){ secs=0; toast('Dashboard refreshed'); } tick(); }, 5000);
+  $('#autoSwitch').addEventListener('click',function(){ auto=!auto; this.style.background=auto?'var(--red)':'var(--panel-3)'; this.querySelector('i').style.transform=auto?'translateX(18px)':'translateX(0)'; secs=0; tick(); toast(auto?'Auto-refresh on':'Auto-refresh paused'); });
+</script>
+</body>
+</html>

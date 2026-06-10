@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Collection Jobs</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  .kpi-row { grid-template-columns: repeat(5, 1fr); }
+  .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .filter-bar .search-inline { flex: 1; min-width: 180px; }
+  .jobid { font-family: var(--font-display); font-weight: 700; font-size: 13.5px; }
+  .runbar { height: 5px; border-radius: 5px; background: var(--panel-3); overflow: hidden; margin-top: 7px; width: 120px; }
+  .runbar > span { display: block; height: 100%; background: var(--amber); border-radius: 5px; transition: width .6s linear; }
+  @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .live-dot { animation: pulseDot 1.2s infinite; }
+  .row-act { display:flex; gap:4px; } .row-act button{ width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:transparent;border:none;color:var(--ink-3);} .row-act button:hover{background:var(--panel-3);color:var(--ink);} .row-act button svg{width:16px;height:16px;}
+  .err { font-size: 12px; color: #ff7378; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="content" style="max-width:1460px">
+      <div class="page-head">
+        <div><h1 class="page-title"><span class="tic" id="tic"></span> Collection Jobs</h1>
+          <div class="page-sub">Observe and control scraping jobs across all sources.</div></div>
+        <div class="row gap-12">
+          <button class="btn btn-ghost" id="refresh"><span id="ri"></span> Refresh</button>
+          <button class="btn btn-primary" id="newJob"><span id="ni"></span> Run Scrape</button>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="stats"></div>
+
+      <div class="panel panel-pad-lg">
+        <div class="filter-bar">
+          <div class="search-inline"><span id="si"></span><input id="kw" placeholder="Search jobs, sources..."></div>
+          <select class="select" id="fStatus"><option>All Status</option><option>Queued</option><option>Running</option><option>Completed</option><option>Failed</option><option>Cancelled</option></select>
+          <div class="live-toggle" style="margin-left:auto;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500">Auto-refresh <div class="switch on" id="liveSwitch" style="width:44px;height:26px;border-radius:20px;background:var(--red);position:relative;cursor:pointer;flex:none"><i style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;transform:translateX(18px)"></i></div></div>
+        </div>
+        <div class="tbl-scroll"><table class="tbl" style="margin-top:8px;min-width:920px">
+          <thead><tr><th>Job</th><th>Source</th><th>Status</th><th>Started</th><th>Completed</th><th>Found</th><th>Imported</th><th></th></tr></thead>
+          <tbody id="jobBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="drawer-back" id="drawerBack"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('refresh');
+  const ic = AFRIBN.ic, toast = AFRIBN.toast;
+  $('#tic').innerHTML = ic('refresh'); $('#ri').innerHTML = ic('refresh','width="16" height="16"'); $('#ni').innerHTML = ic('play','width="14" height="14"'); $('#si').innerHTML = ic('search');
+
+  const STATS = [
+    ['clock','#4493F8','14','Queued','',' ','flat'],
+    ['refresh','#E3B341','6','Running','',' ','flat'],
+    ['checkCircle','#3FB950','1,284','Completed (24h)','+92','vs prev 24h','up'],
+    ['alertTri','#E5252A','23','Failed (24h)','-4','vs prev 24h','down'],
+    ['history','#A371F7','28s','Avg Duration','-3s','vs prev 24h','down'],
+  ];
+  $('#stats').innerHTML = STATS.map(([i,c,v,l,d,sub,dir])=>`
+    <div class="stat"><div class="top"><div class="ic" style="background:${c}22;color:${c}">${ic(i)}</div></div>
+      <div class="num">${v}</div><div class="lbl">${l}</div>
+      ${d?`<div class="delta ${dir==='up'?'up':'down'}" style="font-size:12.5px;white-space:nowrap">${d} <span class="muted" style="font-weight:400">${sub}</span></div>`:'<div class="delta muted" style="font-size:12.5px">live</div>'}</div>`).join('');
+
+  const ST = { Queued:'#4493F8', Running:'#E3B341', Completed:'#3FB950', Failed:'#E5252A', Cancelled:'#8B949E' };
+  let JOBS = [
+    ['JOB-10428','Reuters Africa','Running','10:24:02','—',142,98,'',64],
+    ['JOB-10427','ACLED','Completed','10:18:44','10:19:10',388,388,'',100],
+    ['JOB-10426','The Guardian Nigeria','Completed','10:15:00','10:15:22',84,80,'',100],
+    ['JOB-10425','Sahara Reporters','Failed','10:12:00','10:12:05',0,0,'HTTP 503 — upstream unavailable after 3 retries',0],
+    ['JOB-10424','Nation Africa','Completed','10:10:00','10:10:31',120,118,'',100],
+    ['JOB-10423','@AfricaIntel','Cancelled','10:05:00','—','—','—','Cancelled by analyst@afribn.local',0],
+    ['JOB-10422','ENA','Queued','—','—','—','—','',0],
+    ['JOB-10421','Business Day','Completed','10:02:00','10:02:40',96,92,'',100],
+    ['JOB-10420','AFP Afrique','Running','10:23:40','—',210,150,'',71],
+  ];
+
+  function render(){
+    const kw=($('#kw').value||'').toLowerCase(), fs=$('#fStatus').value;
+    const rows=JOBS.filter(j=>(!kw||(j[0]+j[1]).toLowerCase().includes(kw))&&(fs==='All Status'||j[2]===fs));
+    $('#jobBody').innerHTML = rows.map(j=>{
+      const [id,src,status,start,end,found,imp,err,prog]=j;
+      const running = status==='Running';
+      return `<tr style="cursor:pointer" data-id="${id}">
+        <td><span class="jobid">${id}</span></td>
+        <td class="muted-2" style="white-space:nowrap">${src}</td>
+        <td>${AFRIBN.statusPill(status, ST[status])}${running?`<div class="runbar"><span style="width:${prog}%"></span></div>`:''}${err&&status==='Failed'?`<div class="err">${err.slice(0,28)}…</div>`:''}</td>
+        <td class="muted-2 tabnum" style="white-space:nowrap">${start}</td>
+        <td class="muted-2 tabnum" style="white-space:nowrap">${end}</td>
+        <td class="tabnum">${found}</td>
+        <td class="tabnum">${imp}</td>
+        <td><div class="row-act" onclick="event.stopPropagation()">
+          ${status==='Failed'?`<button title="Retry" data-a="retry" data-id="${id}">${ic('refresh')}</button>`:''}
+          ${running||status==='Queued'?`<button title="Cancel" data-a="cancel" data-id="${id}">${ic('x')}</button>`:''}
+          <button title="View" data-a="view" data-id="${id}">${ic('eye')}</button>
+        </div></td></tr>`;
+    }).join('');
+    $('#jobBody').querySelectorAll('tr').forEach(r=>r.addEventListener('click',()=>openDrawer(r.dataset.id)));
+    $('#jobBody').querySelectorAll('.row-act button').forEach(b=>b.addEventListener('click',()=>{
+      const a=b.dataset.a; if(a==='retry'){toast(`${ic('refresh','width=\"15\" height=\"15\"')} Retrying ${b.dataset.id}`,'ok');} else if(a==='cancel'){toast(`${b.dataset.id} cancelled`,'warn');} else openDrawer(b.dataset.id);
+    }));
+  }
+  render();
+  ['#kw'].forEach(s=>$(s).addEventListener('input',render));
+  $('#fStatus').addEventListener('change',render);
+
+  function openDrawer(id){
+    const j=JOBS.find(x=>x[0]===id); if(!j) return;
+    const [jid,src,status,start,end,found,imp,err]=j;
+    $('#drawer').innerHTML=`
+      <div class="drawer-h"><div><div class="eyebrow red">Collection Job</div><h2 style="font-size:23px;font-weight:800;margin-top:6px">${jid}</h2><div class="muted" style="font-size:13px;margin-top:4px">${src}</div></div>
+      <button class="icon-btn" id="dClose" style="width:36px;height:36px">${ic('x')}</button></div>
+      <div class="drawer-b">
+        <div style="margin-bottom:14px">${AFRIBN.statusPill(status,ST[status])}</div>
+        <div class="kv"><span class="k">Started</span><span class="v tabnum">${start}</span></div>
+        <div class="kv"><span class="k">Completed</span><span class="v tabnum">${end}</span></div>
+        <div class="kv"><span class="k">Articles found</span><span class="v">${found}</span></div>
+        <div class="kv"><span class="k">Articles imported</span><span class="v">${imp}</span></div>
+        <div class="kv"><span class="k">Duplicates skipped</span><span class="v">${typeof found==='number'&&typeof imp==='number'?found-imp:'—'}</span></div>
+        <div class="kv"><span class="k">Worker</span><span class="v">collector-worker-03</span></div>
+        ${err?`<div class="panel" style="margin-top:16px;border-color:rgba(229,72,77,0.3);background:rgba(229,72,77,0.06)"><div class="eyebrow" style="color:#ff7378;margin-bottom:8px">Error Detail</div><div style="font-size:13.5px;color:var(--ink-2);font-family:var(--font-mono,monospace)">${err}</div></div>`:''}
+        <div class="row gap-12" style="margin-top:20px">
+          ${status==='Failed'?`<button class="btn btn-primary" style="flex:1" id="dRetry">${ic('refresh','width=\"16\" height=\"16\"')} Retry job</button>`:''}
+          <a class="btn btn-ghost" style="flex:1" href="raw.html">${ic('inbox','width=\"16\" height=\"16\"')} View articles</a>
+        </div>
+      </div>`;
+    $('#drawerBack').classList.add('open'); $('#drawer').classList.add('open');
+    $('#dClose').onclick=closeDrawer;
+    if($('#dRetry')) $('#dRetry').onclick=()=>toast(`${ic('refresh','width=\"15\" height=\"15\"')} Retrying ${jid}`,'ok');
+  }
+  function closeDrawer(){ $('#drawerBack').classList.remove('open'); $('#drawer').classList.remove('open'); }
+  $('#drawerBack').addEventListener('click',closeDrawer);
+
+  // simulate running progress
+  let auto=true;
+  setInterval(()=>{ if(!auto) return; let changed=false;
+    JOBS.forEach(j=>{ if(j[2]==='Running'){ j[8]=Math.min(100,(j[8]||0)+Math.random()*8); j[5]+=Math.floor(Math.random()*6); j[6]=Math.floor(j[5]*0.7); if(j[8]>=100){ j[2]='Completed'; j[4]='10:'+(24+Math.floor(Math.random()*3))+':'+(10+Math.floor(Math.random()*40)); } changed=true; } });
+    if(changed) render();
+  }, 1600);
+  $('#liveSwitch').addEventListener('click',function(){ auto=!auto; this.style.background=auto?'var(--red)':'var(--panel-3)'; this.querySelector('i').style.transform=auto?'translateX(18px)':'translateX(0)'; toast(auto?'Auto-refresh on':'Auto-refresh paused'); });
+  $('#refresh').onclick=()=>{ render(); toast('Refreshed'); };
+  $('#newJob').onclick=()=>toast(`${ic('play','width=\"14\" height=\"14\"')} Scrape job queued`,'ok');
+</script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Africa's Strategic News Intelligence Network</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<style>
+  body { overflow-x: hidden; }
+  .wrap-m { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+
+  /* nav */
+  .lnav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(14px);
+    background: linear-gradient(180deg, rgba(8,8,10,0.92), rgba(8,8,10,0.55)); border-bottom: 1px solid var(--line); }
+  .lnav-in { display: flex; align-items: center; gap: 30px; height: 78px; }
+  .lnav nav { display: flex; gap: 34px; margin: 0 auto; }
+  .lnav nav a { color: var(--ink-2); font-weight: 500; font-size: 15px; display: flex; align-items: center; gap: 6px; transition: color .15s; white-space: nowrap; }
+  .lnav nav a:hover { color: #fff; }
+  .lnav nav a svg { width: 15px; height: 15px; }
+  .lnav .acts { display: flex; gap: 12px; }
+
+  /* hero */
+  .hero { position: relative; overflow: hidden;
+    background:
+      radial-gradient(110% 80% at 82% -5%, rgba(232,37,45,0.42), rgba(150,15,20,0.18) 38%, transparent 62%),
+      radial-gradient(80% 60% at 100% 0%, rgba(255,70,70,0.30), transparent 55%),
+      linear-gradient(180deg, #0a0809 0%, #120a0b 55%, #1a0c0d 100%);
+  }
+  .hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 240px;
+    background: linear-gradient(180deg, transparent, rgba(150,18,22,0.4)); pointer-events: none;
+    mask-image: linear-gradient(180deg, transparent, #000); }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 30px; align-items: center; padding-top: 70px; padding-bottom: 40px; position: relative; z-index: 2; }
+  .eyebrow-pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 40px;
+    border: 1px solid rgba(232,37,45,0.4); background: rgba(232,37,45,0.08); font-size: 12.5px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink); }
+  .eyebrow-pill .lv { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 0 rgba(232,37,45,0.6); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(232,37,45,.6)} 70%{box-shadow:0 0 0 8px rgba(232,37,45,0)} 100%{box-shadow:0 0 0 0 rgba(232,37,45,0)} }
+  .hero h1 { font-size: clamp(44px, 5.6vw, 76px); font-weight: 800; line-height: 0.98; margin: 26px 0 0; letter-spacing: -0.035em; }
+  .hero h1 .r { color: var(--red); }
+  .hero h1 .dash { color: var(--red); -webkit-text-stroke: 0; }
+  .hero .lede { font-size: 19px; color: var(--ink-2); margin: 24px 0 0; max-width: 480px; line-height: 1.5; }
+  .hero .cta-row { display: flex; gap: 14px; margin-top: 34px; flex-wrap: wrap; }
+  .play-ic { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); display: grid; place-items: center; }
+  .play-ic svg { width: 11px; height: 11px; color: #fff; }
+
+  /* hero map */
+  .hero-map { position: relative; }
+  .hero-map .rings { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+  .hero-map .rings span { position: absolute; border: 1px solid rgba(232,37,45,0.14); border-radius: 50%; }
+  .hero-map .map-img { position: relative; z-index: 2; width: 112%; max-width: 660px; margin: -3% -6% -3% 0; display: block;
+    filter: drop-shadow(0 0 55px rgba(232,37,45,0.5)); }
+  @media (prefers-reduced-motion: no-preference) { .hero-map .map-img { animation: mapFloat 9s ease-in-out infinite; } }
+  @keyframes mapFloat { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-12px); } }
+  .float-card { position: absolute; z-index: 5; display: flex; align-items: center; gap: 11px;
+    background: rgba(14,12,13,0.82); border: 1px solid rgba(232,37,45,0.22); border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(8px);
+    box-shadow: var(--shadow); animation: floaty 6s ease-in-out infinite; }
+  @keyframes floaty { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+  .float-card .fi { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; flex: none; }
+  .float-card .ft { font-weight: 700; font-size: 13.5px; white-space: nowrap; }
+  .float-card .fm { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+  .fc1 { top: 6%; left: 1%; } .fc2 { top: 25%; right: 0%; animation-delay: -2s; }
+  .fc3 { bottom: 19%; left: 5%; animation-delay: -4s; } .fc4 { bottom: 6%; right: 6%; animation-delay: -1s; }
+
+  /* audiences */
+  .aud { border-top: 1px solid var(--line); position: relative; z-index: 2; }
+  .aud-in { padding-top: 30px; padding-bottom: 50px; }
+  .aud .lbl { display: flex; align-items: center; gap: 14px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.16em; color: var(--ink-3); text-transform: uppercase; }
+  .aud .lbl::before { content: ''; width: 30px; height: 1px; background: var(--red); }
+  .aud-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 30px; }
+  .aud-card { text-align: center; padding: 26px 14px; border-radius: 14px; border: 1px solid transparent; transition: .2s; }
+  .aud-card:hover { border-color: rgba(232,37,45,0.3); background: rgba(232,37,45,0.05); }
+  .aud-card .ai { width: 52px; height: 52px; margin: 0 auto 14px; color: var(--red); display: grid; place-items: center; }
+  .aud-card .ai svg { width: 40px; height: 40px; stroke-width: 1.5; }
+  .aud-card .an { font-weight: 600; font-size: 15px; }
+  .aud-card .au-line { width: 24px; height: 2px; background: var(--red); margin: 12px auto 0; border-radius: 2px; }
+
+  /* generic section */
+  .sec { padding: 90px 0; }
+  .sec-head { text-align: center; max-width: 640px; margin: 0 auto 56px; }
+  .sec-head .ek { color: var(--red); font-weight: 700; letter-spacing: 0.18em; font-size: 13px; text-transform: uppercase; }
+  .sec-head h2 { font-size: clamp(32px, 4vw, 46px); font-weight: 800; letter-spacing: -0.03em; margin: 16px 0 0; }
+  .sec-head p { color: var(--ink-3); font-size: 17px; margin: 16px 0 0; }
+
+  .feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .feat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 28px; transition: .2s; position: relative; overflow: hidden; }
+  .feat:hover { border-color: rgba(232,37,45,0.35); transform: translateY(-3px); }
+  .feat .fi { width: 50px; height: 50px; border-radius: 13px; display: grid; place-items: center; background: var(--red-tint); color: var(--red-bright); margin-bottom: 18px; }
+  .feat .fi svg { width: 25px; height: 25px; }
+  .feat h3 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  .feat p { color: var(--ink-3); margin: 10px 0 0; font-size: 14.5px; line-height: 1.55; }
+
+  /* preview */
+  .preview { background: linear-gradient(180deg, transparent, rgba(232,37,45,0.05) 50%, transparent); }
+  .browser { max-width: 1120px; margin: 0 auto; border-radius: 16px; overflow: hidden; border: 1px solid var(--line-2);
+    box-shadow: 0 50px 120px -40px rgba(232,37,45,0.35), 0 30px 80px -30px rgba(0,0,0,0.9); background: var(--bg); }
+  .browser .bar { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: var(--bg-2); border-bottom: 1px solid var(--line); }
+  .browser .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2a2a30; display: inline-block; }
+  .browser .url { margin-left: 14px; font-size: 12px; color: var(--ink-3); background: var(--panel); padding: 4px 14px; border-radius: 20px; }
+  .preview-img { width: 100%; display: block; }
+
+  /* logos */
+  .logos-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px 52px; }
+  .logos-row .lw { color: var(--ink-4); font-weight: 800; font-size: 20px; letter-spacing: 0.02em; opacity: .85; transition: .2s; font-family: var(--font-display); white-space: nowrap; }
+  .logos-row .lw:hover { color: var(--ink-2); }
+
+  /* cta */
+  .cta-box { position: relative; overflow: hidden; border-radius: 24px; padding: 70px 40px; text-align: center;
+    background: radial-gradient(100% 140% at 50% 0%, rgba(232,37,45,0.4), transparent 60%), linear-gradient(180deg, #1a0c0d, #0c0809);
+    border: 1px solid rgba(232,37,45,0.3); }
+  .cta-box h2 { font-size: clamp(32px, 4.4vw, 52px); font-weight: 800; letter-spacing: -0.03em; }
+  .cta-box p { color: var(--ink-2); font-size: 18px; margin: 18px auto 32px; max-width: 520px; }
+
+  /* footer */
+  footer { border-top: 1px solid var(--line); padding: 60px 0 40px; }
+  .foot-grid { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 40px; }
+  .foot-grid h4 { font-family: var(--font-sans); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin-bottom: 16px; }
+  .foot-grid ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 11px; }
+  .foot-grid a { color: var(--ink-2); font-size: 14.5px; }
+  .foot-grid a:hover { color: #fff; }
+  .foot-bot { display: flex; justify-content: space-between; align-items: center; margin-top: 50px; padding-top: 26px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13.5px; flex-wrap: wrap; gap: 14px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .js .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+  }
+  @media (max-width: 980px) {
+    .hero-grid { grid-template-columns: 1fr; } .hero-map { display: none; }
+    .lnav nav, .feat-grid { display: none; }
+    .aud-grid { grid-template-columns: repeat(2, 1fr); } .foot-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="lnav">
+  <div class="wrap-m lnav-in">
+    <span id="nav-logo"></span>
+    <nav>
+      <a href="#features">Product</a>
+      <a href="solutions.html">Solutions</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="about.html">About Us</a>
+      <a href="resources.html">Resources <span id="nc"></span></a>
+    </nav>
+    <div class="acts">
+      <a class="btn btn-ghost" href="login.html">Log in</a>
+      <a class="btn btn-primary" href="request-access.html">Request Access <span id="na"></span></a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap-m hero-grid">
+    <div class="hero-left">
+      <span class="eyebrow-pill"><span class="lv"></span> REAL-TIME NEWS. STRATEGIC INSIGHT.</span>
+      <h1>Africa's Strategic<br>News Intelligence<br><span class="r">Network</span> <span class="dash">—</span></h1>
+      <p class="lede">Real-time news. Deep context. Measurable impact. Built for leaders, investors and decision makers.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="request-access.html" style="height:54px;padding:0 26px;font-size:16px">Request Access <span id="ca"></span></a>
+        <a class="btn btn-ghost" href="#preview" style="height:54px;padding:0 22px;font-size:16px">See How It Works <span class="play-ic" id="cp"></span></a>
+      </div>
+    </div>
+    <div class="hero-map">
+      <div class="rings"><span style="width:340px;height:340px"></span><span style="width:480px;height:480px"></span><span style="width:620px;height:620px"></span></div>
+      <img class="map-img" src="assets/africa-map-t.png" alt="AFRIBN intelligence network across Africa">
+      <div class="float-card fc1"><span class="fi" style="background:rgba(229,72,77,.16);color:#ff7378" id="i1"></span><div><div class="ft">Political Update</div><div class="fm">Nigeria · 2m ago</div></div></div>
+      <div class="float-card fc2"><span class="fi" style="background:rgba(163,113,247,.16);color:#bd9bff" id="i2"></span><div><div class="ft">Security Alert</div><div class="fm">Somalia · 5m ago</div></div></div>
+      <div class="float-card fc3"><span class="fi" style="background:rgba(240,136,62,.16);color:#ffa05a" id="i3"></span><div><div class="ft">Economic News</div><div class="fm">Ghana · 10m ago</div></div></div>
+      <div class="float-card fc4"><span class="fi" style="background:rgba(68,147,248,.16);color:#6fb0ff" id="i4"></span><div><div class="ft">Policy Change</div><div class="fm">Kenya · 15m ago</div></div></div>
+    </div>
+  </div>
+
+  <div class="aud">
+    <div class="wrap-m aud-in">
+      <div class="lbl">Trusted by leaders across Africa and beyond</div>
+      <div class="aud-grid" id="aud"></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="features">
+  <div class="wrap-m">
+    <div class="sec-head reveal">
+      <div class="ek">All-in-one intelligence platform</div>
+      <h2>Everything you need to monitor Africa</h2>
+      <p>Powerful tools. Real-time data. Smarter decisions — across 54 countries and 12 languages.</p>
+    </div>
+    <div class="feat-grid" id="feats"></div>
+  </div>
+</section>
+
+<section class="sec preview" id="preview" style="padding-top:0">
+  <div class="wrap-m">
+    <div class="browser reveal">
+      <div class="bar"><i></i><i></i><i></i><span class="url">app.afribn.com/home</span></div>
+      <img class="preview-img" id="prev" alt="AFRIBN dashboard preview">
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:20px">
+  <div class="wrap-m">
+    <p style="text-align:center;color:var(--ink-3);font-size:12.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:34px">Trusted by organizations across Africa and beyond</p>
+    <div class="logos-row reveal">
+      <span class="lw">WORLD BANK</span><span class="lw">AFRICAN UNION</span><span class="lw">ACLED</span>
+      <span class="lw">Deloitte.</span><span class="lw">pwc</span><span class="lw">IFC</span><span class="lw">KPMG</span>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="cta">
+  <div class="wrap-m">
+    <div class="cta-box reveal">
+      <h2>Stay ahead of risks<br>and opportunities.</h2>
+      <p>Join the governments, investors and institutions using AFRIBN to make decisions with confidence.</p>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-primary" href="request-access.html" style="height:54px;padding:0 28px;font-size:16px">Request Access <span id="ca2"></span></a>
+        <a class="btn btn-ghost" href="contact.html" style="height:54px;padding:0 24px;font-size:16px">Book a Demo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer id="footer">
+  <div class="wrap-m">
+    <div class="foot-grid">
+      <div>
+        <span id="foot-logo"></span>
+        <p style="color:var(--ink-3);font-size:14px;margin:18px 0 0;max-width:300px;line-height:1.6">Africa's strategic news intelligence network. Real-time monitoring across 54 countries for the people who shape the continent.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="product.html">Real-time Feed</a></li><li><a href="country.html">Country Intelligence</a></li><li><a href="brief.html">Executive Briefs</a></li><li><a href="risk.html">Risk Dashboard</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="about.html">About Us</a></li><li><a href="careers.html">Careers</a></li><li><a href="press.html">Press</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div><h4>Resources</h4><ul><li><a href="methodology.html">Methodology</a></li><li><a href="sample-reports.html">Sample Reports</a></li><li><a href="api.html">API</a></li><li><a href="help.html">Help Center</a></li></ul></div>
+    </div>
+    <div class="foot-bot">
+      <span>© 2024 AFRIBN — Africa Bureau of News. All rights reserved.</span>
+      <span style="display:flex;gap:24px"><a href="privacy.html" style="color:inherit">Privacy</a><a href="terms.html" style="color:inherit">Terms</a><a href="security.html" style="color:inherit">Security</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  $('#nav-logo').innerHTML = AFRIBN.logo();
+  $('#foot-logo').innerHTML = AFRIBN.logo();
+  $('#nc').innerHTML = AFRIBN.ic('chevDown'); $('#na').innerHTML = AFRIBN.ic('arrowRight');
+  $('#ca').innerHTML = AFRIBN.ic('arrowRight'); $('#ca2').innerHTML = AFRIBN.ic('arrowRight');
+  $('#cp').innerHTML = AFRIBN.ic('play');
+  $('#i1').innerHTML = AFRIBN.ic('bank'); $('#i2').innerHTML = AFRIBN.ic('shield');
+  $('#i3').innerHTML = AFRIBN.ic('trendUp'); $('#i4').innerHTML = AFRIBN.ic('file');
+
+  // hero map
+  // hero map: real dotted-Africa network image (see assets/africa-map.png)
+
+  // audiences
+  const AUD = [['bank','Governments'],['trendUp','Investors'],['globe','Diplomatic Community'],['deal','Corporates'],['users','Development Partners']];
+  $('#aud').innerHTML = AUD.map(([ic,n])=>`<div class="aud-card"><div class="ai">${AFRIBN.ic(ic)}</div><div class="an">${n}</div><div class="au-line"></div></div>`).join('');
+
+  // features
+  const FE = [
+    ['feed','Real-time Feed','Live updates and critical intelligence as it happens — filtered by country, topic, sector and source.'],
+    ['globe','Country Intelligence','Deep economic, political and security profiles for all 54 countries, updated continuously.'],
+    ['gauge','Risk Dashboard','A live risk map of the continent scored across political, security, economic and regulatory dimensions.'],
+    ['deal','Deal Tracker','Monitor major deals, projects and transactions — value, stage and status — across every sector.'],
+    ['policy','Policy Monitor','Track policy shifts, regulations and government actions before they move markets.'],
+    ['file','Executive Briefs','AI-curated daily briefings ranking the developments that matter, with measurable Signal Scores.'],
+  ];
+  $('#feats').innerHTML = FE.map(([ic,t,d])=>`<div class="feat reveal"><div class="fi">${AFRIBN.ic(ic)}</div><h3>${t}</h3><p>${d}</p></div>`).join('');
+
+  // preview: render a mini dashboard snapshot as inline svg-ish? use a generated data URL screenshot placeholder
+  $('#prev').src = "data:image/svg+xml," + encodeURIComponent(previewSVG());
+  function previewSVG(){
+    return `<svg xmlns='http://www.w3.org/2000/svg' width='1120' height='600' viewBox='0 0 1120 600'>
+      <rect width='1120' height='600' fill='#08080A'/>
+      <rect x='0' y='0' width='220' height='600' fill='#0a0a0c'/>
+      <text x='28' y='48' fill='#fff' font-family='Archivo,sans-serif' font-weight='800' font-size='22'>AFRI<tspan fill='#E8252D'>BN</tspan></text>
+      ${[0,1,2,3,4,5].map(i=>`<rect x='20' y='${88+i*44}' width='180' height='34' rx='8' fill='${i===0?'rgba(232,37,45,0.18)':'transparent'}'/><circle cx='40' cy='${105+i*44}' r='4' fill='#85858e'/><rect x='56' y='${100+i*44}' width='${90-i*6}' height='8' rx='4' fill='${i===0?'#fff':'#3a3a40'}'/>`).join('')}
+      <rect x='248' y='28' width='560' height='44' rx='12' fill='#111114' stroke='#222'/>
+      <text x='264' y='55' fill='#5c5c64' font-family='sans-serif' font-size='14'>Search countries, topics, companies...</text>
+      ${[['Total Stories','3,248','#E8252D'],['Policy Changes','86','#E3B341'],['Deals Tracked','152','#A371F7'],['Events Tracked','204','#3FB950']].map(([l,v,c],i)=>`
+        <rect x='${248+i*148}' y='100' width='136' height='92' rx='14' fill='#111114' stroke='#1c1c20'/>
+        <rect x='${264+i*148}' y='116' width='28' height='28' rx='8' fill='${c}' opacity='0.2'/>
+        <text x='${264+i*148}' y='168' fill='#fff' font-family='Archivo' font-weight='800' font-size='24'>${v}</text>
+        <text x='${264+i*148}' y='184' fill='#85858e' font-size='10'>${l}</text>`).join('')}
+      <rect x='248' y='208' width='560' height='360' rx='16' fill='#0e0e11' stroke='#1c1c20'/>
+      <text x='272' y='244' fill='#fff' font-family='Archivo' font-weight='700' font-size='18'>Stories Over Time</text>
+      <polyline fill='none' stroke='#E8252D' stroke-width='2.5' points='272,470 320,440 368,448 416,410 464,420 512,380 560,392 608,350 656,360 704,320 752,300 788,270'/>
+      <polyline fill='none' stroke='#E3B341' stroke-width='2' points='272,500 320,490 368,495 416,470 464,478 512,455 560,460 608,440 656,448 704,420 752,415 788,400'/>
+      <rect x='824' y='100' width='272' height='468' rx='16' fill='#0e0e11' stroke='#1c1c20'/>
+      <text x='848' y='136' fill='#fff' font-family='Archivo' font-weight='700' font-size='18'>Intelligence Summary</text>
+      ${[0,1,2,3].map(i=>`<rect x='848' y='${160+i*70}' width='224' height='56' rx='10' fill='#141417'/><circle cx='876' cy='${188+i*70}' r='12' fill='#E8252D' opacity='0.2'/><rect x='900' y='${178+i*70}' width='90' height='8' rx='4' fill='#cfcfd6'/><rect x='900' y='${194+i*70}' width='60' height='7' rx='3' fill='#4a4a52'/><text x='1050' y='${193+i*70}' fill='#E8252D' font-size='12' text-anchor='end' font-weight='700'>↑</text>`).join('')}
+    </svg>`;
+  }
+
+  // reveal on scroll (robust: scroll + rAF, never leaves content hidden)
+  function checkReveal(){
+    const vh = window.innerHeight;
+    document.querySelectorAll('.reveal:not(.in)').forEach(el=>{
+      if (el.getBoundingClientRect().top < vh * 0.88) el.classList.add('in');
+    });
+  }
+  window.addEventListener('scroll', checkReveal, {passive:true});
+  window.addEventListener('resize', checkReveal);
+  checkReveal();
+  let n=0; const iv=setInterval(()=>{ checkReveal(); if(++n>8) clearInterval(iv); }, 250);
+  // safety: never leave content hidden (print, capture, slow scroll)
+  setTimeout(()=>document.querySelectorAll('.reveal').forEach(e=>e.classList.add('in')), 1400);
+</script>
+</body>
+</html>

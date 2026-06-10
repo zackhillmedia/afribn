@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Careers</title>
+<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="assets/marketing.css">
+<style>
+  .job { display:flex; align-items:center; gap:16px; padding:20px 22px; background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-bottom:12px; transition:.16s; cursor:pointer; }
+  .job:hover { border-color:rgba(232,37,45,0.35); transform:translateX(3px); }
+  .job .jt { font-weight:700; font-size:16.5px; } .job .jm { display:flex; gap:8px; align-items:center; margin-top:5px; font-size:13px; color:var(--ink-3); flex-wrap:wrap; }
+  .job .jm .sep { width:3px;height:3px;border-radius:50%;background:var(--ink-4); }
+  .job .arr { margin-left:auto; color:var(--ink-4); } .job:hover .arr { color:var(--red-bright); }
+  .dept { font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--red-bright);padding:3px 10px;border-radius:6px;background:var(--red-tint);white-space:nowrap; }
+</style>
+</head>
+<body class="mkt">
+<header id="mhead"></header>
+
+<section class="mhero">
+  <div class="wrap-m">
+    <span class="eyebrow-pill"><span class="lv"></span> Careers</span>
+    <h1>Build the intelligence<br>network for <span class="r">Africa</span>.</h1>
+    <p class="lede">We're a team of analysts, engineers, journalists and Africa hands building decision-grade intelligence. Join us.</p>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:10px">
+  <div class="wrap-m"><div class="mgrid c4" id="perks"></div></div>
+</section>
+
+<section class="sec" style="padding-top:0">
+  <div class="wrap-narrow">
+    <div class="sec-head left"><div class="ek">Open roles</div><h2>Where you fit</h2></div>
+    <div id="jobs"></div>
+    <p class="muted" style="margin-top:20px;font-size:14px">Don't see your role? <a class="muted-link" href="contact.html" style="color:var(--red-bright);font-weight:600">Introduce yourself</a> — we're always meeting exceptional people.</p>
+  </div>
+</section>
+
+<footer id="mfoot" class="mfoot"></footer>
+
+<script src="assets/afribn.js"></script>
+<script src="assets/marketing.js"></script>
+<script>
+  const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
+  AFRIBN.marketing(null);
+  const P=[['globe','Remote-first','Across the continent & beyond'],['zap','Real impact','Inform decisions that matter'],['users','Exceptional team','Learn from the best in the field'],['shield','Mission-driven','Intelligence as a public good']];
+  $('#perks').innerHTML=P.map(([i,t,d])=>`<div class="mcard"><div class="mi">${ic(i)}</div><h3 style="font-size:17px">${t}</h3><p>${d}</p></div>`).join('');
+  const JOBS=[
+    ['Senior Intelligence Analyst','Intelligence','Remote · Pan-African','Full-time'],
+    ['Field Network Coordinator','Operations','Nairobi','Full-time'],
+    ['Senior Frontend Engineer','Engineering','Remote','Full-time'],
+    ['Data Scientist — Scoring','Data','Remote','Full-time'],
+    ['Francophone Analyst — Sahel','Intelligence','Dakar · Remote','Full-time'],
+    ['Enterprise Account Executive','Sales','Lagos · Remote','Full-time'],
+    ['Verification Editor','Editorial','Remote','Contract'],
+  ];
+  $('#jobs').innerHTML=JOBS.map(([t,d,l,type])=>`<div class="job" onclick="AFRIBN.toast('Application form — '+this.querySelector('.jt').textContent)"><div><div class="jt">${t}</div><div class="jm">${l} <span class="sep"></span> ${type}</div></div><span class="dept">${d}</span><span class="arr">${ic('arrowRight')}</span></div>`).join('');
+</script>
+</body>
+</html>
