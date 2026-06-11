@@ -12,9 +12,11 @@ const server = spawn("node", ["server.js"], {
   env: {
     ...process.env,
     PORT: String(port),
+    AFRIBN_ENV_FILE: "0",
     AFRIBN_DB_PATH: join(tempDir, "afribn.sqlite"),
     AFRIBN_UPLOAD_DIR: join(tempDir, "uploads"),
-    AFRIBN_JWT_SECRET: "smoke-test-secret"
+    AFRIBN_JWT_SECRET: "smoke-test-secret",
+    OPENAI_API_KEY: ""
   },
   stdio: ["ignore", "pipe", "pipe"]
 });

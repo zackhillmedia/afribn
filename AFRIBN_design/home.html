@@ -6,14 +6,9 @@
 <title>AFRIBN — Home</title>
 <link rel="stylesheet" href="assets/afribn.css">
 <style>
-  .grid-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 22px; }
-  .stat.link { cursor: pointer; }
-  .stat.link:hover { border-color: rgba(232,37,45,0.35); }
-  .stat .arrow { margin-left: auto; color: var(--ink-4); transition: .15s; }
-  .stat.link:hover .arrow { color: var(--red-bright); transform: translateX(2px); }
-
-  .grid-mid { display: grid; grid-template-columns: 2fr 1fr; gap: 22px; margin-bottom: 22px; }
-  .grid-bot { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; margin-bottom: 22px; }
+  .grid-mid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
+  .grid-bot { display: grid; grid-template-columns: minmax(320px,1fr) minmax(360px,1.15fr) minmax(300px,.95fr); gap: 24px; margin-bottom: 24px; align-items: stretch; }
+  .grid-bot .panel { min-height: 360px; }
   .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .panel-h h3 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
   .link-r { color: var(--red-bright); font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
@@ -21,7 +16,7 @@
   .link-r:hover { color: #fff; }
 
   /* top stories */
-  .stories-in { display: grid; grid-template-columns: 1.15fr 1fr; gap: 22px; }
+  .stories-in { display: grid; grid-template-columns: minmax(420px,1.05fr) minmax(420px,1fr); gap: 28px; align-items: start; }
   .feat-story { border-radius: 14px; overflow: hidden; cursor: pointer; }
   .feat-story .img { aspect-ratio: 16/10; width: 100%; object-fit: cover; border-radius: 14px; }
   .feat-meta { margin-top: 16px; }
@@ -38,18 +33,6 @@
   .mini-story .cat { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
   .mini-story h5 { font-size: 15px; font-weight: 600; margin: 6px 0 0; line-height: 1.3; }
   .mini-story:hover h5 { color: var(--red-bright); }
-
-  /* risk donut */
-  .risk-wrap { display: flex; align-items: center; gap: 16px; }
-  .risk-legend { flex: 1; display: flex; flex-direction: column; gap: 11px; }
-  .risk-legend .li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-  .risk-legend .li .nm { color: var(--ink-2); white-space: nowrap; }
-  .risk-legend .li .vl { margin-left: auto; font-weight: 600; }
-  .risk-legend .li .pc { color: var(--ink-3); font-size: 13px; width: 42px; text-align: right; }
-  .risk-banner { display: flex; align-items: center; gap: 12px; margin-top: 20px; padding: 14px 16px; border-radius: 12px;
-    background: var(--red-tint); border: 1px solid rgba(232,37,45,0.3); color: #fff; font-weight: 500; font-size: 14px; cursor: pointer; }
-  .risk-banner svg { width: 18px; height: 18px; color: var(--red-bright); }
-  .risk-banner .chev { margin-left: auto; }
 
   /* alerts / updates lists */
   .alert-li { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
@@ -89,7 +72,8 @@
   .date-pill { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 16px; border-radius: 11px; background: var(--panel); border: 1px solid var(--line); font-weight: 500; font-size: 14px; }
   .date-pill svg { width: 17px; height: 17px; color: var(--ink-3); }
 
-  @media (max-width: 1280px){ .grid-stats{grid-template-columns:repeat(3,1fr)} .grid-bot{grid-template-columns:1fr} .grid-mid{grid-template-columns:1fr} .stories-in{grid-template-columns:1fr} .foot-strip{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width: 1280px){ .grid-bot{grid-template-columns:1fr 1fr} .grid-bot .panel:last-child{grid-column:1/-1} .grid-mid{grid-template-columns:1fr} .stories-in{grid-template-columns:1fr} .foot-strip{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width: 820px){ .grid-bot{grid-template-columns:1fr} .grid-bot .panel:last-child{grid-column:auto} }
 </style>
 </head>
 <body>
@@ -107,8 +91,6 @@
         <span class="date-pill" id="datepill"></span>
       </div>
 
-      <div class="grid-stats" id="stats"></div>
-
       <div class="grid-mid">
         <div class="panel panel-pad-lg">
           <div class="panel-h"><h3>Top Stories</h3><a class="link-r" href="feed.html">View all stories <span id="va1"></span></a></div>
@@ -117,14 +99,6 @@
             <div id="ministories"></div>
           </div>
           <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
-        </div>
-        <div class="panel panel-pad-lg">
-          <div class="panel-h"><h3>Risk Overview</h3><a class="link-r" href="#">View full report <span id="va2"></span></a></div>
-          <div class="risk-wrap">
-            <div id="riskdonut"></div>
-            <div class="risk-legend" id="risklegend"></div>
-          </div>
-          <div class="risk-banner"><span id="rbi"></span> 3 countries moved to higher risk level <span class="chev" id="rbc"></span></div>
         </div>
       </div>
 
@@ -156,27 +130,8 @@
   AFRIBN.shell('home');
   const ic = AFRIBN.ic;
   $('#datepill').innerHTML = ic('calendar') + ' May 15, 2024';
-  ['#va1','#va2','#va3','#va4','#va5'].forEach(s=>$(s).innerHTML = ic('arrowRight'));
-  $('#rbi').innerHTML = ic('shield'); $('#rbc').innerHTML = ic('chevRight'); $('#rf').innerHTML = ic('refresh','width="14" height="14"');
-
-  // stats
-  const STATS = [
-    ['file','#E8252D', 'Total Stories', '3,248', '+12.4%', 'up'],
-    ['bank','#E3B341', 'Policy Changes', '86', '+8.7%', 'up'],
-    ['handshake','#A371F7', 'Deals Tracked', '152', '+15.3%', 'up'],
-    ['calendar','#3FB950', 'Events Tracked', '204', '+9.1%', 'up'],
-    ['shield','#4493F8', 'Risk Level', 'Medium', 'Stable', 'flat'],
-  ];
-  $('#stats').innerHTML = STATS.map(([icn,c,l,v,d,dir])=>`
-    <div class="stat link">
-      <div class="top">
-        <div class="ic" style="background:${c}22;color:${c}">${ic(icn)}</div>
-        <div class="lbl">${l}</div>
-        <span class="arrow">${ic('chevRight','width="18" height="18"')}</span>
-      </div>
-      <div class="num"${l==='Risk Level'?' style="color:'+c+'"':''}>${v}</div>
-      <div class="delta ${dir==='up'?'up':dir==='down'?'down':'muted'}">${dir==='up'?ic('trendUp','width="14" height="14"'):dir==='flat'?'':''} ${d} <span class="muted" style="font-weight:400">vs yesterday</span></div>
-    </div>`).join('');
+  ['#va1','#va3','#va4','#va5'].forEach(s=>$(s).innerHTML = ic('arrowRight'));
+  $('#rf').innerHTML = ic('refresh','width="14" height="14"');
 
   // featured + mini stories
   $('#feat').innerHTML = `
@@ -200,15 +155,6 @@
         <h5>${title}</h5>
       </div>
     </div>`).join('');
-
-  // risk donut + legend
-  const RISK = [
-    ['High Risk','#E8252D',8,'20%'],['Medium Risk','#FF8A3D',14,'35%'],['Low Risk','#A371F7',10,'25%'],
-    ['Stable','#4493F8',6,'15%'],['Unknown','#8B949E',2,'5%'],
-  ];
-  $('#riskdonut').innerHTML = AFRIBN.donut(RISK.map(r=>({value:r[2],color:r[1]})), {size:160,thick:22});
-  $('#risklegend').innerHTML = RISK.map(([n,c,v,p])=>`
-    <div class="li"><span class="cdot" style="background:${c}"></span><span class="nm">${n}</span><span class="vl">${v}</span><span class="pc">(${p})</span></div>`).join('');
 
   // alerts
   const ALERTS = [

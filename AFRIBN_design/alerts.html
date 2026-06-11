@@ -66,16 +66,16 @@
 <div class="modal-back" id="modalBack"><div class="modal">
   <div class="modal-h"><h3>Create Alert Rule</h3><button class="icon-btn" id="mClose" style="width:36px;height:36px"></button></div>
   <div class="modal-b">
-    <div class="field"><label>Alert name</label><input placeholder="e.g. Nigeria energy policy changes"></div>
+    <div class="field"><label>Alert name</label><input id="alertName" placeholder="e.g. Nigeria energy policy changes"></div>
     <div class="eyebrow" style="margin:6px 0 12px">Trigger when</div>
-    <div class="field-row"><div class="field"><label>Country</label><select><option>Any</option><option>Nigeria</option><option>Kenya</option></select></div><div class="field"><label>Topic</label><select><option>Any</option><option>Energy</option><option>Security</option></select></div></div>
-    <div class="field-row"><div class="field"><label>Source</label><select><option>Any</option><option>Reuters</option></select></div><div class="field"><label>Signal score ≥</label><input type="number" value="70"></div></div>
-    <div class="field"><label>Watchlist item / Risk change</label><select><option>Any watchlist match</option><option>Risk level increase</option></select></div>
+    <div class="field-row"><div class="field"><label>Keyword</label><input id="alertKeyword" placeholder="e.g. energy subsidy, election, LNG"></div><div class="field"><label>Topic</label><select id="alertTopic"><option value="">Any topic</option><option>Energy</option><option>Security</option><option>Economy</option><option>Policy</option><option>Trade</option><option>Infrastructure</option></select></div></div>
+    <div class="field-row"><div class="field"><label>Country</label><select id="alertCountry"><option value="">Any Strategic Market</option><option>Nigeria</option><option>Kenya</option></select></div><div class="field"><label>Intelligence category</label><select id="alertCategory"><option value="">Any category</option><option>Policy Change</option><option>Regulation</option><option>Corporate Update</option><option>Partnership</option><option>Security</option><option>Economic</option></select></div></div>
+    <div class="field-row"><div class="field"><label>Confidence score ≥</label><input id="alertConfidence" type="number" min="0" max="100" value="60"></div><div class="field"><label>Signal score ≥</label><input id="alertSignal" type="number" min="0" max="100" value="70"></div></div>
+    <div class="field-row"><div class="field"><label>Risk change</label><select id="alertRiskChange"><option value="">Any risk movement</option><option value="increase">Risk level increase</option><option value="decrease">Risk level decrease</option><option value="critical">Critical threshold crossed</option></select></div><div class="field"><label>Frequency</label><select id="alertFrequency"><option value="real_time">Real-Time</option><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div></div>
     <div class="eyebrow" style="margin:10px 0 12px">Delivery channels</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <label class="aud-chip" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;background:var(--red-tint);color:var(--red-bright)"><input type="checkbox" checked style="accent-color:var(--red)"> In-app</label>
-      <label class="aud-chip" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer"><input type="checkbox"> Email</label>
-      <label class="aud-chip" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer"><input type="checkbox"> SMS</label>
+      <label class="aud-chip" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;background:var(--red-tint);color:var(--red-bright)"><input class="alert-channel" value="in_app" type="checkbox" checked style="accent-color:var(--red)"> In-app</label>
+      <label class="aud-chip" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer"><input class="alert-channel" value="email" type="checkbox"> Email</label>
     </div>
   </div>
   <div class="modal-f"><button class="btn btn-ghost" id="mCancel">Cancel</button><button class="btn btn-primary" id="mSave">Create Alert</button></div>

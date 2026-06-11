@@ -17,7 +17,7 @@
   .feed-grid { display: grid; grid-template-columns: 1fr 340px; gap: 22px; align-items: start; }
 
   .feed-list { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
-  .feed-item { display: flex; align-items: flex-start; gap: 16px; padding: 20px 22px; border-bottom: 1px solid var(--line); position: relative; cursor: pointer; transition: background .12s; }
+  .feed-item { display: flex; align-items: flex-start; gap: 16px; padding: 20px 22px; border-bottom: 1px solid var(--line); position: relative; cursor: default; transition: background .12s; }
   .feed-item:hover { background: rgba(255,255,255,0.022); }
   .feed-item .impact { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 7px; }
   .feed-item .ftile { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; flex: none; }
@@ -168,7 +168,7 @@
 
   function itemHTML(it){
     const [tIc,tColor,pill,impact] = CAT[it.cat];
-    return `<a class="feed-item${it._new?' new':''}" href="story.html">
+    return `<article class="feed-item${it._new?' new':''}">
       <span class="impact" style="background:${impact}"></span>
       <span class="ftile" style="background:${tColor}22;color:${tColor}">${ic(tIc)}</span>
       <div class="body">
@@ -181,7 +181,7 @@
         <span class="pill ${pill}">${it.cat}</span>
         <span class="more" onclick="event.preventDefault();event.stopPropagation()">${ic('more','width="18" height="18"')}</span>
       </div>
-    </a>`;
+    </article>`;
   }
 
   function renderFeed(){

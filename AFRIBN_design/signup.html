@@ -62,7 +62,7 @@
   const $ = s => document.querySelector(s);
   AFRIBN.marketing(null);
   const ic = AFRIBN.ic;
-  $('#topLogo').innerHTML = AFRIBN.logo({h:34}); $('#formLogo').innerHTML = AFRIBN.logo({h:30}); $('#ci').innerHTML = ic('arrowRight','width="17" height="17"');
+  $('#topLogo').innerHTML = AFRIBN.logo(); $('#formLogo').innerHTML = AFRIBN.logo(); $('#ci').innerHTML = ic('arrowRight','width="17" height="17"');
   $('#asideChk').innerHTML = ['Decision-grade intelligence across 54 countries','Source reliability & verification on every item','Workspace tailored to your countries & sectors'].map(t=>`<li>${ic('checkCircle')} ${t}</li>`).join('');
 
   $('#pw').addEventListener('input', e=>{

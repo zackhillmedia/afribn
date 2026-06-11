@@ -79,25 +79,6 @@
   .sec-head h2 { font-size: clamp(30px, 4vw, 42px); font-weight: 800; letter-spacing: -0.03em; margin: 14px 0 0; }
   .sec-head p { color: var(--ink-3); font-size: 16px; margin: 14px 0 0; }
 
-  /* comparison table */
-  .cmp-wrap { border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-  .cmp { width: 100%; border-collapse: collapse; }
-  .cmp th, .cmp td { padding: 16px 22px; text-align: left; border-bottom: 1px solid var(--line); font-size: 14.5px; }
-  .cmp thead th { background: var(--panel); position: sticky; top: 78px; z-index: 5; }
-  .cmp thead .pn { font-family: var(--font-display); font-weight: 800; font-size: 17px; }
-  .cmp thead .pn.feat { color: var(--red-bright); }
-  .cmp thead .pp { font-size: 12.5px; color: var(--ink-3); font-weight: 400; margin-top: 2px; }
-  .cmp td:not(:first-child), .cmp th:not(:first-child) { text-align: center; width: 17%; }
-  .cmp .grp-row td { background: var(--bg-2); font-weight: 700; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); padding: 12px 22px; }
-  .cmp .feat-col { background: rgba(232,37,45,0.04); }
-  .cmp tbody tr:hover td { background: rgba(255,255,255,0.02); }
-  .cmp tbody tr:hover .feat-col { background: rgba(232,37,45,0.07); }
-  .ck { color: var(--green); display: inline-flex; } .ck svg { width: 19px; height: 19px; }
-  .dash { color: var(--ink-4); }
-  .cmp .val { font-weight: 600; font-size: 13.5px; }
-  .cmp td:first-child { color: var(--ink); font-weight: 500; }
-  .cmp .sub { display: block; color: var(--ink-3); font-size: 12px; font-weight: 400; margin-top: 2px; }
-
   /* logos */
   .logos-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px 52px; }
   .logos-row .lw { color: var(--ink-4); font-weight: 800; font-size: 19px; opacity: .85; font-family: var(--font-display); white-space: nowrap; }
@@ -131,7 +112,6 @@
     .lnav nav { display: none; }
     .plans { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; }
     .ent-band { grid-template-columns: 1fr; } .foot-grid { grid-template-columns: 1fr 1fr; }
-    .cmp-wrap { overflow-x: auto; } .cmp { min-width: 720px; }
   }
 </style>
 </head>
@@ -180,27 +160,6 @@
       <a class="btn btn-primary" href="home.html" style="height:52px">Talk to our team <span id="eci"></span></a>
       <a class="btn btn-ghost" href="home.html" style="height:52px">Download capability brief</a>
       <p class="muted" style="font-size:12.5px;text-align:center;margin:4px 0 0">Procurement-ready · SSO/SAML · On-prem available</p>
-    </div>
-  </div>
-</section>
-
-<section class="sec">
-  <div class="wrap-m">
-    <div class="sec-head">
-      <div class="ek">Compare plans</div>
-      <h2>Every capability, side by side</h2>
-      <p>What's included at each level of access.</p>
-    </div>
-    <div class="cmp-wrap">
-      <table class="cmp">
-        <thead><tr>
-          <th>Capability</th>
-          <th><div class="pn">Analyst</div><div class="pp">Individual</div></th>
-          <th class="feat-col"><div class="pn feat">Professional</div><div class="pp">Teams</div></th>
-          <th><div class="pn">Enterprise</div><div class="pp">Institutions</div></th>
-        </tr></thead>
-        <tbody id="cmpBody"></tbody>
-      </table>
     </div>
   </div>
 </section>
@@ -303,39 +262,6 @@
   // ---- enterprise feats ----
   const EF = ['Dedicated intelligence analyst','Custom country & sector coverage','Field tasking & verification','SSO / SAML & audit logging','On-prem or private cloud','Procurement & MSA support'];
   $('#entFeats').innerHTML = EF.map(f=>`<span>${ic('check','width="16" height="16"')} ${f}</span>`).join('');
-
-  // ---- comparison table ----
-  const C = check, D = '<span class="dash">—</span>';
-  const v = t => `<span class="val">${t}</span>`;
-  const ROWS = [
-    ['grp','Intelligence Access'],
-    ['Real-time Feed', C, C, C],
-    ['Country Intelligence', v('54 countries'), v('54 countries'), v('54 + custom')],
-    ['Daily Executive Brief', C, C, C],
-    ['Reports library', v('Read'), v('Read + build'), v('Read + build')],
-    ['Policy / Deal / Event trackers', C, C, C],
-    ['grp','Analytics & Risk'],
-    ['Risk Dashboard', v('View'), v('Full'), v('Full + custom')],
-    ['Custom dashboards', D, C, C],
-    ['Watchlists', v('5'), v('Unlimited'), v('Unlimited')],
-    ['Alert channels', v('In-app · Email'), v('+ SMS'), v('+ SMS · Webhook')],
-    ['grp','Production & Data'],
-    ['Source reliability access', D, C, C],
-    ['API access', D, v('Standard'), v('Extended')],
-    ['Custom intelligence requests', D, D, C],
-    ['Field tasking & verification', D, D, C],
-    ['grp','Support & Security'],
-    ['Seats', v('1'), v('Up to 10'), v('Unlimited')],
-    ['Onboarding', v('Self-serve'), v('Guided'), v('White-glove')],
-    ['Dedicated analyst', D, D, C],
-    ['SSO / SAML', D, D, C],
-    ['Uptime SLA', D, v('99.5%'), v('99.9%')],
-  ];
-  $('#cmpBody').innerHTML = ROWS.map(r=>{
-    if(r[0]==='grp') return `<tr class="grp-row"><td colspan="4">${r[1]}</td></tr>`;
-    const cell = x => x===C ? `<span class="ck">${C}</span>` : x;
-    return `<tr><td>${r[0]}</td><td>${cell(r[1])}</td><td class="feat-col">${cell(r[2])}</td><td>${cell(r[3])}</td></tr>`;
-  }).join('');
 
   // ---- faq ----
   const FAQ = [

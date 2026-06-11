@@ -1,5 +1,8 @@
+const { STRATEGIC_MARKETS, isStrategicMarket } = require("./strategic-markets");
+
 function listFeed(store, query) {
   return store.list("feedItems", (item) => {
+    if (query.strategicMarkets !== "0" && query.scope !== "all" && !query.country && !isStrategicMarket(item.country)) return false;
     if (query.country && item.country !== query.country) return false;
     if (query.sector && item.sector !== query.sector) return false;
     if (query.impact && item.impact !== query.impact) return false;
@@ -18,8 +21,11 @@ function countryIntelligence(store, country) {
   const deals = store.list("deals", (item) => item.country.toLowerCase() === country.toLowerCase());
   const risk = store.list("countryRiskSnapshots", (item) => item.country.toLowerCase() === country.toLowerCase()).at(-1);
 
+  const strategicMarket = STRATEGIC_MARKETS.find((market) => market.name.toLowerCase() === country.toLowerCase());
   return {
     country,
+    productLabel: "Country Brief",
+    strategicMarket: strategicMarket || null,
     summary: {
       storyCount: stories.length,
       publishedCount: published.length,
@@ -32,7 +38,51 @@ function countryIntelligence(store, country) {
     security: stories.filter((item) => item.sector === "Security"),
     investments: deals,
     risk,
-    keyDevelopments: published.slice(-10).reverse()
+    keyDevelopments: published.slice(-10).reverse(),
+    brief: buildCountryBriefSections({ country, stories, published, policies, deals, risk })
+  };
+}
+
+function buildCountryBriefSections({ country, stories, published, policies, deals, risk }) {
+  const latest = published.slice(-5).reverse();
+  return {
+    overview: {
+      executiveSummary: latest[0]?.summary || `${country} is monitored as part of AFRIBN's Strategic Markets launch coverage, combining verified intelligence, policy changes, investment activity, event signals, and risk indicators.`,
+      keyIndicators: {
+        riskLevel: risk ? riskLabel(risk.overallRisk) : "unknown",
+        publishedItems: published.length,
+        policyDevelopments: policies.length,
+        investmentActivity: deals.length
+      },
+      countrySnapshot: `${country} brief generated from existing AFRIBN intelligence objects.`
+    },
+    political: {
+      developments: policies.slice(-5).reverse(),
+      outlook: policies.length ? "Policy activity requires active monitoring." : "No major policy signal currently published.",
+      publicPolicyDevelopments: policies
+    },
+    economicInvestment: {
+      indicators: stories.filter((item) => /econom|finance|investment/i.test(item.sector || "")),
+      investmentActivity: deals,
+      emergingOpportunities: deals.map((deal) => deal.title).slice(0, 5)
+    },
+    regulatoryInfrastructure: {
+      regulatoryDevelopments: policies.filter((item) => /regulat|policy/i.test(`${item.policyType} ${item.title}`)),
+      infrastructureProjects: deals.filter((item) => /infrastructure|project|rail|road|port|energy/i.test(`${item.sector} ${item.title}`)),
+      majorInitiatives: [...policies, ...deals].slice(-6).reverse()
+    },
+    securityRisk: {
+      riskAssessment: risk || null,
+      securityOutlook: stories.filter((item) => /security|risk/i.test(`${item.sector} ${item.title}`)).slice(-5).reverse(),
+      businessEnvironment: risk ? `Overall risk is ${riskLabel(risk.overallRisk)}.` : "Risk profile pending."
+    },
+    outlook: {
+      opportunities: deals.map((deal) => deal.title).slice(0, 5),
+      risks: stories.filter((item) => /risk|security|inflation|debt/i.test(`${item.title} ${item.summary}`)).map((item) => item.title).slice(0, 5),
+      emergingTrends: latest.map((item) => item.sector).filter(Boolean).slice(0, 5),
+      analystObservations: "AFRIBN will update this brief quarterly as new verified intelligence is published.",
+      sources: latest.map((item) => item.title)
+    }
   };
 }
 
@@ -84,6 +134,13 @@ function buildReport(store, input = {}) {
   const report = store.insert("reports", {
     title,
     reportType: input.reportType || "Executive Brief",
+    executiveBrief: input.executiveBrief || "Executive-level AFRIBN intelligence brief generated from verified published intelligence.",
+    summary: input.summary || "Research, analysis, strategic assessment, and intelligence notes from AFRIBN's intelligence pipeline.",
+    country: input.country || input.filters?.country || "Pan-African",
+    category: input.category || input.filters?.category || "Strategic Brief",
+    publicationDate: new Date().toISOString(),
+    sources: input.sources || published.slice(0, 5).map((item) => item.title),
+    methodologyNote: input.methodologyNote || "Generated from existing AFRIBN intelligence objects, source reliability records, scoring outputs, and verified published intelligence.",
     status: "generated",
     generatedAt: new Date().toISOString(),
     filters: input.filters || {}

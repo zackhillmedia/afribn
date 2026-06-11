@@ -5,6 +5,21 @@
   const NS = {};
   window.AFRIBN = NS;
   const svgNS = (inner, attrs = '') => `<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${inner}</svg>`;
+  const READABLE_KEY = 'afribn_readable_text';
+
+  function readableEnabled() {
+    try { return localStorage.getItem(READABLE_KEY) === '1'; }
+    catch (e) { return false; }
+  }
+
+  function setReadableText(on) {
+    document.documentElement.classList.toggle('afribn-readable', !!on);
+    try { localStorage.setItem(READABLE_KEY, on ? '1' : '0'); }
+    catch (e) {}
+  }
+
+  setReadableText(readableEnabled());
+  NS.setReadableText = setReadableText;
 
   /* ---------- eagle mark ---------- */
   NS.markSVG = `<svg class="mark" viewBox="0 0 140 104" fill="currentColor" aria-hidden="true">
@@ -21,7 +36,7 @@
 
   NS.logo = (opts = {}) => {
     const href = opts.href || 'index.html';
-    const h = opts.h || 32;
+    const h = 63;
     return `<a class="logo" href="${href}" aria-label="AFRIBN"><img class="logo-img" src="assets/afribn-logo.png" alt="AFRIBN" style="height:${h}px"></a>`;
   };
 
@@ -107,6 +122,7 @@
 
   /* ---------- roles + nav config ---------- */
   const ALL = ['client', 'analyst', 'agent', 'verifier', 'admin'];
+  const INTERNAL = ['analyst', 'agent', 'verifier', 'admin'];
   NS.ROLE_LABEL = { client: 'Client', analyst: 'Analyst', agent: 'Field Agent', verifier: 'Verifier', admin: 'Admin' };
   NS.role = () => localStorage.getItem('afribn_role') || 'admin';
   NS.setRole = (r) => { localStorage.setItem('afribn_role', r); location.reload(); };
@@ -114,25 +130,25 @@
   // [icon, label, href, group, roles, badge]
   const NAV = [
     ['home', 'Home', 'home.html', 'Intelligence', ALL],
-    ['feed', 'Real-time Feed', 'feed.html', 'Intelligence', ALL],
+    ['feed', 'Feed', 'feed.html', 'Intelligence', ALL],
     ['bell', 'Alerts', 'alerts.html', 'Intelligence', ALL, 4],
-    ['star', 'Watchlist', 'watchlist.html', 'Intelligence', ALL],
+    ['star', 'Watchlist', 'watchlist.html', 'Intelligence', INTERNAL],
     ['globe', 'Country Intelligence', 'country.html', 'Intelligence', ALL],
-    ['grid', 'Dashboards', 'dashboards.html', 'Intelligence', ALL],
+    ['grid', 'Dashboards', 'dashboards.html', 'Intelligence', INTERNAL],
     ['file', 'Reports', 'reports.html', 'Intelligence', ALL],
-    ['policy', 'Policy Monitor', 'policy.html', 'Intelligence', ALL],
-    ['deal', 'Deal Tracker', 'deal.html', 'Intelligence', ALL],
+    ['policy', 'Policy Monitor', 'policy.html', 'Intelligence', INTERNAL],
+    ['deal', 'Deal Tracker', 'deal.html', 'Intelligence', INTERNAL],
     ['calendar', 'Event Tracker', 'event.html', 'Intelligence', ALL],
-    ['gauge', 'Risk Dashboard', 'risk.html', 'Intelligence', ALL],
-    ['database', 'Sources', 'sources.html', 'Production', ['admin', 'analyst']],
-    ['refresh', 'Collection Jobs', 'jobs.html', 'Production', ['admin', 'analyst']],
-    ['inbox', 'Raw Articles', 'raw.html', 'Production', ['admin', 'analyst']],
-    ['edit', 'Intelligence Workspace', 'workspace.html', 'Production', ['admin', 'analyst']],
-    ['target', 'Scoring', 'scoring.html', 'Production', ['admin', 'analyst', 'verifier']],
-    ['alertTri', 'Gap Reports', 'gaps.html', 'Production', ['admin', 'analyst', 'verifier']],
-    ['pin', 'Field Tasks', 'tasks.html', 'Production', ['admin', 'agent', 'analyst']],
-    ['listChecks', 'Verification', 'verification.html', 'Production', ['admin', 'verifier']],
-    ['send', 'Published Intelligence', 'published.html', 'Production', ['admin', 'analyst', 'verifier']],
+    ['gauge', 'Risk Dashboard', 'risk.html', 'Intelligence', INTERNAL],
+    ['database', 'Sources', 'sources.html', 'Production', INTERNAL],
+    ['refresh', 'Collection Jobs', 'jobs.html', 'Production', INTERNAL],
+    ['inbox', 'Raw Articles', 'raw.html', 'Production', INTERNAL],
+    ['edit', 'Intelligence Workspace', 'workspace.html', 'Production', INTERNAL],
+    ['target', 'Scoring', 'scoring.html', 'Production', INTERNAL],
+    ['alertTri', 'Gap Reports', 'gaps.html', 'Production', INTERNAL],
+    ['pin', 'Field Tasks', 'tasks.html', 'Production', INTERNAL],
+    ['listChecks', 'Verification', 'verification.html', 'Production', INTERNAL],
+    ['send', 'Published Intelligence', 'published.html', 'Production', INTERNAL],
     ['sliders', 'Admin / Operations', 'admin.html', 'Operations', ['admin']],
   ];
 
@@ -148,6 +164,8 @@
         if (!items.length) return;
         if (g !== 'Intelligence') body += `<div class="nav-group">${g}</div>`;
         body += `<nav class="nav">` + items.map(([icon, label, href, grp, roles, badge]) => {
+          if (role === 'client' && href === 'country.html') label = 'Country Brief';
+          if (role === 'client' && href === 'event.html') label = 'Event Monitor';
           const on = icon === active ? ' active' : '';
           const bdg = badge ? `<span class="nav-badge">${badge}</span>` : '';
           return `<a class="nav-item${on}" href="${href}">${NS.ic(icon)}<span>${label}</span>${bdg}</a>`;
@@ -174,6 +192,7 @@
           <span class="kbd">/</span>
         </div>
         <div class="topbar-actions">
+          <button class="icon-btn readability-btn" id="readabilityBtn" title="Use larger text" aria-label="Use larger text" aria-pressed="false"><span>Aa</span></button>
           <a class="icon-btn" href="alerts.html" title="Alerts">${NS.ic('bell')}<span class="dot"></span></a>
           <button class="icon-btn" id="messageBtn" title="Messages">${NS.ic('message')}<span class="badge-count" id="messageBadge">0</span></button>
           <div class="avatar" id="avatarBtn" tabindex="0">
@@ -201,6 +220,23 @@
       menu.querySelectorAll('.av-opt[data-role]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); NS.setRole(b.dataset.role); }));
       const mb = top.querySelector('#menuBtn');
       if (mb) mb.addEventListener('click', () => document.querySelector('.app')?.classList.toggle('nav-open'));
+      const rb = top.querySelector('#readabilityBtn');
+      if (rb) {
+        const syncReadableButton = () => {
+          const on = document.documentElement.classList.contains('afribn-readable');
+          rb.classList.toggle('active', on);
+          rb.setAttribute('aria-pressed', String(on));
+          rb.title = on ? 'Use standard text' : 'Use larger text';
+          rb.setAttribute('aria-label', rb.title);
+        };
+        rb.addEventListener('click', () => {
+          const next = !document.documentElement.classList.contains('afribn-readable');
+          setReadableText(next);
+          syncReadableButton();
+          NS.toast?.(next ? 'Readable text enabled' : 'Standard text restored', 'info');
+        });
+        syncReadableButton();
+      }
     }
   };
 
@@ -226,6 +262,9 @@
     zambia:    'solid#0b7a3b',
     egypt:     'h|#e3132f,#fff,#111|disc#caa14a',
     rwanda:    'h|#1a6fc4,#ffd200,#0b9a3b',
+    tanzania:  'tanzania',
+    cotedivoire:'v|#ff8a00,#fff,#0b9a3b',
+    ivorycoast:'v|#ff8a00,#fff,#0b9a3b',
     mauritius: 'h4|#e3132f,#1a3aa0,#ffd200,#0b7a3b',
     botswana:  'bw',
     tunisia:   'solid#e3132f|disc#fff',
@@ -236,6 +275,7 @@
     if (spec === 'drc') return `<rect width='24' height='16' fill='#1a6fc4'/><path d='M0 13 L24 3' stroke='#ffd200' stroke-width='5'/><path d='M0 13 L24 3' stroke='#e3132f' stroke-width='2.4'/>`;
     if (spec === 'sa') return `<rect width='24' height='16' fill='#0b7a3b'/><path d='M0 0 L11 8 L0 16 Z' fill='#111'/><path d='M0 0 L9 8 L0 16' fill='none' stroke='#ffd200' stroke-width='2'/><path d='M11 5 H24 M11 11 H24' stroke='#fff' stroke-width='3.4'/><path d='M11 5.5 H24 M11 10.5 H24' stroke='#e3132f' stroke-width='1.2'/>`;
     if (spec === 'uganda') return `<rect width='24' height='16' fill='#111'/><rect y='2.66' width='24' height='2.66' fill='#ffd200'/><rect y='8' width='24' height='2.66' fill='#e3132f'/><rect y='13.3' width='24' height='2.7' fill='#ffd200'/><rect x='8.5' y='5.5' width='7' height='5' rx='3' fill='#fff'/>`;
+    if (spec === 'tanzania') return `<rect width='24' height='16' fill='#1eb53a'/><path d='M0 16 24 0' stroke='#fcd116' stroke-width='6'/><path d='M0 16 24 0' stroke='#111' stroke-width='3.5'/><path d='M0 16 24 0' stroke='#00a3dd' stroke-width='1.2' opacity='.9'/>`;
     if (spec === 'bw') return `<rect width='24' height='16' fill='#6cb7e6'/><rect y='5.5' width='24' height='5' fill='#fff'/><rect y='6.7' width='24' height='2.6' fill='#111'/>`;
     const parts = spec.split('|');
     const layout = parts[0];

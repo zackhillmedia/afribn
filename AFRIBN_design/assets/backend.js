@@ -72,6 +72,7 @@
       "feed.html": initFeed,
       "home.html": initHome,
       "dashboards.html": initDashboards,
+      "country.html": initCountryBrief,
       "alerts.html": initAlerts,
       "event.html": initEventTracker,
       "event-detail.html": initEventDetail,
@@ -703,7 +704,52 @@
     const feed = await API.get("/feed");
     const list = $(".feed-list") || $("#feedList") || $(".panel");
     if (!list) return;
-    list.innerHTML = feed.map((item) => `<a class="feed-item" href="story.html?storyId=${encodeURIComponent(item.storyId)}"><span class="live-dot"></span><div class="fi-main"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary || "")}</p><div class="fi-meta">${escapeHtml(item.country)} · ${escapeHtml(item.sector)} · ${formatDate(item.publishedAt)}</div></div><div class="fi-score">${item.signalScore || ""}</div></a>`).join("") || list.innerHTML;
+    if (!feed.length || !$("#feed")) return;
+    list.innerHTML = feed.map((item) => feedItemMarkup(item)).join("");
+  }
+
+  function feedItemMarkup(item = {}) {
+    const category = item.sector || item.eventType || "Intelligence";
+    const meta = feedCategoryMeta(category);
+    const highImpact = Number(item.signalScore || 0) >= 75 || String(item.impact || "").toLowerCase() === "high";
+    return `<article class="feed-item">
+      <span class="impact" style="background:${meta.color}"></span>
+      <span class="ftile" style="background:${meta.color}22;color:${meta.color}">${ic(meta.icon)}</span>
+      <div class="body">
+        <div class="ttl">${escapeHtml(item.title)} ${highImpact ? '<span class="pill high-impact">High Impact</span>' : ""}</div>
+        <div class="desc">${escapeHtml(item.summary || item.description || "")}</div>
+        <div class="meta">${window.AFRIBN.flag(flagKey(item.country))} ${escapeHtml(item.country || "Pan-African")} <span class="sep"></span> ${escapeHtml(category)} <span class="sep"></span> ${escapeHtml(item.sourceName || item.originalSourceName || "AFRIBN")}</div>
+      </div>
+      <div class="right">
+        <span class="tm">${formatDate(item.publishedAt || item.createdAt)}</span>
+        <span class="pill ${meta.pill}">${escapeHtml(category)}</span>
+        <span class="more">${ic("more", 'width="18" height="18"')}</span>
+      </div>
+    </article>`;
+  }
+
+  function feedCategoryMeta(category = "") {
+    const lower = category.toLowerCase();
+    if (lower.includes("politic") || lower.includes("policy")) return { icon: "file", color: "#E5484D", pill: "politics" };
+    if (lower.includes("energy")) return { icon: "barChart", color: "#F0883E", pill: "energy" };
+    if (lower.includes("security") || lower.includes("risk")) return { icon: "shield", color: "#A371F7", pill: "security" };
+    if (lower.includes("trade") || lower.includes("deal")) return { icon: "handshake", color: "#4493F8", pill: "trade" };
+    if (lower.includes("econom") || lower.includes("finance")) return { icon: "bank", color: "#3FB950", pill: "economy" };
+    return { icon: "file", color: "#8B949E", pill: "industry" };
+  }
+
+  function flagKey(country = "") {
+    const key = String(country).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+    return {
+      "drc": "drc",
+      "drcongo": "drc",
+      "democraticrepublicofcongo": "drc",
+      "southafrica": "southafrica",
+      "panAfrican": "regional",
+      "panafrican": "regional",
+      "cotedivoire": "cotedivoire",
+      "ivorycoast": "cotedivoire"
+    }[key] || key || "regional";
   }
 
   async function initHome() {
@@ -719,10 +765,105 @@
     await initHome();
   }
 
+  async function initCountryBrief() {
+    const role = localStorage.getItem("afribn_role") || "admin";
+    const markets = await API.get("/strategic-markets").catch(() => []);
+    const label = $("#countryProductLabel");
+    if (label && role === "client") label.textContent = "Country Brief";
+    if (document.title && role === "client") document.title = "AFRIBN - Country Brief";
+    const dropdown = $("#cdrop");
+    const countryName = $("#cname")?.textContent?.trim() || "Nigeria";
+    let selected = markets.find((market) => market.name === countryName) || markets[0] || { name: countryName, flag: "nigeria" };
+
+    if (dropdown && markets.length) {
+      dropdown.innerHTML = markets.map((market) => `<div class="ci-opt" data-c="${escapeAttr(market.name)}">${window.AFRIBN.flag(market.flag)} ${escapeHtml(market.name)}</div>`).join("");
+      $$(".ci-opt", dropdown).forEach((item) => item.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        selected = markets.find((market) => market.name === item.dataset.c) || selected;
+        dropdown.classList.remove("open");
+        await renderBrief(selected);
+      }));
+    }
+
+    async function renderBrief(market) {
+      const brief = await API.get(`/country-briefs/${encodeURIComponent(market.name)}`);
+      $("#cname") && ($("#cname").textContent = market.name);
+      const flag = $("#flagLg");
+      if (flag) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = window.AFRIBN.flag(market.flag || brief.strategicMarket?.flag || "regional");
+        const svg = tmp.querySelector("svg");
+        flag.src = svg ? `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice">${svg.innerHTML}</svg>`)}` : "";
+      }
+      const download = $("#downloadBrief");
+      if (download) download.href = `/country-briefs/${encodeURIComponent(market.name)}/download`;
+      renderBriefMetrics(brief);
+      renderBriefStories(brief);
+      renderBriefIndicators(brief);
+      renderBriefProjects(brief);
+    }
+
+    await renderBrief(selected);
+  }
+
+  function renderBriefMetrics(brief) {
+    const metrics = $("#metrics");
+    if (!metrics) return;
+    const risk = brief.summary?.riskLevel || "unknown";
+    metrics.innerHTML = [
+      ["Published Intelligence", brief.summary?.publishedCount || 0, "Verified items"],
+      ["Policy Signals", brief.summary?.policyCount || 0, "Government developments"],
+      ["Investment Activity", brief.summary?.dealCount || 0, "Tracked deals/projects"],
+      ["Risk Rating", titleCase(risk), "Quarterly outlook"]
+    ].map(([label, value, sub], index) => `<div class="metric">
+      <span class="ml">${escapeHtml(label)}</span>
+      <div class="mv ${index === 3 ? `risk-${String(risk).toLowerCase()}` : ""}">${escapeHtml(value)}</div>
+      <div class="md muted" style="color:var(--ink-3)">${escapeHtml(sub)}</div>
+      <div class="spk">${window.AFRIBN.spark([20 + index * 4, 28, 25 + index * 3, 34, 38, 42], { w: 150, h: 34, color: "#E8252D", sw: 1.6 })}</div>
+    </div>`).join("");
+  }
+
+  function renderBriefStories(brief) {
+    const list = $("#cistories");
+    if (!list) return;
+    const rows = brief.keyDevelopments?.length ? brief.keyDevelopments : [];
+    list.innerHTML = rows.map((item) => `<a class="ci-story" href="story.html?storyId=${encodeURIComponent(item.storyId || item.id)}">
+      <img class="img" src="${window.AFRIBN.scene(item.sector || "city", 150, 120)}" alt="">
+      <div class="grow"><div class="cat" style="color:#E8252D">${escapeHtml(item.sector || item.eventType || "INTELLIGENCE")}</div><h4>${escapeHtml(item.title)}</h4><p>${escapeHtml(item.summary || "")}</p></div>
+      <div class="score"><div class="sl">Signal Score</div><div class="sv">${item.signalScore || "-"}</div><div class="st">${formatDate(item.publishedAt || item.createdAt)}</div></div>
+    </a>`).join("") || `<div class="empty">${ic("globe")}<div>No published intelligence yet for ${escapeHtml(brief.country)}.</div></div>`;
+  }
+
+  function renderBriefIndicators(brief) {
+    const indicators = $("#indicators");
+    if (!indicators) return;
+    const rows = [
+      ["Risk Level", titleCase(brief.summary?.riskLevel || "unknown")],
+      ["Published Items", brief.summary?.publishedCount || 0],
+      ["Policy Developments", brief.summary?.policyCount || 0],
+      ["Investment Activity", brief.summary?.dealCount || 0]
+    ];
+    indicators.innerHTML = rows.map(([label, value]) => `<div class="ind-row"><span class="muted-2 lbl0">${escapeHtml(label)}</span><span class="iv">${escapeHtml(value)}</span></div>`).join("");
+  }
+
+  function renderBriefProjects(brief) {
+    const projects = $("#projects");
+    if (!projects) return;
+    const rows = brief.investments || [];
+    projects.innerHTML = rows.slice(0, 4).map((item) => `<div class="proj-row"><span class="pi">${ic("deal")}</span><span class="pn">${escapeHtml(item.title)}</span><span class="pv">${escapeHtml(item.value || "")}</span></div>`).join("") || `<div class="muted" style="padding:12px 0">No major projects currently tracked.</div>`;
+  }
+
   async function initEventTracker() {
     await ensureDemoData();
     const role = localStorage.getItem("afribn_role") || "admin";
     const isAdmin = role === "admin";
+    if (role === "client") {
+      const title = document.querySelector(".page-title");
+      if (title) title.childNodes.forEach((node) => { if (node.nodeType === Node.TEXT_NODE) node.textContent = " Event Monitor"; });
+      const sub = document.querySelector(".page-sub");
+      if (sub) sub.textContent = "Strategic event monitoring across AFRIBN's priority markets.";
+      document.title = "AFRIBN - Event Monitor";
+    }
     const elements = {
       stats: $("#stats"),
       timeline: $("#timeline"),
@@ -911,6 +1052,8 @@
           <div class="kv full"><span class="k">Address</span><span class="v">${escapeHtml(event.address || "-")}</span></div>
           <div class="kv full"><span class="k">Access Link</span><span class="v">${event.accessLink ? `<a href="${escapeAttr(event.accessLink)}" target="_blank">${escapeHtml(event.accessLink)}</a>` : "-"}</span></div>
         </div></div>
+        <div class="card-red"><div class="sect-label">Strategic Relevance</div><p class="lead-p" style="font-size:15.5px">${escapeHtml(strategicRelevance(event))}</p></div>
+        <div class="card-red"><div class="sect-label">Supporting Intelligence</div><div class="detail-list">${documentItems(event.supportingIntelligence || event.keyDocuments)}</div></div>
       </div>
       <div class="stack gap-20">
         <div class="panel" style="border-color:rgba(232,37,45,0.22)"><div class="sect-label">Event Summary</div>
@@ -940,6 +1083,30 @@
       toast("Alert acknowledged", "ok");
       location.reload();
     });
+    const markets = await API.get("/strategic-markets").catch(() => []);
+    const country = $("#alertCountry");
+    if (country && markets.length) {
+      country.innerHTML = `<option value="">Any Strategic Market</option>` + markets.map((market) => `<option>${escapeHtml(market.name)}</option>`).join("");
+    }
+    $("#mSave")?.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const channels = $$(".alert-channel:checked").map((item) => item.value);
+      await API.post("/alerts/rules", {
+        name: $("#alertName")?.value || "Strategic market alert",
+        keyword: $("#alertKeyword")?.value || "",
+        topic: $("#alertTopic")?.value || "",
+        country: $("#alertCountry")?.value || "",
+        category: $("#alertCategory")?.value || "",
+        minimumConfidenceScore: Number($("#alertConfidence")?.value || 60),
+        minimumSignalScore: Number($("#alertSignal")?.value || 70),
+        riskChange: $("#alertRiskChange")?.value || "",
+        frequency: $("#alertFrequency")?.value || "real_time",
+        channels: channels.length ? channels : ["in_app"]
+      });
+      $("#modalBack")?.classList.remove("open");
+      toast("Alert rule created", "ok");
+    }, true);
   }
 
   async function initWatchlist() {
@@ -1227,6 +1394,13 @@
       const url = item.url || item.href || "";
       return `<div class="leader-li"><span class="li-ic">${ic("file")}</span><span class="tx">${url ? `<a href="${escapeAttr(url)}" target="_blank">${escapeHtml(title)}</a>` : escapeHtml(title)}</span></div>`;
     }).join("") : `<div class="muted">No documents linked yet.</div>`;
+  }
+
+  function strategicRelevance(event = {}) {
+    const country = event.country || "this market";
+    const sector = event.sector || event.eventType || "strategic";
+    const format = formatLabel(event.format || event.accessType || "event");
+    return `${event.title} is relevant to AFRIBN users because it may affect ${sector.toLowerCase()} positioning, stakeholder engagement, risk monitoring, and opportunity discovery in ${country}. The ${format.toLowerCase()} format and linked supporting documents help analysts track participation, follow-up actions, and downstream intelligence signals.`;
   }
 
   function titleCase(value = "") {

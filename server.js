@@ -2,11 +2,14 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const { URL } = require("node:url");
+const { loadEnv } = require("./src/env");
 const { createStore } = require("./src/store");
 const { createRouter } = require("./src/router");
 const { seedStore } = require("./src/seed");
 const { validateConfig, publicConfig } = require("./src/config");
 const { createRateLimiter } = require("./src/rate-limit");
+
+loadEnv();
 
 const port = Number(process.env.PORT || 3000);
 const store = createStore();

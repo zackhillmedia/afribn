@@ -77,7 +77,7 @@
     <header class="topbar" id="topbar"></header>
     <div class="content" style="max-width:1320px">
 
-      <div class="ci-eyebrow">Country Intelligence</div>
+      <div class="ci-eyebrow" id="countryProductLabel">Country Intelligence</div>
       <div class="ci-head">
         <div class="country-pick" id="cpick">
           <img class="flag-lg" id="flagLg" alt="">
@@ -86,6 +86,7 @@
           <div class="cdrop" id="cdrop"></div>
         </div>
         <div class="row gap-12">
+          <a class="btn btn-primary" id="downloadBrief" href="/country-briefs/Nigeria/download" target="_blank"><span id="dbi"></span> Download Brief</a>
           <button class="btn btn-ghost" id="watchBtn"><span id="wbi"></span> Add to Watchlist</button>
           <button class="icon-btn" id="shareBtn"></button>
         </div>
@@ -134,7 +135,7 @@
   const $ = s => document.querySelector(s);
   AFRIBN.shell('globe');
   const ic = AFRIBN.ic;
-  $('#cchev').innerHTML = ic('chevDown'); $('#wbi').innerHTML = ic('plus'); $('#shareBtn').innerHTML = ic('share');
+  $('#cchev').innerHTML = ic('chevDown'); $('#wbi').innerHTML = ic('plus'); $('#dbi').innerHTML = ic('download','width="16" height="16"'); $('#shareBtn').innerHTML = ic('share');
   ['#vas','#vai','#vap'].forEach(s=>$(s).innerHTML = ic('arrowRight','width="14" height="14"'));
 
   const flagImg = name => `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16">'+ ('') +'</svg>')}`;
@@ -188,7 +189,7 @@
   };
 
   function render(country){
-    const d = DATA[country];
+    const d = DATA[country] || DATA.Nigeria;
     $('#cname').textContent = country;
     $('#flagLg').src = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" preserveAspectRatio="xMidYMid slice">'+ flagInnerOf(d.flag) +'</svg>')}`;
 

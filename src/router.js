@@ -2,7 +2,7 @@ const { parsePath, readBody, sendJson, notFound, badRequest } = require("./http"
 const { hashPassword, requireFields, requireUser, signJwt, userFromRequest, verifyPassword } = require("./auth");
 const { parseMultipartUpload, saveUploadedFile } = require("./uploads");
 const { deliverQueuedAlerts } = require("./alert-delivery");
-const { renderReportPdf, sendPdf } = require("./pdf");
+const { renderCountryBriefPdf, renderReportPdf, sendPdf } = require("./pdf");
 const { requirePermission } = require("./middleware/rbac");
 const { enqueueJob } = require("./workers/queue");
 const { processWorkerQueue } = require("./workers/processor");
@@ -35,6 +35,7 @@ const {
 const { buildReport, countryIntelligence, dashboardSummary, listFeed } = require("./products");
 const { runScrapeWorker } = require("./scrapers");
 const { listSourceAdapters } = require("./adapters");
+const { STRATEGIC_MARKETS } = require("./strategic-markets");
 
 function createRouter(store) {
   const currentUser = (req) => {
@@ -81,15 +82,16 @@ function createRouter(store) {
     if (parts[0] === "uploads") return handleUploads(req, res, parts);
     if (parts[0] === "scrape-jobs") return handleScrapeJobs(req, res, parts);
     if (parts[0] === "raw-articles") return handleRawArticles(req, res, parts);
-    if (parts[0] === "events") return handleEvents(req, res, parts, query);
+    if (parts[0] === "events" || parts[0] === "event-monitor") return handleEvents(req, res, parts, query);
     if (parts[0] === "stories") return handleStories(req, res, parts, query);
     if (parts[0] === "scores") return handleScores(req, res, parts);
     if (parts[0] === "gap-reports") return handleGapReports(req, res, parts);
     if (parts[0] === "field-tasks" || parts[0] === "agent") return handleFieldOps(req, res, parts);
     if (parts[0] === "verification") return handleVerification(req, res, parts);
     if (parts[0] === "published-intelligence") return handlePublishedIntelligence(req, res, parts);
+    if (parts[0] === "strategic-markets") return sendJson(res, 200, { data: STRATEGIC_MARKETS });
     if (parts[0] === "feed") return sendJson(res, 200, { data: listFeed(store, query) });
-    if (parts[0] === "countries") return handleCountries(res, parts);
+    if (parts[0] === "countries" || parts[0] === "country-briefs") return handleCountries(req, res, parts);
     if (parts[0] === "policies") return handleProductList(res, "policies", query);
     if (parts[0] === "deals") return handleProductList(res, "deals", query);
     if (parts[0] === "risk") return handleRisk(res, parts);
@@ -567,10 +569,16 @@ function createRouter(store) {
     throw notFound("Published intelligence route not found");
   }
 
-  function handleCountries(res, parts) {
-    if (!parts[1]) return sendJson(res, 200, { data: [...new Set(store.list("sources").map((source) => source.country))] });
+  function handleCountries(req, res, parts) {
+    if (!parts[1]) return sendJson(res, 200, { data: STRATEGIC_MARKETS });
     const country = decodeURIComponent(parts[1]);
     const data = countryIntelligence(store, country);
+    if (parts[2] === "download" || parts[2] === "pdf") {
+      const user = userFromRequest(store, req);
+      if (user) requirePermission(store, req, "reports:download");
+      const pdf = renderCountryBriefPdf(data);
+      return sendPdf(res, `${data.country.replace(/[^A-Za-z0-9._-]/g, "_")}_Brief.pdf`, pdf);
+    }
     if (parts[2] && data[parts[2]]) return sendJson(res, 200, { data: data[parts[2]] });
     return sendJson(res, 200, { data });
   }
