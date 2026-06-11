@@ -159,14 +159,18 @@ function parseHtml(html, baseUrl, source, options = {}) {
   const pageTitle = decodeHtml(stripTags(readTag(html, "title") || source.name));
   const metaDescription = readMeta(html, "description") || readMeta(html, "og:description") || "";
   const scopedHtml = options.containerSelector ? extractBySelector(html, options.containerSelector) || html : html;
-  const anchors = [...scopedHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+  const anchors = [...scopedHtml.matchAll(/<a\b[^>]*href=(?:"([^"]+)"|'([^']+)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>/gi)]
     .map((match) => ({
-      href: match[1],
-      text: decodeHtml(stripTags(match[2]))
+      href: match[1] || match[2] || match[3],
+      text: decodeHtml(stripTags(match[4]))
     }))
-    .filter((link) => link.text.length >= 24 && !/^#|mailto:|tel:/i.test(link.href));
+    .filter((link) => link.text.length >= 24 && !/^#|mailto:|tel:/i.test(link.href))
+    .filter((link) => isLikelyArticleLink(link, baseUrl));
 
-  const candidates = anchors.slice(0, options.limit || 10).map((link) => {
+  const candidates = anchors
+    .sort((a, b) => articleLinkScore(b, baseUrl) - articleLinkScore(a, baseUrl))
+    .slice(0, options.limit || 10)
+    .map((link) => {
     const url = resolveUrl(baseUrl, link.href);
     return candidate(baseUrl, url, link.text, `${link.text}. ${metaDescription || pageTitle}`, null, source);
   });
@@ -182,8 +186,57 @@ function filterCandidates(candidates, options = {}) {
     if (options.includeUrlPattern && !new RegExp(options.includeUrlPattern, "i").test(item.url)) return false;
     if (options.excludeUrlPattern && new RegExp(options.excludeUrlPattern, "i").test(item.url)) return false;
     if (options.minimumTitleLength && item.title.length < Number(options.minimumTitleLength)) return false;
+    if (isBlockedContentUrl(item.url) || isBlockedContentTitle(item.title)) return false;
     return true;
   });
+}
+
+function isLikelyArticleLink(link, baseUrl) {
+  const url = resolveUrl(baseUrl, link.href);
+  if (isBlockedContentUrl(url) || isBlockedContentTitle(link.text)) return false;
+  if (!sameHost(baseUrl, url)) return false;
+  const score = articleLinkScore(link, baseUrl);
+  return score >= 1;
+}
+
+function articleLinkScore(link, baseUrl) {
+  const url = resolveUrl(baseUrl, link.href);
+  const path = safePath(url).toLowerCase();
+  const text = String(link.text || "");
+  let score = 0;
+  if (text.length >= 40) score += 1;
+  if (text.length >= 70) score += 1;
+  if (/\/(article|news|story|business|politics|economy|sports|opinion|rwanda|africa)\b/i.test(path)) score += 1;
+  if (/\/\d{4}\/\d{1,2}\//.test(path) || /\/\d{4}-\d{2}-\d{2}\//.test(path)) score += 2;
+  if (path.split("/").filter(Boolean).length >= 2) score += 1;
+  if (/\b(says|govt|government|minister|deal|policy|rwanda|kigali|bank|budget|investment|security|trade)\b/i.test(text)) score += 1;
+  if (isBlockedContentUrl(url) || isBlockedContentTitle(text)) score -= 5;
+  return score;
+}
+
+function isBlockedContentUrl(url) {
+  const path = safePath(url).toLowerCase();
+  return /(?:^|\/)(add-story-idea|submit|contact|about|advertise|advertising|login|register|signup|sign-up|subscribe|newsletter|privacy|terms|cookies|careers|jobs|tag|tags|category|author|search)(?:\/|$|-)/i.test(path);
+}
+
+function isBlockedContentTitle(title) {
+  return /\b(submit|send us|contact us|advertise|newsletter|sign in|login|subscribe|privacy policy|terms|cookies|careers|idea for .* cover)\b/i.test(String(title || ""));
+}
+
+function sameHost(baseUrl, value) {
+  try {
+    return new URL(baseUrl).hostname.replace(/^www\./, "") === new URL(value, baseUrl).hostname.replace(/^www\./, "");
+  } catch {
+    return false;
+  }
+}
+
+function safePath(value) {
+  try {
+    return new URL(value).pathname || "/";
+  } catch {
+    return "/";
+  }
 }
 
 function extractBySelector(html, selector) {

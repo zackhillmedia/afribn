@@ -155,7 +155,10 @@
       for (const source of sources.filter((item) => item.status !== "inactive").slice(0, 5)) {
         await API.post("/queue/jobs", { queue: "collection", type: "scrape_source", payload: { sourceId: source.id, limit: 5 } }).catch(() => null);
       }
-      toast("Queued scrapes for active sources", "ok");
+      const processed = await API.post("/queue/process", { queue: "collection", limit: 5 }).catch(() => null);
+      const completed = Array.isArray(processed) ? processed.length : processed?.processed?.length || 0;
+      toast(completed ? `Processed ${completed} scrape jobs` : "Queued scrapes for active sources", "ok");
+      setTimeout(() => location.reload(), 700);
     }, true);
   }
 
@@ -337,7 +340,8 @@
     await ensureDemoData();
     const [articles, sources] = await Promise.all([API.get("/raw-articles"), API.get("/sources")]);
     const sourceById = Object.fromEntries(sources.map((source) => [source.id, source]));
-    let selected = articles[0] || null;
+    const requestedId = new URLSearchParams(location.search).get("rawArticleId") || localStorage.getItem("afribn_rawArticleId");
+    let selected = articles.find((article) => article.id === requestedId) || articles.at(-1) || articles[0] || null;
     const list = $("#rawItems");
     const preview = $("#preview");
     if (!list || !preview) return;
@@ -349,6 +353,7 @@
       </div>`).join("") || `<div class="empty">${ic("inbox")}<div>No raw articles yet.</div></div>`;
       $$(".raw-item", list).forEach((item) => item.addEventListener("click", () => {
         selected = articles.find((article) => article.id === item.dataset.id);
+        if (selected) remember("rawArticleId", selected.id);
         drawList(rows);
         drawPreview();
       }));
@@ -392,7 +397,7 @@
       $("#apiToAI").onclick = async () => {
         const result = await API.post(`/raw-articles/${article.id}/ai-distill`, {});
         remember("storyId", result.story.id);
-        toast("AI extraction complete", "ok");
+        toast(result.ai?.status === "fallback" ? "AI unavailable; rules extraction created" : "AI extraction complete", "ok");
         location.href = `workspace.html?storyId=${encodeURIComponent(result.story.id)}`;
       };
       $("#apiReject").onclick = async () => {
@@ -536,13 +541,37 @@
     await ensureDemoData();
     const story = await currentStory();
     if (!story) return;
-    $(".page-head h1:not(.page-title)") && ($(".page-head h1:not(.page-title)").textContent = story.title);
+    const title = $(".page-head h1:not(.page-title)");
+    if (title) title.textContent = story.title;
+    const meta = $(".page-head .muted");
+    const [events, scores] = await Promise.all([API.get("/events"), API.get("/scores")]);
+    let eventRecord = events.find((item) => item.storyId === story.id);
+    const scoreSet = latestScoreSet(scores, story.id, eventRecord?.id);
+    if (meta) meta.textContent = `${story.id} · ${story.country || "Africa"} · ${story.sector || story.eventType || "General"} · ${eventRecord?.status || story.status || "draft"}`;
+    renderLiveScoring(story, eventRecord, scoreSet);
+
     async function calculate() {
-      const result = await API.post("/scoring/calculate", {
-        objectType: "story",
-        objectId: story.id,
-        userContext: { countries: [story.country], sectors: [story.sector], audience: "analyst" }
-      });
+      if (!eventRecord) {
+        const refreshedEvents = await API.get("/events");
+        eventRecord = refreshedEvents.find((item) => item.storyId === story.id);
+      }
+      let result;
+      if (eventRecord) {
+        const score = await API.post(`/events/${eventRecord.id}/score`, {});
+        result = { scores: { signal: score.signalScore, confidence: score.confidenceScore, risk: score.riskScore } };
+        remember("scoreId", score.signalScore.id);
+        renderLiveScoring(story, eventRecord, {
+          signal: score.signalScore,
+          confidence: score.confidenceScore,
+          risk: score.riskScore
+        });
+      } else {
+        result = await API.post("/scoring/calculate", {
+          objectType: "story",
+          objectId: story.id,
+          userContext: { countries: [story.country], sectors: [story.sector], audience: "analyst" }
+        });
+      }
       toast("Scores calculated", "ok");
       return result;
     }
@@ -555,13 +584,81 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       const result = await calculate();
-      const eventRecord = (await API.get("/events")).find((item) => item.storyId === story.id);
-      if (eventRecord) {
-        const score = await API.post(`/events/${eventRecord.id}/score`, {});
-        remember("scoreId", score.signalScore.id);
-      }
       toast(`Score saved: ${result.scores?.signal?.score || "ok"}`, "ok");
     }, true);
+  }
+
+  function latestScoreSet(scores, storyId, eventId) {
+    const matches = (items = []) => items.filter((item) => item.storyId === storyId || item.eventId === eventId);
+    return {
+      signal: matches(scores.signalScores).at(-1),
+      confidence: matches(scores.confidenceScores).at(-1),
+      risk: matches(scores.riskScores).at(-1)
+    };
+  }
+
+  function renderLiveScoring(story, eventRecord, scoreSet = {}) {
+    const signal = scoreSet.signal;
+    const confidence = scoreSet.confidence;
+    const risk = scoreSet.risk;
+    const factors = signal?.factors || {};
+    const impact = Math.round(Number(factors.impact ?? 0));
+    const signalValue = Math.round(Number(signal?.score ?? 0));
+    const confidenceValue = Math.round(Number(confidence?.score ?? 0));
+    const riskValue = Math.round(Number(risk?.score ?? 0));
+    const decision = Math.round(((Number(factors.countryImportance) || 50) + (Number(factors.sectorImportance) || 50)) / 2);
+    const negotiation = Math.round(((Number(factors.crossBorderEffect) || 50) + impact) / 2);
+    const scenario = Math.round(((Number(factors.urgency) || 50) + riskValue) / 2);
+    const gap = confidenceValue ? Math.max(0, Math.round((100 - confidenceValue) * 0.18)) : 0;
+    const aiv = Math.max(0, Math.round(impact * 0.30 + confidenceValue * 0.25 + signalValue * 0.20 + decision * 0.15 + negotiation * 0.10 - gap));
+    const cardData = [
+      ["target", "Impact Score", impact],
+      ["shield", "Confidence Score", confidenceValue],
+      ["feed", "Signal Score", signalValue],
+      ["user", "Decision Relevance", decision],
+      ["handshake", "Negotiation Leverage", negotiation],
+      ["alertTri", "Scenario Risk", scenario],
+      ["gauge", "Risk Score", riskValue],
+      ["ban", "Gap Penalty", gap, true]
+    ];
+    const scoreCards = $("#scoreCards");
+    if (scoreCards) {
+      scoreCards.innerHTML = cardData.map(([icon, label, value, penalty]) => {
+        const color = penalty ? "#FF6B35" : scoreColor(label === "Risk Score" ? 100 - value : value);
+        return `<div class="sc-card"><div class="l">${ic(icon)} ${label}</div><div class="v" style="color:${color}">${penalty ? "-" : ""}${value || 0}</div><div class="bar"><span style="width:${Math.max(0, Math.min(100, value || 0))}%;background:${color}"></span></div></div>`;
+      }).join("");
+    }
+    const ring = $("#aivRing");
+    if (ring) ring.innerHTML = AFRIBN.ring(aiv, { size: 104, stroke: 10, color: "#E8252D", label: "AIV" });
+    const sub = $(".hero-score .ht .v");
+    if (sub) sub.textContent = signalValue >= 75 ? "High-value strategic intelligence" : signalValue >= 50 ? "Strategic monitoring signal" : "Low-confidence monitoring item";
+    const desc = $(".hero-score .ht .d");
+    if (desc) desc.textContent = `${story.country || eventRecord?.country || "Africa"} · ${story.sector || eventRecord?.sector || "General"} · ${signal?.modelVersion || "rules pending"}`;
+    const factorEl = $("#factors");
+    if (factorEl) {
+      const rows = Object.entries({
+        "Impact magnitude": factors.impact,
+        "Time sensitivity": factors.urgency,
+        "Novelty": factors.novelty,
+        "Country importance": factors.countryImportance,
+        "Sector importance": factors.sectorImportance,
+        "Cross-border effect": factors.crossBorderEffect,
+        "Source credibility": factors.sourceCredibility
+      }).filter(([, value]) => value !== undefined);
+      factorEl.innerHTML = rows.length ? rows.map(([name, value]) => {
+        const numeric = Math.round(Number(value) || 0);
+        return `<div class="factor-slider"><div class="top"><span>${escapeHtml(name)}</span><b style="color:${scoreColor(numeric)}">${numeric}</b></div><div class="bar"><span style="display:block;width:${numeric}%;height:6px;border-radius:6px;background:${scoreColor(numeric)}"></span></div></div>`;
+      }).join("") : `<div class="muted">No score factors yet. Use Recalculate to generate scoring records.</div>`;
+    }
+    const history = $("#history");
+    if (history) {
+      const rows = [
+        signal && [`Signal ${Math.round(signal.score || 0)}`, `${signal.modelVersion || "rules"} · ${formatDate(signal.createdAt)}`],
+        confidence && [`Confidence ${Math.round(confidence.score || 0)}`, `${confidence.modelVersion || "rules"} · ${formatDate(confidence.createdAt)}`],
+        risk && [`Risk ${Math.round(risk.score || 0)}`, `${eventRecord?.country || story.country || "Africa"} · ${formatDate(risk.createdAt)}`]
+      ].filter(Boolean);
+      history.innerHTML = rows.map(([title, meta], index) => `<div class="tl-item"><span class="tl-dot ${index ? "muted" : ""}"></span><div class="tl-t">${escapeHtml(title)}</div><div class="tl-m">${escapeHtml(meta)}</div></div>`).join("") || `<div class="muted">No score history yet.</div>`;
+    }
   }
 
   async function initGaps() {

@@ -324,7 +324,34 @@ function signalBand(score) {
 
 // Backward-compatible exports used by the existing pipeline.
 function calculateSignalScore(input) {
+  if (isLegacySignalInput(input)) {
+    return weightedScore({
+      impact: input.impact,
+      urgency: input.urgency,
+      novelty: input.novelty,
+      countryImportance: input.countryImportance,
+      sectorImportance: input.sectorImportance,
+      crossBorderEffect: input.crossBorderEffect,
+      sourceCredibility: input.sourceCredibility
+    }, {
+      impact: 0.25,
+      urgency: 0.20,
+      novelty: 0.15,
+      countryImportance: 0.15,
+      sectorImportance: 0.10,
+      crossBorderEffect: 0.10,
+      sourceCredibility: 0.05
+    });
+  }
   return calculateSignalScoreDetailed(input).score;
+}
+
+function isLegacySignalInput(input = {}) {
+  return input &&
+    input.impactScore === undefined &&
+    input.confidenceScore === undefined &&
+    ["impact", "urgency", "novelty", "countryImportance", "sectorImportance", "crossBorderEffect", "sourceCredibility"]
+      .some((key) => input[key] !== undefined);
 }
 
 function calculateConfidenceScore(input) {

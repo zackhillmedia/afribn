@@ -244,7 +244,45 @@ async function distillRawArticleWithAI(store, rawArticleId, options = {}) {
       status: "failed",
       error: error.message
     });
-    throw error;
+    const fallback = createStoryEvent(store, rawArticleId, {
+      country: options.country,
+      sector: options.sector,
+      eventType: options.eventType,
+      impact: options.impact,
+      aiProvider: null,
+      aiModel: null
+    });
+    store.update("rawArticles", rawArticleId, {
+      status: "rules_distilled",
+      aiProvider: "rules_fallback",
+      aiModel: null,
+      aiError: error.message
+    });
+    store.insert("aiProcessingLogs", {
+      rawArticleId,
+      provider: "rules_fallback",
+      model: "local-rules",
+      promptVersion,
+      status: "completed_with_fallback",
+      error: error.message,
+      structuredOutput: {
+        title: fallback.story.title,
+        summary: fallback.story.summary,
+        country: fallback.story.country,
+        sector: fallback.story.sector,
+        eventType: fallback.story.eventType,
+        impact: fallback.story.impact
+      }
+    });
+    return {
+      ai: {
+        provider: "rules_fallback",
+        model: "local-rules",
+        status: "fallback",
+        error: error.message
+      },
+      ...fallback
+    };
   }
   const distilled = result.data;
 
@@ -377,6 +415,13 @@ function createScore(store, eventId, inputs = {}) {
     confidenceScoreId: confidenceScore.id,
     riskScoreId: riskScore.id,
     nextObject: { type: "Score", signalScoreId: signalScore.id, confidenceScoreId: confidenceScore.id }
+  });
+  store.update("stories", story.id, {
+    status: story.status === "draft" ? "scored" : story.status,
+    signalScoreId: signalScore.id,
+    confidenceScoreId: confidenceScore.id,
+    riskScoreId: riskScore.id,
+    nextObject: { type: "Score", signalScoreId: signalScore.id, confidenceScoreId: confidenceScore.id, riskScoreId: riskScore.id }
   });
 
   return { signalScore, confidenceScore, riskScore };
