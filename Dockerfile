@@ -11,6 +11,7 @@ COPY package.json ./
 COPY server.js ./
 COPY src ./src
 COPY docs ./docs
+COPY AFRIBN_design ./AFRIBN_design
 COPY index.html styles.css app.js frontend-api.js ./
 
 RUN mkdir -p /app/data /app/uploads
