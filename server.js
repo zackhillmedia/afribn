@@ -47,6 +47,11 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ status: "ready", config: publicConfig(), warnings: configWarnings }));
       return;
     }
+    if (req.method === "GET" && url.pathname === "/") {
+      res.writeHead(302, { Location: "/design/index.html" });
+      res.end();
+      return;
+    }
     if (req.method === "GET" && serveStatic(req, res, url)) return;
     await router.handle(req, res, url, { requestId, startedAt });
   } catch (error) {
