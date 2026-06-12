@@ -1258,8 +1258,12 @@
     if (label && role === "client") label.textContent = "Country Brief";
     if (document.title && role === "client") document.title = "AFRIBN - Country Brief";
     const dropdown = $("#cdrop");
-    const countryName = $("#cname")?.textContent?.trim() || "Nigeria";
-    let selected = markets.find((market) => market.name === countryName) || markets[0] || { name: countryName, flag: "nigeria" };
+    const norm = (value) => String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const requested = new URLSearchParams(location.search).get("country");
+    const countryName = requested || $("#cname")?.textContent?.trim() || "Nigeria";
+    const matchMarket = (value) => markets.find((market) =>
+      [market.name, market.slug, ...(market.aliases || [])].some((label) => norm(label) === norm(value)));
+    let selected = matchMarket(countryName) || markets[0] || { name: countryName, flag: "nigeria" };
 
     if (dropdown && markets.length) {
       dropdown.innerHTML = markets.map((market) => `<div class="ci-opt" data-c="${escapeAttr(market.name)}">${window.AFRIBN.flag(market.flag)} ${escapeHtml(market.name)}</div>`).join("");
@@ -1272,6 +1276,8 @@
     }
 
     async function renderBrief(market) {
+      // Keep the URL in sync so every country brief is deep-linkable / bookmarkable.
+      history.replaceState(null, "", `/country?country=${encodeURIComponent(market.name)}`);
       const brief = await API.get(`/country-briefs/${encodeURIComponent(market.name)}`);
       $("#cname") && ($("#cname").textContent = market.name);
       const flag = $("#flagLg");

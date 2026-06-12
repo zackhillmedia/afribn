@@ -4,6 +4,40 @@
 (function () {
   const NS = {};
   window.AFRIBN = NS;
+
+  // The 10 launch markets — selectable anywhere via the top-nav country picker.
+  NS.MARKETS = [
+    { name: 'Nigeria', flag: 'nigeria', slug: 'nigeria' },
+    { name: 'South Africa', flag: 'southafrica', slug: 'south-africa' },
+    { name: 'Kenya', flag: 'kenya', slug: 'kenya' },
+    { name: 'Egypt', flag: 'egypt', slug: 'egypt' },
+    { name: 'Morocco', flag: 'morocco', slug: 'morocco' },
+    { name: 'Ghana', flag: 'ghana', slug: 'ghana' },
+    { name: 'Rwanda', flag: 'rwanda', slug: 'rwanda' },
+    { name: "Côte d'Ivoire", flag: 'cotedivoire', slug: 'cote-divoire' },
+    { name: 'Tanzania', flag: 'tanzania', slug: 'tanzania' },
+    { name: 'Uganda', flag: 'uganda', slug: 'uganda' }
+  ];
+  NS.countryHref = (name) => `/country?country=${encodeURIComponent(name)}`;
+
+  if (document.head && !document.getElementById('afribn-cpick-css')) {
+    const st = document.createElement('style');
+    st.id = 'afribn-cpick-css';
+    st.textContent = `
+      .cpick{position:relative}
+      .cpick-btn{display:flex;align-items:center;gap:7px;height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--line,#262b36);background:var(--panel,#12151c);color:var(--ink,#e6e9ef);font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+      .cpick-btn:hover{border-color:rgba(232,37,45,.45)}
+      .cpick-btn svg.chev{width:14px;height:14px;opacity:.6}
+      .cpick-menu{position:absolute;top:46px;right:0;z-index:60;min-width:212px;max-height:344px;overflow:auto;padding:6px;border-radius:12px;border:1px solid var(--line,#262b36);background:var(--panel-2,#161a22);box-shadow:0 18px 40px rgba(0,0,0,.45);display:none}
+      .cpick.open .cpick-menu{display:block}
+      .cpick-opt{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--ink-2,#c2c7d0);font-size:13.5px;text-decoration:none;cursor:pointer}
+      .cpick-opt:hover{background:var(--red-tint,rgba(232,37,45,.1));color:#fff}
+      .cpick-opt .flag{width:20px;height:13px;border-radius:2px;flex:none}
+      @media(max-width:760px){.cpick-btn .cpick-label{display:none}}
+    `;
+    document.head.appendChild(st);
+  }
+
   const svgNS = (inner, attrs = '') => `<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${inner}</svg>`;
   const READABLE_KEY = 'afribn_readable_text';
 
@@ -189,6 +223,10 @@
           <span class="kbd">/</span>
         </div>
         <div class="topbar-actions">
+          <div class="cpick" id="cpick">
+            <button class="cpick-btn" id="cpickBtn" title="Select a country" aria-label="Select a country">${NS.ic('globe')}<span class="cpick-label">Countries</span>${NS.ic('chevDown', 'class="chev"')}</button>
+            <div class="cpick-menu" id="cpickMenu">${NS.MARKETS.map((m) => `<a class="cpick-opt" href="${NS.countryHref(m.name)}">${NS.flag(m.flag)}<span>${m.name}</span></a>`).join('')}</div>
+          </div>
           <button class="icon-btn readability-btn" id="readabilityBtn" title="Use larger text" aria-label="Use larger text" aria-pressed="false"><span>Aa</span></button>
           <a class="icon-btn" href="/alerts" title="Alerts">${NS.ic('bell')}<span class="dot"></span></a>
           <button class="icon-btn" id="messageBtn" title="Messages">${NS.ic('message')}<span class="badge-count" id="messageBadge">0</span></button>
@@ -211,6 +249,11 @@
         }
         if (e.key === 'Escape') inp.blur();
       });
+      const cp = top.querySelector('#cpick');
+      if (cp) {
+        cp.querySelector('#cpickBtn').addEventListener('click', (e) => { e.stopPropagation(); cp.classList.toggle('open'); });
+        document.addEventListener('click', () => cp.classList.remove('open'));
+      }
       const av = top.querySelector('#avatarBtn'), menu = top.querySelector('#avMenu');
       av.addEventListener('click', (e) => { e.stopPropagation(); av.classList.toggle('open'); });
       document.addEventListener('click', () => av.classList.remove('open'));
