@@ -12,6 +12,22 @@ const { createRateLimiter } = require("./src/rate-limit");
 loadEnv();
 
 const port = Number(process.env.PORT || 3000);
+
+// CORS allowlist. Configure extra origins via ALLOWED_ORIGINS (comma-separated).
+// Defaults cover the production site and local development.
+const ALLOWED_ORIGINS = new Set(
+  [
+    "https://www.afribn.com",
+    "https://afribn.com",
+    `http://localhost:${process.env.PORT || 3000}`,
+    `http://127.0.0.1:${process.env.PORT || 3000}`,
+    ...String(process.env.ALLOWED_ORIGINS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  ]
+);
+
 const store = createStore();
 seedStore(store);
 
@@ -24,12 +40,36 @@ const server = http.createServer(async (req, res) => {
   const requestId = `req_${startedAt}_${Math.random().toString(16).slice(2, 8)}`;
 
   res.setHeader("X-Request-Id", requestId);
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // CORS: only reflect origins on the allowlist instead of a blanket "*".
+  // The frontend is served same-origin, so cross-origin access is opt-in via
+  // ALLOWED_ORIGINS (comma-separated). Falls back to the site's own origins.
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin && ALLOWED_ORIGINS.has(requestOrigin)) {
+    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "no-referrer");
+  // Force HTTPS for a year (incl. subdomains) and constrain resource origins.
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      // Inline <style>/<script> blocks are used throughout the static pages.
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'"
+    ].join("; ")
+  );
 
   if (req.method === "OPTIONS") {
     res.writeHead(204);
@@ -45,6 +85,17 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/ready") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ status: "ready", config: publicConfig(), warnings: configWarnings }));
+      return;
+    }
+    if (req.method === "GET" && url.pathname === "/robots.txt") {
+      if (serveFile(res, path.join(process.cwd(), "robots.txt"))) return;
+    }
+    if (req.method === "GET" && url.pathname === "/sitemap.xml") {
+      if (serveFile(res, path.join(process.cwd(), "sitemap.xml"))) return;
+    }
+    if (req.method === "GET" && url.pathname === "/favicon.ico") {
+      res.writeHead(302, { Location: "/design/assets/favicon-32.png" });
+      res.end();
       return;
     }
     if (req.method === "GET" && url.pathname === "/") {
@@ -103,7 +154,9 @@ function serveFile(res, requestedPath) {
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
     ".svg": "image/svg+xml; charset=utf-8",
-    ".md": "text/markdown; charset=utf-8"
+    ".md": "text/markdown; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8",
+    ".xml": "application/xml; charset=utf-8"
   };
   res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "application/octet-stream" });
   fs.createReadStream(filePath).pipe(res);

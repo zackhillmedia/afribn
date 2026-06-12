@@ -28,6 +28,9 @@ const {
   createScrapeJob,
   createStoryEvent,
   distillRawArticleWithAI,
+  updateStoryDraft,
+  transitionIntelligenceItem,
+  publishStory,
   createVerificationReview,
   publishIntelligence,
   runDemoPipeline
@@ -36,6 +39,13 @@ const { buildReport, countryIntelligence, dashboardSummary, listFeed } = require
 const { runScrapeWorker } = require("./scrapers");
 const { listSourceAdapters } = require("./adapters");
 const { STRATEGIC_MARKETS } = require("./strategic-markets");
+const oauth = require("./oauth");
+
+// Routes reachable without authentication. "strategic-markets" is a static list
+// of public market names/flags used by the marketing site; everything else that
+// carries real intelligence data is gated. Root info and /health are handled
+// before the gate, and /auth owns login/register/refresh.
+const PUBLIC_ROUTES = new Set(["strategic-markets"]);
 
 function createRouter(store) {
   const currentUser = (req) => {
@@ -70,6 +80,14 @@ function createRouter(store) {
     }
 
     if (parts[0] === "auth") return handleAuth(req, res, parts);
+
+    // Server-side authentication gate. Everything below requires a valid token,
+    // except a small public allowlist. The root info ("") and /health responses
+    // above are intentionally public; /auth handles its own login/register.
+    // This closes the hole where data endpoints (feed, dashboard, reports, etc.)
+    // served live JSON to anonymous callers via the currentUser() fallback.
+    if (!PUBLIC_ROUTES.has(parts[0])) requireUser(store, req);
+
     if (parts[0] === "users") return handleUsers(req, res, parts, currentUser);
     if (parts[0] === "users-directory") return handleUsersDirectory(req, res);
     if (parts[0] === "organizations") return handleCollection(req, res, parts, "organizations", ["name", "type", "country"]);
@@ -82,6 +100,7 @@ function createRouter(store) {
     if (parts[0] === "uploads") return handleUploads(req, res, parts);
     if (parts[0] === "scrape-jobs") return handleScrapeJobs(req, res, parts);
     if (parts[0] === "raw-articles") return handleRawArticles(req, res, parts);
+    if (parts[0] === "intelligence-items") return handleIntelligenceItems(req, res, parts, query);
     if (parts[0] === "events" || parts[0] === "event-monitor") return handleEvents(req, res, parts, query);
     if (parts[0] === "stories") return handleStories(req, res, parts, query);
     if (parts[0] === "scores") return handleScores(req, res, parts);
@@ -109,7 +128,71 @@ function createRouter(store) {
     throw notFound("Route not found");
   }
 
+  function requestBaseUrl(req) {
+    if (process.env.APP_BASE_URL) return process.env.APP_BASE_URL.replace(/\/$/, "");
+    const proto = String(req.headers["x-forwarded-proto"] || "http").split(",")[0].trim();
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    return `${proto}://${host}`;
+  }
+
+  // Find an existing user by email or provision a new client account for an
+  // OAuth sign-in. OAuth accounts have no password — they authenticate only
+  // through the identity provider.
+  function findOrCreateOAuthUser(profile) {
+    const existing = store.list("users", (item) => item.email === profile.email)[0];
+    if (existing) return existing;
+    const role = store.list("roles", (item) => item.name === "Enterprise Client")[0];
+    const organization = store.list("organizations")[0];
+    return store.insert("users", {
+      email: profile.email,
+      name: profile.name || profile.email,
+      passwordHash: "",
+      authProvider: profile.provider,
+      roleId: role.id,
+      organizationId: organization.id,
+      status: "active"
+    });
+  }
+
   async function handleAuth(req, res, parts) {
+    // --- OAuth (Google / Microsoft) — GET routes, handled before body read ---
+    if (req.method === "GET" && parts[1] === "providers") {
+      return sendJson(res, 200, { data: oauth.listProviders() });
+    }
+    if (req.method === "GET" && parts[1] === "oauth" && parts[3] === "start") {
+      const providerId = parts[2];
+      const next = new URL(req.url, requestBaseUrl(req)).searchParams.get("next") || "";
+      const redirectUri = `${requestBaseUrl(req)}/auth/oauth/${providerId}/callback`;
+      const url = oauth.authorizeUrl({ providerId, redirectUri, state: oauth.createState(providerId, next) });
+      res.writeHead(302, { Location: url });
+      res.end();
+      return;
+    }
+    if (req.method === "GET" && parts[1] === "oauth" && parts[3] === "callback") {
+      const providerId = parts[2];
+      const params = new URL(req.url, requestBaseUrl(req)).searchParams;
+      const loginPage = `${requestBaseUrl(req)}/design/login.html`;
+      try {
+        if (params.get("error")) throw badRequest(params.get("error_description") || params.get("error"));
+        const state = oauth.verifyState(params.get("state"), providerId);
+        const profile = await oauth.exchangeCodeForProfile({
+          providerId,
+          code: params.get("code"),
+          redirectUri: `${requestBaseUrl(req)}/auth/oauth/${providerId}/callback`
+        });
+        const user = findOrCreateOAuthUser(profile);
+        const token = signJwt({ sub: user.id, roleId: user.roleId, organizationId: user.organizationId });
+        const fragment = new URLSearchParams({ token, next: state.next || "" }).toString();
+        res.writeHead(302, { Location: `${loginPage}#${fragment}` });
+        res.end();
+      } catch (error) {
+        const fragment = new URLSearchParams({ oauth_error: error.message || "Sign-in failed" }).toString();
+        res.writeHead(302, { Location: `${loginPage}#${fragment}` });
+        res.end();
+      }
+      return;
+    }
+
     const body = await readBody(req);
     if (req.method === "POST" && parts[1] === "login") {
       requireFields(body, ["email", "password"]);
@@ -183,13 +266,30 @@ function createRouter(store) {
         if (!body[field]) throw badRequest(`${field} is required`);
       }
       const source = store.insert("sources", {
+        ...body,
         frequency: body.frequency || "15min",
         reliability: body.reliability || 70,
         collectorType: body.collectorType || "NewsScraperWorker",
-        status: "active",
-        ...body
+        status: "pending_review",
+        approvalStatus: "pending_review"
       });
-      return sendJson(res, 201, { data: source });
+      const assessment = body.skipInitialAssessment ? null : /^data:/i.test(source.url) ? {
+        sourceId: source.id,
+        status: "skipped",
+        recommendation: "approve",
+        score: source.reliability || 70,
+        summary: "Inline test source skipped initial assessment.",
+        sampleArticles: []
+      } : await assessSource(source.id, { limit: body.initialLimit || 5 }).catch((error) => ({
+        sourceId: source.id,
+        status: "failed",
+        recommendation: "probation",
+        score: 45,
+        summary: error.message,
+        sampleArticles: []
+      }));
+      const currentSource = store.get("sources", source.id);
+      return sendJson(res, 201, { data: { ...currentSource, source: currentSource, assessment } });
     }
     const id = parts[1];
     const source = store.get("sources", id);
@@ -206,6 +306,37 @@ function createRouter(store) {
     if (req.method === "POST" && parts[2] === "test-scrape") {
       requirePermission(store, req, "sources:manage");
       return sendJson(res, 201, { data: await runScrapeWorker(store, id, await readBody(req)) });
+    }
+    if (req.method === "POST" && parts[2] === "initial-assessment") {
+      requirePermission(store, req, "sources:manage");
+      return sendJson(res, 201, { data: await assessSource(id, await readBody(req)) });
+    }
+    if (req.method === "GET" && parts[2] === "assessments") {
+      requirePermission(store, req, "sources:read");
+      return sendJson(res, 200, { data: store.list("sourceProbeResults", (item) => item.sourceId === id).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))) });
+    }
+    if (req.method === "POST" && parts[2] === "approve") {
+      requirePermission(store, req, "sources:manage");
+      return sendJson(res, 200, { data: store.update("sources", id, { status: "active", approvalStatus: "approved", approvedAt: new Date().toISOString(), probationEndsAt: null }) });
+    }
+    if (req.method === "POST" && parts[2] === "probation") {
+      requirePermission(store, req, "sources:manage");
+      const now = Date.now();
+      return sendJson(res, 200, { data: store.update("sources", id, { status: "probation", approvalStatus: "probation", probationStartedAt: new Date(now).toISOString(), probationEndsAt: new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString() }) });
+    }
+    if (req.method === "POST" && parts[2] === "blacklist") {
+      requirePermission(store, req, "sources:manage");
+      blacklistSource(store, id, { reason: "Manual source management action" });
+      return sendJson(res, 200, { data: store.update("sources", id, { status: "blacklisted", approvalStatus: "blacklisted", blacklistedAt: new Date().toISOString() }) });
+    }
+    if (req.method === "POST" && parts[2] === "pause") {
+      requirePermission(store, req, "sources:manage");
+      return sendJson(res, 200, { data: store.update("sources", id, { status: "inactive", pausedAt: new Date().toISOString() }) });
+    }
+    if (req.method === "POST" && parts[2] === "reactivate") {
+      requirePermission(store, req, "sources:manage");
+      whitelistSource(store, id, { reason: "Manual reactivation" });
+      return sendJson(res, 200, { data: store.update("sources", id, { status: "active", approvalStatus: "approved", reactivatedAt: new Date().toISOString() }) });
     }
     if (req.method === "POST" && parts[2] === "queue-scrape") {
       requirePermission(store, req, "sources:manage");
@@ -328,7 +459,46 @@ function createRouter(store) {
       if (user) requirePermission(store, req, "ai:process");
       return sendJson(res, 201, { data: await distillRawArticleWithAI(store, parts[1], await readBody(req)) });
     }
+    if (req.method === "POST" && parts[2] === "convert-intelligence") {
+      const user = userFromRequest(store, req);
+      if (user) requirePermission(store, req, "ai:process");
+      return sendJson(res, 201, { data: await distillRawArticleWithAI(store, parts[1], await readBody(req)) });
+    }
     throw notFound("RawArticle route not found");
+  }
+
+  async function handleIntelligenceItems(req, res, parts, query) {
+    if (req.method === "GET" && parts.length === 1) {
+      const statuses = query.status ? String(query.status).split(",").map((item) => item.trim()) : null;
+      const data = filterRecords(store.list("stories"), { ...query, status: undefined })
+        .filter((story) => !statuses || statuses.includes(story.status) || statuses.includes(story.workflowStatus))
+        .map(enrichStory);
+      return sendJson(res, 200, { data });
+    }
+    if (req.method === "POST" && parts.length === 1) {
+      const body = await readBody(req);
+      if (!body.rawArticleId) throw badRequest("rawArticleId is required");
+      return sendJson(res, 201, { data: await distillRawArticleWithAI(store, body.rawArticleId, body) });
+    }
+    const story = parts[1] ? store.get("stories", parts[1]) : null;
+    if (parts[1] && !story) throw notFound("Intelligence item not found");
+    if (req.method === "GET" && parts.length === 2) return sendJson(res, 200, { data: enrichStory(story) });
+    if (req.method === "PATCH" && parts.length === 2) return sendJson(res, 200, { data: updateStoryDraft(store, parts[1], await readBody(req)) });
+    if (req.method === "GET" && parts[2] === "versions") return sendJson(res, 200, { data: store.list("storyVersions", (item) => item.storyId === parts[1]) });
+    if (req.method === "POST" && parts[2] === "submit-verification") return sendJson(res, 200, { data: transitionIntelligenceItem(store, parts[1], "submit_verification", await readBody(req)) });
+    if (req.method === "POST" && parts[2] === "return-draft") return sendJson(res, 200, { data: transitionIntelligenceItem(store, parts[1], "return_draft", await readBody(req)) });
+    if (req.method === "POST" && parts[2] === "verify") return sendJson(res, 200, { data: transitionIntelligenceItem(store, parts[1], "verify", await readBody(req)) });
+    if (req.method === "POST" && parts[2] === "approve") return sendJson(res, 200, { data: transitionIntelligenceItem(store, parts[1], "approve", await readBody(req)) });
+    if (req.method === "POST" && parts[2] === "publish") return sendJson(res, 201, { data: publishStory(store, parts[1], await readBody(req)) });
+    if (req.method === "POST" && parts[2] === "unpublish") {
+      store.list("publishedIntelligence", (item) => item.storyId === parts[1] && item.status === "published").forEach((item) => {
+        store.update("publishedIntelligence", item.id, { status: "unpublished", unpublishedAt: new Date().toISOString() });
+        store.list("feedItems", (feed) => feed.publishedIntelligenceId === item.id).forEach((feed) => store.update("feedItems", feed.id, { status: "unpublished" }));
+      });
+      return sendJson(res, 200, { data: transitionIntelligenceItem(store, parts[1], "unpublish", await readBody(req)) });
+    }
+    if (req.method === "POST" && parts[2] === "revise") return sendJson(res, 200, { data: transitionIntelligenceItem(store, parts[1], "revise", await readBody(req)) });
+    throw notFound("Intelligence item route not found");
   }
 
   async function handleStories(req, res, parts, query) {
@@ -880,6 +1050,52 @@ function createRouter(store) {
       approvedBy: publicUser(store.get("users", event.approvedByUserId)),
       rejectedBy: publicUser(store.get("users", event.rejectedByUserId))
     };
+  }
+
+  function enrichStory(story) {
+    if (!story) return story;
+    return {
+      ...story,
+      rawArticle: story.rawArticleId ? store.get("rawArticles", story.rawArticleId) : null,
+      versions: store.list("storyVersions", (item) => item.storyId === story.id).length,
+      published: store.list("publishedIntelligence", (item) => item.storyId === story.id && item.status === "published").at(-1) || null
+    };
+  }
+
+  async function assessSource(sourceId, options = {}) {
+    const source = store.get("sources", sourceId);
+    if (!source) throw notFound("Source not found");
+    const result = await runScrapeWorker(store, sourceId, { limit: Math.min(Number(options.limit || 5), 10), timeoutMs: options.timeoutMs || 15000 });
+    const articles = result.rawArticles || [];
+    const relevanceTerms = [source.country, source.topic, "Africa", "government", "policy", "economy", "business", "security", "investment"].filter(Boolean);
+    const relevant = articles.filter((article) => relevanceTerms.some((term) => `${article.title} ${article.body}`.toLowerCase().includes(String(term).toLowerCase()))).length;
+    const sampleScore = articles.length ? Math.round((relevant / articles.length) * 25) : 0;
+    const reliabilitySummary = calculateSourceReliabilityForSource(store, sourceId, { sampleSize: articles.length, relevanceScore: articles.length ? 65 + sampleScore : 45 });
+    const reliability = reliabilitySummary.reliability?.adjustedReliabilityScore || source.reliability || 70;
+    const score = Math.max(0, Math.min(100, Math.round(Number(reliability) * 0.75 + sampleScore)));
+    const recommendation = score >= 75 && articles.length >= 2 ? "approve" : score >= 45 ? "probation" : "blacklist";
+    const assessment = store.insert("sourceProbeResults", {
+      sourceId,
+      status: "completed",
+      provider: process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY ? "qwen_ready" : "rules",
+      score,
+      recommendation,
+      summary: `${source.name} returned ${articles.length} article${articles.length === 1 ? "" : "s"} with ${relevant} relevant sample${relevant === 1 ? "" : "s"}. Recommended action: ${recommendation}.`,
+      sampleArticles: articles.map((article) => ({
+        rawArticleId: article.id,
+        title: article.title,
+        url: article.url,
+        publishedAt: article.publishedAt,
+        confidenceScore: score
+      }))
+    });
+    store.update("sources", sourceId, {
+      initialAssessmentId: assessment.id,
+      initialAssessmentScore: score,
+      initialAssessmentRecommendation: recommendation,
+      initialAssessedAt: new Date().toISOString()
+    });
+    return assessment;
   }
 
   function isAdminUser(user) {

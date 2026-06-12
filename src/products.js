@@ -1,7 +1,13 @@
 const { STRATEGIC_MARKETS, isStrategicMarket } = require("./strategic-markets");
 
 function listFeed(store, query) {
-  return store.list("feedItems", (item) => {
+  const feedItems = store.list("feedItems");
+  return store.list("publishedIntelligence", (published) => {
+    if (published.status !== "published") return false;
+    const item = {
+      ...published,
+      ...(feedItems.find((feed) => feed.publishedIntelligenceId === published.id && feed.status === "published") || {})
+    };
     if (query.strategicMarkets !== "0" && query.scope !== "all" && !query.country && !isStrategicMarket(item.country)) return false;
     if (query.country && item.country !== query.country) return false;
     if (query.sector && item.sector !== query.sector) return false;
@@ -11,6 +17,16 @@ function listFeed(store, query) {
       if (!haystack.includes(String(query.search).toLowerCase())) return false;
     }
     return true;
+  }).map((published) => {
+    const feedItem = feedItems.find((feed) => feed.publishedIntelligenceId === published.id && feed.status === "published") || {};
+    return {
+      ...published,
+      ...feedItem,
+      id: feedItem.id || published.id,
+      publishedIntelligenceId: published.id,
+      storyId: published.storyId,
+      eventId: published.eventId
+    };
   }).sort((a, b) => String(b.publishedAt).localeCompare(String(a.publishedAt)));
 }
 

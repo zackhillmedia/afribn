@@ -25,11 +25,16 @@ let output = "";
 server.stdout.on("data", (chunk) => { output += chunk.toString(); });
 server.stderr.on("data", (chunk) => { output += chunk.toString(); });
 
+let authToken = null;
+
 async function request(path, options = {}) {
   const response = await fetch(`${base}${path}`, {
     ...options,
     headers: {
       ...(options.body && typeof options.body === "string" ? { "Content-Type": "application/json" } : {}),
+      // Data endpoints now require authentication; attach the session token by
+      // default once logged in. Callers may still override via options.headers.
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...(options.headers || {})
     }
   });
@@ -61,18 +66,24 @@ try {
   const ready = await request("/ready");
   assert(ready.status === "ready", "readiness should be ready");
 
-  const stages = await request("/pipeline/stages");
-  assert(stages.data.length === 10, "pipeline should expose 10 stage transitions");
-
+  // Authenticate up front — the API gates all data endpoints behind a token.
   const login = await request("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email: "admin@afribn.local", password: "afribn-admin-demo" })
   });
   assert(login.token.split(".").length === 3, "login should return JWT");
-
-  const me = await request("/users/me", { headers: { Authorization: `Bearer ${login.token}` } });
-  assert(me.data.email === "admin@afribn.local", "JWT should resolve current user");
+  authToken = login.token;
   const authHeaders = { Authorization: `Bearer ${login.token}` };
+
+  // Gated endpoints must reject anonymous callers.
+  const anon = await fetch(`${base}/feed`);
+  assert(anon.status === 401, "data endpoints should require authentication");
+
+  const stages = await request("/pipeline/stages");
+  assert(stages.data.length === 10, "pipeline should expose 10 stage transitions");
+
+  const me = await request("/users/me");
+  assert(me.data.email === "admin@afribn.local", "JWT should resolve current user");
 
   const sources = await request("/sources");
   assert(sources.data.length >= 1, "seed sources should exist");

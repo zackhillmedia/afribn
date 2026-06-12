@@ -26,7 +26,7 @@ function tokenize(text) {
 }
 
 function inferCountry(text, fallback = "Pan-African") {
-  const countries = ["Nigeria", "Kenya", "Ghana", "Ethiopia", "DR Congo", "South Sudan", "Morocco", "South Africa"];
+  const countries = ["Nigeria", "Kenya", "Ghana", "Ethiopia", "DR Congo", "South Sudan", "Morocco", "South Africa", "Rwanda", "Tanzania"];
   return countries.find((country) => text.toLowerCase().includes(country.toLowerCase())) || fallback;
 }
 
@@ -132,6 +132,10 @@ function createStoryEvent(store, rawArticleId, overrides = {}) {
   const eventType = overrides.eventType || inferEventType(text);
   const summary = overrides.summary || rawArticle.body.split(".").slice(0, 2).join(".").trim();
   const impact = overrides.impact || (eventType === "Risk" ? "high" : eventType === "Deal" ? "high" : "medium");
+  const keyFacts = normalizeList(overrides.keyFacts || overrides.keyClaims || [summary]);
+  const whyItMatters = normalizeList(overrides.whyItMatters || overrides.opportunities || defaultWhyItMatters(country, sector));
+  const potentialConsequences = normalizeList(overrides.potentialConsequences || overrides.riskIndicators || defaultConsequences(eventType));
+  const watchNext = normalizeList(overrides.whatToWatchNext || overrides.watchNext || ["Official confirmation", "Implementation timeline", "Stakeholder reaction"]);
 
   const story = store.insert("stories", {
     stage: STAGE.STORY_EVENT,
@@ -143,14 +147,25 @@ function createStoryEvent(store, rawArticleId, overrides = {}) {
     sector,
     eventType,
     impact,
-    keyClaims: overrides.keyClaims || [summary],
-    opportunities: overrides.opportunities || [],
-    riskIndicators: overrides.riskIndicators || [],
-    organizations: overrides.organizations || [],
-    people: overrides.people || [],
-    projects: overrides.projects || [],
+    keyClaims: normalizeList(overrides.keyClaims || keyFacts),
+    keyFacts,
+    whatHappened: overrides.whatHappened || summary,
+    whyItMatters,
+    potentialConsequences,
+    watchNext,
+    whatToWatchNext: watchNext,
+    supportingContext: normalizeList(overrides.supportingContext || []),
+    missingFacts: normalizeList(overrides.missingFacts || []),
+    sourceLinks: overrides.sourceLinks || [{ title: rawArticle.title, url: rawArticle.url, sourceName: rawArticle.sourceName }],
+    opportunities: normalizeList(overrides.opportunities || []),
+    riskIndicators: normalizeList(overrides.riskIndicators || []),
+    organizations: normalizeList(overrides.organizations || []),
+    people: normalizeList(overrides.people || []),
+    projects: normalizeList(overrides.projects || []),
     aiProvider: overrides.aiProvider || null,
     aiModel: overrides.aiModel || null,
+    workflowStatus: overrides.workflowStatus || "draft",
+    version: Number(overrides.version || 1),
     status: "draft",
     nextObject: null
   });
@@ -238,7 +253,7 @@ async function distillRawArticleWithAI(store, rawArticleId, options = {}) {
   } catch (error) {
     store.insert("aiProcessingLogs", {
       rawArticleId,
-      provider: "openai",
+      provider: process.env.AI_PRIMARY_PROVIDER || (process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY ? "qwen" : "openai"),
       model: options.model || process.env.OPENAI_MODEL || "gpt-5.4",
       promptVersion,
       status: "failed",
@@ -298,6 +313,12 @@ async function distillRawArticleWithAI(store, rawArticleId, options = {}) {
     keyClaims: distilled.keyClaims,
     opportunities: distilled.opportunities,
     riskIndicators: distilled.riskIndicators,
+    keyFacts: distilled.keyFacts,
+    whyItMatters: distilled.whyItMatters,
+    potentialConsequences: distilled.potentialConsequences,
+    whatToWatchNext: distilled.whatToWatchNext,
+    supportingContext: distilled.supportingContext,
+    missingFacts: distilled.missingFacts,
     organizations: distilled.organizations,
     people: distilled.people,
     projects: distilled.projects,
@@ -334,6 +355,149 @@ async function distillRawArticleWithAI(store, rawArticleId, options = {}) {
     },
     ...storyEvent
   };
+}
+
+function updateStoryDraft(store, storyId, patch = {}, status = null) {
+  const story = store.get("stories", storyId);
+  if (!story) throw notFound("Story not found");
+  snapshotStory(store, story, "draft_saved");
+  const normalized = normalizeStoryPatch(patch);
+  return store.update("stories", storyId, {
+    ...normalized,
+    status: status || normalized.status || story.status || "draft",
+    workflowStatus: status || normalized.workflowStatus || story.workflowStatus || story.status || "draft",
+    version: Number(story.version || 1) + 1
+  });
+}
+
+function transitionIntelligenceItem(store, storyId, action, input = {}) {
+  const story = store.get("stories", storyId);
+  if (!story) throw notFound("Story not found");
+  const transitions = {
+    submit_verification: ["submitted_for_verification", "Submitted for verification"],
+    return_draft: ["draft", "Returned to draft"],
+    verify: ["verified", "Verified"],
+    approve: ["approved", "Approved"],
+    unpublish: ["approved", "Unpublished"],
+    revise: ["draft", "New revision opened"]
+  };
+  if (!transitions[action]) throw badRequest("Unknown intelligence item action");
+  snapshotStory(store, story, action);
+  const [status, label] = transitions[action];
+  const updated = store.update("stories", storyId, {
+    ...normalizeStoryPatch(input.patch || {}),
+    status,
+    workflowStatus: status,
+    [`${action}At`]: new Date().toISOString(),
+    reviewerNotes: input.notes || story.reviewerNotes || "",
+    version: action === "revise" ? Number(story.version || 1) + 1 : story.version
+  });
+  store.insert("verificationReviews", {
+    stage: STAGE.VERIFICATION_REVIEW,
+    storyId,
+    reviewedBy: input.reviewedBy || "launch_workflow",
+    decision: status,
+    evidenceChainComplete: ["verified", "approved"].includes(status),
+    notes: input.notes || label,
+    status,
+    source: "intelligence_item_workflow",
+    nextObject: status === "approved" ? { type: "PublishedIntelligence", pending: true } : null
+  });
+  return updated;
+}
+
+function publishStory(store, storyId, input = {}) {
+  const story = store.get("stories", storyId);
+  if (!story) throw notFound("Story not found");
+  if (!["approved", "published"].includes(story.status)) throw badRequest("Only approved intelligence items can be published");
+  const existing = store.list("publishedIntelligence", (item) => item.storyId === story.id && item.status === "published").at(-1);
+  if (existing && !input.forceNew) return { publishedIntelligence: existing, feedItem: store.list("feedItems", (item) => item.publishedIntelligenceId === existing.id).at(-1) || null };
+  const event = store.list("events", (item) => item.storyId === story.id)[0];
+  const signalScore = store.list("signalScores", (score) => score.storyId === story.id).at(-1);
+  const confidenceScore = store.list("confidenceScores", (score) => score.storyId === story.id).at(-1);
+  const published = store.insert("publishedIntelligence", {
+    stage: STAGE.PUBLISHED_INTELLIGENCE,
+    storyId: story.id,
+    eventId: event?.id || null,
+    title: story.title,
+    summary: story.summary,
+    country: story.country,
+    sector: story.sector,
+    eventType: story.eventType,
+    impact: story.impact,
+    keyFacts: story.keyFacts || [],
+    whyItMatters: story.whyItMatters || [],
+    potentialConsequences: story.potentialConsequences || [],
+    watchNext: story.watchNext || story.whatToWatchNext || [],
+    signalScore: signalScore?.score || null,
+    confidenceScore: confidenceScore?.score || null,
+    publishedAt: input.publishedAt || new Date().toISOString(),
+    audience: input.audience || ["government", "investor", "corporate", "diplomatic"],
+    status: "published",
+    nextObject: { type: STAGE.DASHBOARD, products: ["Feed", "Country Intelligence", "Alerts", "Reports"] }
+  });
+  const feedItem = store.insert("feedItems", {
+    publishedIntelligenceId: published.id,
+    storyId: story.id,
+    title: story.title,
+    summary: story.summary,
+    country: story.country,
+    sector: story.sector,
+    impact: story.impact,
+    signalScore: published.signalScore,
+    publishedAt: published.publishedAt,
+    status: "published"
+  });
+  upsertSearchDocument(store, "published_intelligence", published.id, {
+    title: published.title,
+    body: published.summary,
+    country: published.country,
+    sector: published.sector,
+    tags: [published.eventType, published.impact]
+  });
+  store.update("stories", story.id, { status: "published", workflowStatus: "published", publishedAt: published.publishedAt });
+  evaluateAlertRules(store, published, feedItem);
+  return { publishedIntelligence: published, feedItem };
+}
+
+function snapshotStory(store, story, reason) {
+  store.insert("storyVersions", {
+    storyId: story.id,
+    version: Number(story.version || 1),
+    reason,
+    snapshot: story
+  });
+}
+
+function normalizeStoryPatch(patch = {}) {
+  const out = { ...patch };
+  for (const field of ["keyFacts", "whyItMatters", "potentialConsequences", "watchNext", "whatToWatchNext", "supportingContext", "missingFacts", "keyClaims", "opportunities", "riskIndicators", "organizations", "people", "projects"]) {
+    if (out[field] !== undefined) out[field] = normalizeList(out[field]);
+  }
+  if (out.whatToWatchNext && !out.watchNext) out.watchNext = out.whatToWatchNext;
+  if (out.watchNext && !out.whatToWatchNext) out.whatToWatchNext = out.watchNext;
+  return out;
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  if (!value) return [];
+  return String(value).split(/\n|;/).map((item) => item.trim()).filter(Boolean);
+}
+
+function defaultWhyItMatters(country, sector) {
+  return [
+    `It can shift decision-making assumptions for ${country || "Africa"}.`,
+    `It creates a new monitoring signal in ${sector || "the relevant sector"}.`,
+    "It may affect public policy, investment, or operating risk.",
+    "It needs follow-up confirmation before strategic action."
+  ];
+}
+
+function defaultConsequences(eventType) {
+  if (eventType === "Risk") return ["Operational exposure may rise if the signal escalates.", "Government or corporate responses may change the risk picture."];
+  if (eventType === "Deal") return ["New capital allocation or procurement opportunities may emerge.", "Implementation delays could change the value of the announcement."];
+  return ["Stakeholders may adjust plans as more information becomes available.", "Regulatory, market, or diplomatic reactions may follow."];
 }
 
 function getActivePromptVersion(store, name) {
@@ -657,6 +821,9 @@ module.exports = {
   createRawArticle,
   createStoryEvent,
   distillRawArticleWithAI,
+  updateStoryDraft,
+  transitionIntelligenceItem,
+  publishStory,
   createScore,
   createGapReport,
   createFieldTask,

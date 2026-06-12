@@ -4,6 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AFRIBN — Sign in</title>
+<!-- afribn:seo -->
+<meta name="description" content="Sign in to AFRIBN — Africa's strategic news intelligence network.">
+<link rel="canonical" href="https://www.afribn.com/design/login.html">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AFRIBN">
+<meta property="og:title" content="AFRIBN — Sign in">
+<meta property="og:description" content="Sign in to AFRIBN — Africa's strategic news intelligence network.">
+<meta property="og:url" content="https://www.afribn.com/design/login.html">
+<meta property="og:image" content="https://www.afribn.com/design/assets/favicon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AFRIBN — Sign in">
+<meta name="twitter:description" content="Sign in to AFRIBN — Africa's strategic news intelligence network.">
+<meta name="theme-color" content="#0a0809">
 <link rel="stylesheet" href="assets/afribn.css">
 <style>
   body { height: 100vh; overflow: hidden; }
@@ -38,6 +53,13 @@
   .role-chip .ri svg { width: 17px; height: 17px; }
   .role-chip .rn { font-weight: 600; font-size: 13.5px; white-space: nowrap; } .role-chip .rd { font-size: 11px; color: var(--ink-3); white-space: nowrap; }
   .role-chip > div { min-width: 0; }
+  .sso { display: grid; gap: 10px; }
+  .sso-btn { display: flex; align-items: center; justify-content: center; gap: 11px; width: 100%; height: 48px; border-radius: 11px;
+    background: #fff; color: #1a1a1a; border: 1px solid var(--line); font-weight: 600; font-size: 14.5px; cursor: pointer; transition: .15s; }
+  .sso-btn:hover { filter: brightness(0.96); }
+  .sso-btn svg { width: 19px; height: 19px; flex: none; }
+  .sso-btn.ms { background: #2f2f2f; color: #fff; border-color: #2f2f2f; }
+  .sso-btn[disabled] { opacity: .45; cursor: not-allowed; }
   .checkbox { white-space: nowrap; }
   .forgot { color: var(--red-bright); font-size: 13px; font-weight: 600; }
   .checkbox { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-2); }
@@ -75,7 +97,10 @@
         <button type="submit" class="btn btn-primary">Sign in <span id="si"></span></button>
       </form>
 
-      <div class="alt">or fill demo credentials</div>
+      <div class="alt">or continue with</div>
+      <div class="sso" id="sso"></div>
+
+      <div class="alt">or fill a demo email</div>
       <div class="roles" id="roles"></div>
       <p class="muted" style="font-size:12px;text-align:center;margin-top:22px">Protected by JWT session auth · SSO available for enterprise</p>
     </div>
@@ -105,14 +130,77 @@
       <span class="ri">${AFRIBN.ic(ic)}</span><div><div class="rn">${nm}</div><div class="rd">${desc}</div></div>
     </button>`).join('');
 
-  const DEMO_PASSWORDS = {
-    'admin@afribn.local':'afribn-admin-demo',
-    'analyst@afribn.local':'afribn-analyst-demo',
-    'agent@afribn.local':'afribn-agent-demo',
-    'verifier@afribn.local':'afribn-verifier-demo',
-    'client@afribn.local':'afribn-client-demo'
+  // Role chips pre-fill the demo EMAIL only — passwords are never shipped to the client.
+  $('#roles').querySelectorAll('.role-chip').forEach(c=>c.addEventListener('click',()=>{
+    $('#email').value=c.dataset.email; $('#password').value=''; $('#password').focus();
+    AFRIBN.toast('Demo email filled. Enter the password to sign in.','ok');
+  }));
+
+  function roleName(user){ return (user && (user.role?.name || user.roleName || user.role)) || 'client'; }
+  function landingFor(user){
+    const n = roleName(user).toLowerCase();
+    if (n.includes('admin')) return LANDING.admin;
+    if (n.includes('analyst')) return LANDING.analyst;
+    if (n.includes('agent')) return LANDING.agent;
+    if (n.includes('verif')) return LANDING.verifier;
+    return LANDING.client;
+  }
+  function persistSession(token, user){
+    localStorage.setItem('afribn_token', token);
+    if (user) localStorage.setItem('afribn_user', JSON.stringify(user));
+  }
+  async function goAfterAuth(token, user, next){
+    persistSession(token, user);
+    if (!user){
+      try { user = await fetch('/users/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()).then(j=>j.data); persistSession(token, user); } catch {}
+    }
+    localStorage.setItem('afribn_role', roleName(user));
+    location.href = next || landingFor(user);
+  }
+
+  // --- Email/password login (real API call; no client-side passwords) ---
+  $('#loginForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = $('#email').value.trim(), password = $('#password').value;
+    if (!email || !password){ AFRIBN.toast('Enter your email and password.','err'); return; }
+    try {
+      const res = await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || 'Sign in failed');
+      const next = new URLSearchParams(location.search).get('next');
+      AFRIBN.toast('Signed in','ok');
+      goAfterAuth(data.token, data.user, next);
+    } catch (err){ AFRIBN.toast(err.message,'err'); }
+  });
+
+  // --- Handle OAuth redirect back from provider (token/error in URL fragment) ---
+  (function handleOAuthReturn(){
+    if (!location.hash || location.hash.length < 2) return;
+    const frag = new URLSearchParams(location.hash.slice(1));
+    history.replaceState(null,'',location.pathname + location.search);
+    if (frag.get('oauth_error')){ AFRIBN.toast(frag.get('oauth_error'),'err'); return; }
+    if (frag.get('token')){ AFRIBN.toast('Signed in','ok'); goAfterAuth(frag.get('token'), null, frag.get('next') || null); }
+  })();
+
+  // --- Single sign-on buttons (Google / Microsoft) ---
+  const PROVIDER_ICON = {
+    google: '<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.5 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.3 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-2.8-.4-4.1H24v7.8h12.5c-.3 2.1-1.6 5.2-4.6 7.3l7.1 5.5c4.3-3.9 6.8-9.7 6.8-16.5z"/><path fill="#FBBC05" d="M10.4 28.3c-.5-1.5-.8-3.1-.8-4.8s.3-3.3.8-4.8l-7.8-6.1C.9 16 0 19.9 0 24s.9 8 2.6 11.4l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.6l-7.1-5.5c-2 1.4-4.6 2.3-8.1 2.3-6.4 0-11.7-3.8-13.6-9.8l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>',
+    microsoft: '<svg viewBox="0 0 48 48"><path fill="#F25022" d="M6 6h17v17H6z"/><path fill="#7FBA00" d="M25 6h17v17H25z"/><path fill="#00A4EF" d="M6 25h17v17H6z"/><path fill="#FFB900" d="M25 25h17v17H25z"/></svg>'
   };
-  $('#roles').querySelectorAll('.role-chip').forEach(c=>c.addEventListener('click',()=>{ $('#email').value=c.dataset.email; $('#password').value=DEMO_PASSWORDS[c.dataset.email]||''; AFRIBN.toast('Demo credentials filled. Press Sign in to continue.','ok'); }));
+  (async function renderSSO(){
+    let providers = [{id:'google',label:'Google',configured:false},{id:'microsoft',label:'Microsoft',configured:false}];
+    try { providers = await fetch('/auth/providers').then(r=>r.json()).then(j=>j.data || providers); } catch {}
+    const next = new URLSearchParams(location.search).get('next') || '';
+    $('#sso').innerHTML = providers.map(p=>{
+      const dis = p.configured ? '' : 'disabled title="Not configured yet"';
+      const cls = p.id === 'microsoft' ? 'sso-btn ms' : 'sso-btn';
+      return `<button type="button" class="${cls}" data-provider="${p.id}" ${dis}>${PROVIDER_ICON[p.id]||''} Continue with ${p.label}</button>`;
+    }).join('');
+    $('#sso').querySelectorAll('button[data-provider]').forEach(b=>b.addEventListener('click',()=>{
+      const q = next ? ('?next=' + encodeURIComponent(next)) : '';
+      location.href = '/auth/oauth/' + b.dataset.provider + '/start' + q;
+    }));
+  })();
 </script>
 </body>
 </html>

@@ -1,12 +1,6 @@
 (function () {
-  const DEMO_PASSWORDS = {
-    "admin@afribn.local": "afribn-admin-demo",
-    "analyst@afribn.local": "afribn-analyst-demo",
-    "agent@afribn.local": "afribn-agent-demo",
-    "verifier@afribn.local": "afribn-verifier-demo",
-    "client@afribn.local": "afribn-client-demo"
-  };
-
+  // SECURITY: Demo passwords are intentionally NOT shipped in this client bundle.
+  // Role chips below pre-fill the demo email only; the password must be typed.
   const ROLE_BY_EMAIL = {
     "admin@afribn.local": "admin",
     "analyst@afribn.local": "analyst",
@@ -59,6 +53,8 @@
     const handlers = {
       "login.html": initLogin,
       "sources.html": initSources,
+      "source-assessment.html": initSourceAssessment,
+      "source-detail.html": initSourceDetail,
       "jobs.html": initJobs,
       "raw.html": initRawArticles,
       "reliability.html": initReliability,
@@ -70,6 +66,7 @@
       "verification.html": initVerification,
       "published.html": initPublished,
       "feed.html": initFeed,
+      "story.html": initStoryPage,
       "home.html": initHome,
       "dashboards.html": initDashboards,
       "country.html": initCountryBrief,
@@ -103,7 +100,7 @@
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
-      await login(emailInput.value.trim(), passwordInput.value || DEMO_PASSWORDS[emailInput.value.trim()]);
+      await login(emailInput.value.trim(), passwordInput.value);
     }, true);
 
     $$(".role-chip").forEach((button) => {
@@ -112,8 +109,9 @@
         event.stopImmediatePropagation();
         const email = button.dataset.email;
         emailInput.value = email;
-        passwordInput.value = DEMO_PASSWORDS[email] || "";
-        toast("Demo credentials filled. Press Sign in to continue.", "ok");
+        passwordInput.value = "";
+        passwordInput.focus();
+        toast("Demo email filled. Enter the password to continue.", "ok");
       }, true);
     });
   }
@@ -122,17 +120,18 @@
     await ensureDemoData();
     addProviderFields();
     const sources = await API.get("/sources");
-    const reliability = await Promise.all(sources.map((source) => API.get(`/source-reliability/${source.id}`).catch(() => null)));
-    const summaries = Object.fromEntries(sources.map((source, index) => [source.id, reliability[index]]));
-    renderSourceStats(sources, summaries);
-    renderSourceRows(sources, summaries);
+    const visibleSources = sources.filter((source) => source.approvalStatus !== "pending_review" && source.status !== "pending_review");
+    const reliability = await Promise.all(visibleSources.map((source) => API.get(`/source-reliability/${source.id}`).catch(() => null)));
+    const summaries = Object.fromEntries(visibleSources.map((source, index) => [source.id, reliability[index]]));
+    renderSourceStats(visibleSources, summaries);
+    renderSourceRows(visibleSources, summaries);
 
     $("#mSave")?.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
       const type = $("#m_type")?.value || "Website";
       const provider = $("#m_provider")?.value || "";
-      const source = await API.post("/sources", {
+      const created = await API.post("/sources", {
         name: $("#m_name")?.value || "New AFRIBN Source",
         url: $("#m_url")?.value || (provider === "gdelt" ? "https://api.gdeltproject.org/api/v2/doc/doc" : "https://example.com"),
         type,
@@ -140,19 +139,19 @@
         topic: $("#m_topic")?.value || "",
         language: normalizeLanguage($("#m_lang")?.value),
         frequency: $("#m_freq")?.value || "15min",
-        status: ($("#m_status")?.value || "Active").toLowerCase(),
         provider: provider || undefined,
-        scrapingConfig: provider ? { provider, query: $("#m_topic")?.value || "Africa", limit: 25 } : {}
+        scrapingConfig: provider ? { provider, query: $("#m_topic")?.value || "Africa", limit: 25 } : {},
+        skipInitialAssessment: true
       });
-      await API.post(`/source-reliability/calculate/${source.id}`, {});
-      toast("Source added", "ok");
-      setTimeout(() => location.reload(), 500);
+      const source = created.source || created;
+      toast("Source captured. Starting initial assessment...", "ok");
+      location.href = `source-assessment.html?sourceId=${encodeURIComponent(source.id)}`;
     }, true);
 
     $("#runAll")?.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
-      for (const source of sources.filter((item) => item.status !== "inactive").slice(0, 5)) {
+      for (const source of visibleSources.filter((item) => item.status !== "inactive").slice(0, 5)) {
         await API.post("/queue/jobs", { queue: "collection", type: "scrape_source", payload: { sourceId: source.id, limit: 5 } }).catch(() => null);
       }
       const processed = await API.post("/queue/process", { queue: "collection", limit: 5 }).catch(() => null);
@@ -256,6 +255,216 @@
         $("#msgBody").focus();
       }
     });
+  }
+
+  async function initSourceAssessment() {
+    const sourceId = new URLSearchParams(location.search).get("sourceId");
+    const content = $(".content");
+    if (!sourceId || !content) return;
+    const source = await API.get(`/sources/${sourceId}`);
+    content.innerHTML = `
+      <div class="page-head">
+        <div>
+          <div class="eyebrow red">Source Onboarding</div>
+          <h1 class="page-title">Initial Source Assessment</h1>
+          <div class="page-sub">Run the first scrape, inspect source quality, then decide whether this source joins AFRIBN collection.</div>
+        </div>
+        <div class="row gap-12">
+          <a class="btn btn-ghost" href="sources.html">${ic("arrowLeft", 'width="16" height="16"')} Sources</a>
+          <a class="btn btn-ghost" href="source-detail.html?sourceId=${encodeURIComponent(source.id)}">${ic("edit", 'width="16" height="16"')} Edit source</a>
+        </div>
+      </div>
+      <div class="ws-grid">
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg" id="assessmentMain">
+            <div class="empty">${ic("refresh")}<div>Running first scrape and source assessment...</div></div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:12px">Sample Articles</div>
+            <div id="sampleArticles"><div class="muted">Waiting for collection result...</div></div>
+          </div>
+        </div>
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:10px">Source Profile</div>
+            ${sourceProfileMarkup(source)}
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:10px">Admin Decision</div>
+            <div class="stack gap-10">
+              <button class="btn btn-primary" id="approveSource">${ic("check", 'width="16" height="16"')} Approve Source</button>
+              <button class="btn btn-ghost" id="probationSource">${ic("clock", 'width="16" height="16"')} Put on 7-day Probation</button>
+              <button class="btn btn-ghost" id="blacklistSource" style="color:#ff7378">${ic("ban", 'width="16" height="16"')} Blacklist Source</button>
+            </div>
+            <p class="muted" style="font-size:12.5px;line-height:1.5;margin-top:14px">The source appears in the main Sources list only after one of these actions is taken.</p>
+          </div>
+        </div>
+      </div>`;
+
+    let assessment = null;
+    try {
+      assessment = await API.post(`/sources/${sourceId}/initial-assessment`, { limit: 10, timeoutMs: 20000 });
+      await API.post(`/source-reliability/calculate/${sourceId}`, {}).catch(() => null);
+      renderAssessmentResult(source, assessment);
+      toast("Initial assessment complete", "ok");
+    } catch (error) {
+      renderAssessmentError(source, error);
+      toast(error.message, "warn");
+    }
+
+    $("#approveSource").onclick = async () => {
+      await API.post(`/sources/${sourceId}/approve`, {});
+      toast("Source approved and added to collection list", "ok");
+      location.href = `source-detail.html?sourceId=${encodeURIComponent(sourceId)}`;
+    };
+    $("#probationSource").onclick = async () => {
+      await API.post(`/sources/${sourceId}/probation`, {});
+      toast("Source placed on probation and added to collection list", "warn");
+      location.href = `source-detail.html?sourceId=${encodeURIComponent(sourceId)}`;
+    };
+    $("#blacklistSource").onclick = async () => {
+      await API.post(`/sources/${sourceId}/blacklist`, {});
+      toast("Source blacklisted", "warn");
+      location.href = `source-detail.html?sourceId=${encodeURIComponent(sourceId)}`;
+    };
+  }
+
+  function renderAssessmentResult(source, assessment) {
+    const main = $("#assessmentMain");
+    const score = Math.round(assessment.score || 0);
+    const sampleArticles = assessment.sampleArticles || [];
+    if (main) {
+      main.innerHTML = `<div class="row" style="align-items:flex-start;justify-content:space-between;gap:20px">
+        <div>
+          <div class="eyebrow red">Assessment Result</div>
+          <h2 style="font-size:28px;font-weight:850;margin:8px 0 8px">${escapeHtml(source.name)}</h2>
+          <p class="muted" style="line-height:1.6;max-width:760px">${escapeHtml(assessment.summary || "Assessment completed.")}</p>
+          <div class="row gap-8" style="margin-top:14px;flex-wrap:wrap">
+            ${pill(assessment.recommendation || "review", decisionColor(assessment.recommendation || "review"))}
+            ${pill(`${sampleArticles.length} sample articles`, "#4493F8")}
+            ${pill(source.country || "Pan-African", "#A371F7")}
+          </div>
+        </div>
+        <div style="min-width:120px;text-align:center">${window.AFRIBN?.ring ? AFRIBN.ring(score, { size: 112, stroke: 10, color: scoreColor(score), label: "Probe" }) : `<b>${score}</b>`}</div>
+      </div>`;
+    }
+    const samples = $("#sampleArticles");
+    if (samples) {
+      samples.innerHTML = sampleArticles.map((article) => `<div class="src-link">
+        ${ic("file")}
+        <div>
+          <div style="font-weight:700">${escapeHtml(article.title || "Untitled article")}</div>
+          <div class="muted" style="font-size:12px">${escapeHtml(article.url || "")}</div>
+        </div>
+      </div>`).join("") || `<div class="muted">No sample articles were collected. Consider probation or editing the source URL.</div>`;
+    }
+  }
+
+  function renderAssessmentError(source, error) {
+    $("#assessmentMain").innerHTML = `<div class="empty">${ic("alertTri")}<div><b>Initial scrape failed</b><br><span class="muted">${escapeHtml(error.message)}</span></div></div>`;
+    $("#sampleArticles").innerHTML = `<div class="muted">No articles collected. Edit the source URL/configuration or place it on probation.</div>`;
+  }
+
+  async function initSourceDetail() {
+    const sourceId = new URLSearchParams(location.search).get("sourceId");
+    const content = $(".content");
+    if (!sourceId || !content) return;
+    const [source, assessments, jobs, rawArticles, summary] = await Promise.all([
+      API.get(`/sources/${sourceId}`),
+      API.get(`/sources/${sourceId}/assessments`).catch(() => []),
+      API.get("/scrape-jobs").catch(() => []),
+      API.get("/raw-articles").catch(() => []),
+      API.get(`/source-reliability/${sourceId}`).catch(() => null)
+    ]);
+    const recentJobs = jobs.filter((job) => job.sourceId === sourceId).slice().reverse().slice(0, 8);
+    const recentRaw = rawArticles.filter((article) => article.sourceId === sourceId).slice().reverse().slice(0, 8);
+    const latestAssessment = assessments[0];
+    const score = Math.round(summary?.reliability?.adjustedReliabilityScore || source.reliability || latestAssessment?.score || 0);
+    content.innerHTML = `
+      <div class="page-head">
+        <div>
+          <div class="eyebrow red">Source Detail</div>
+          <h1 class="page-title">${escapeHtml(source.name)}</h1>
+          <div class="page-sub">${escapeHtml(source.url)}</div>
+        </div>
+        <div class="row gap-12">
+          <a class="btn btn-ghost" href="sources.html">${ic("arrowLeft", 'width="16" height="16"')} Sources</a>
+          <button class="btn btn-primary" id="detailRun">${ic("refresh", 'width="16" height="16"')} Run scrape</button>
+        </div>
+      </div>
+      <div class="ws-grid">
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg">
+            <div class="row" style="align-items:flex-start;justify-content:space-between;gap:20px">
+              <div>
+                <div class="row gap-8" style="margin-bottom:12px;flex-wrap:wrap">${pill(source.status || "pending", colorForStatus(source.status || "pending"))}${pill(source.approvalStatus || "pending_review", decisionColor(source.approvalStatus || "pending_review"))}</div>
+                <h2 style="font-size:24px;font-weight:850;margin-bottom:8px">Collection profile</h2>
+                <p class="muted" style="line-height:1.55">${escapeHtml(latestAssessment?.summary || "No assessment summary yet. Run an assessment to profile this source.")}</p>
+              </div>
+              <div>${window.AFRIBN?.ring ? AFRIBN.ring(score, { size: 104, stroke: 10, color: scoreColor(score), label: "SRS" }) : `<b>${score}</b>`}</div>
+            </div>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:12px">Recent Raw Articles</div>
+            ${recentRaw.map((article) => `<div class="src-link">${ic("file")}<div><div style="font-weight:700">${escapeHtml(article.title)}</div><div class="muted" style="font-size:12px">${formatDate(article.publishedAt)} · ${escapeHtml(article.status || "collected")}</div></div></div>`).join("") || `<div class="muted">No raw articles yet.</div>`}
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:12px">Recent Jobs</div>
+            ${recentJobs.map((job) => `<div class="kv"><span class="k">${escapeHtml(job.id)}</span><span class="v">${escapeHtml(job.status)} · ${job.createdCount ?? "-"} created</span></div>`).join("") || `<div class="muted">No jobs yet.</div>`}
+          </div>
+        </div>
+        <div class="stack gap-16">
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:12px">Edit Source</div>
+            <div class="field"><label>Name</label><input id="sdName" value="${escapeAttr(source.name || "")}"></div>
+            <div class="field"><label>URL</label><input id="sdUrl" value="${escapeAttr(source.url || "")}"></div>
+            <div class="field"><label>Country</label><input id="sdCountry" value="${escapeAttr(source.country || "")}"></div>
+            <div class="field"><label>Topic / sector</label><input id="sdTopic" value="${escapeAttr(source.topic || source.sector || "")}"></div>
+            <button class="btn btn-primary" id="detailSave" style="width:100%">${ic("check", 'width="16" height="16"')} Save changes</button>
+          </div>
+          <div class="panel panel-pad-lg">
+            <div class="eyebrow" style="margin-bottom:12px">Admin Actions</div>
+            <div class="stack gap-10">
+              <button class="btn btn-ghost" id="detailAssess">${ic("flask", 'width="16" height="16"')} Rerun assessment</button>
+              <button class="btn btn-ghost" id="detailApprove">${ic("check", 'width="16" height="16"')} Approve</button>
+              <button class="btn btn-ghost" id="detailProbation">${ic("clock", 'width="16" height="16"')} Put on probation</button>
+              <button class="btn btn-ghost" id="detailPause">${ic("pause", 'width="16" height="16"')} Pause</button>
+              <button class="btn btn-ghost" id="detailBlacklist" style="color:#ff7378">${ic("ban", 'width="16" height="16"')} Blacklist</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    $("#detailSave").onclick = async () => {
+      await API.patch(`/sources/${sourceId}`, { name: $("#sdName").value, url: $("#sdUrl").value, country: $("#sdCountry").value, topic: $("#sdTopic").value });
+      toast("Source updated", "ok");
+      location.reload();
+    };
+    $("#detailRun").onclick = async () => {
+      await API.post("/workers/scrape", { sourceId, limit: 10 });
+      toast("Scrape completed", "ok");
+      location.reload();
+    };
+    $("#detailAssess").onclick = () => { location.href = `source-assessment.html?sourceId=${encodeURIComponent(sourceId)}`; };
+    $("#detailApprove").onclick = () => sourceAction(sourceId, "approve", "Source approved");
+    $("#detailProbation").onclick = () => sourceAction(sourceId, "probation", "Source placed on probation");
+    $("#detailPause").onclick = () => sourceAction(sourceId, "pause", "Source paused");
+    $("#detailBlacklist").onclick = () => sourceAction(sourceId, "blacklist", "Source blacklisted");
+  }
+
+  async function sourceAction(sourceId, action, message) {
+    await API.post(`/sources/${sourceId}/${action}`, {});
+    toast(message, action === "blacklist" || action === "pause" ? "warn" : "ok");
+    location.reload();
+  }
+
+  function sourceProfileMarkup(source) {
+    return `<div class="kv"><span class="k">Name</span><span class="v">${escapeHtml(source.name)}</span></div>
+      <div class="kv"><span class="k">URL</span><span class="v" style="word-break:break-all">${escapeHtml(source.url)}</span></div>
+      <div class="kv"><span class="k">Type</span><span class="v">${escapeHtml(source.provider || source.type || "Website")}</span></div>
+      <div class="kv"><span class="k">Country</span><span class="v">${escapeHtml(source.country || "Pan-African")}</span></div>
+      <div class="kv"><span class="k">Topic</span><span class="v">${escapeHtml(source.topic || source.sector || "General")}</span></div>
+      <div class="kv"><span class="k">Status</span><span class="v">${escapeHtml(source.status || "pending_review")}</span></div>`;
   }
 
   function updateMessageBadge(count) {
@@ -388,16 +597,16 @@
           <button class="btn btn-ghost btn-sm" id="apiReject" style="margin-left:auto;color:#ff7378">${ic("ban", 'width="15" height="15"')} Reject</button>
         </div>`;
       $("#apiToStory").onclick = async () => {
-        const result = await API.post(`/raw-articles/${article.id}/distill`, {});
+        const result = await API.post(`/raw-articles/${article.id}/convert-intelligence`, {});
         remember("storyId", result.story.id);
-        toast("Story draft created", "ok");
+        toast(result.ai?.status === "fallback" ? "Rules extraction created" : "Intelligence item generated", "ok");
         location.href = `workspace.html?storyId=${encodeURIComponent(result.story.id)}`;
       };
       $("#apiToEvent").onclick = $("#apiToStory").onclick;
       $("#apiToAI").onclick = async () => {
-        const result = await API.post(`/raw-articles/${article.id}/ai-distill`, {});
+        const result = await API.post(`/raw-articles/${article.id}/convert-intelligence`, {});
         remember("storyId", result.story.id);
-        toast(result.ai?.status === "fallback" ? "AI unavailable; rules extraction created" : "AI extraction complete", "ok");
+        toast(result.ai?.status === "fallback" ? "AI unavailable; rules extraction created" : "Intelligence item generated", "ok");
         location.href = `workspace.html?storyId=${encodeURIComponent(result.story.id)}`;
       };
       $("#apiReject").onclick = async () => {
@@ -503,38 +712,114 @@
 
   async function initWorkspace() {
     await ensureDemoData();
+    const explicitStoryId = new URLSearchParams(location.search).get("storyId");
+    if (!explicitStoryId) {
+      await renderIntelligenceItemList();
+      return;
+    }
     const story = await currentStory();
     if (!story) return;
+    const title = $(".page-head h1");
+    if (title) title.textContent = "Intelligence Item";
+    const meta = $(".page-head .muted");
+    if (meta) meta.textContent = `${story.status || "draft"} · ${story.country || "Africa"} · version ${story.version || 1}`;
     $("#f_head") && ($("#f_head").value = story.title || "");
     $("#f_sum") && ($("#f_sum").value = story.summary || "");
     $("#f_what") && ($("#f_what").value = story.whatHappened || story.summary || "");
-    $("#f_why") && ($("#f_why").value = story.whyItMatters || story.keyClaims?.join("\n") || "");
-    $("#f_cons") && ($("#f_cons").value = story.potentialConsequences || story.opportunities?.join("\n") || "");
-    $("#f_watch") && ($("#f_watch").value = story.watchNext || story.riskIndicators?.join("\n") || "");
+    $("#f_why") && ($("#f_why").value = linesText(story.whyItMatters || story.keyClaims));
+    $("#f_cons") && ($("#f_cons").value = linesText(story.potentialConsequences || story.opportunities));
+    $("#f_watch") && ($("#f_watch").value = linesText(story.watchNext || story.whatToWatchNext || story.riskIndicators));
 
     $("#saveDraft")?.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
-      await API.patch(`/stories/${story.id}`, storyPayloadFromForm("draft"));
+      await API.patch(`/intelligence-items/${story.id}`, storyPayloadFromForm("draft"));
       toast("Draft saved", "ok");
     }, true);
     $("#toScore")?.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
-      await API.patch(`/stories/${story.id}`, storyPayloadFromForm("ready_for_scoring"));
-      const eventRecord = (await API.get(`/events?storyId=${encodeURIComponent(story.id)}`))[0] || (await API.get("/events")).find((item) => item.storyId === story.id);
-      if (eventRecord) await API.post(`/events/${eventRecord.id}/score`, {});
+      await API.post(`/intelligence-items/${story.id}/verify`, { notes: "Verified from launch workspace" });
       remember("storyId", story.id);
-      toast("Submitted for scoring", "ok");
-      location.href = `scoring.html?storyId=${encodeURIComponent(story.id)}`;
+      toast("Marked verified", "ok");
+      location.href = "verification.html";
     }, true);
     $("#toVerify")?.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
-      await API.patch(`/stories/${story.id}`, storyPayloadFromForm("ready_for_verification"));
+      await API.patch(`/intelligence-items/${story.id}`, storyPayloadFromForm("draft"));
+      await API.post(`/intelligence-items/${story.id}/submit-verification`, { notes: "Submitted from Intelligence Item workspace" });
       toast("Submitted for verification", "ok");
       location.href = "verification.html";
     }, true);
+  }
+
+  async function renderIntelligenceItemList() {
+    const content = $(".content");
+    if (!content) return;
+    const items = await API.get("/intelligence-items").catch(() => []);
+    const sorted = items.slice().sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
+    content.innerHTML = `
+      <div class="page-head">
+        <div>
+          <div class="eyebrow red">Launch Pipeline</div>
+          <h1 class="page-title">Intelligence Items</h1>
+          <div class="page-sub">Editable intelligence drafts generated from reviewed raw articles.</div>
+        </div>
+        <div class="row gap-12">
+          <a class="btn btn-ghost" href="raw.html">${ic("inbox", 'width="16" height="16"')} Raw Articles</a>
+          <a class="btn btn-primary" href="verification.html">${ic("listChecks", 'width="16" height="16"')} Verification</a>
+        </div>
+      </div>
+      <div class="panel panel-pad-lg">
+        <div class="toolbar" style="margin-bottom:16px">
+          <div class="search" style="max-width:420px">${ic("search")}<input id="iiSearch" placeholder="Search intelligence items..."></div>
+          <select id="iiStatus"><option value="">All statuses</option><option value="draft">Draft</option><option value="submitted_for_verification">Submitted</option><option value="verified">Verified</option><option value="approved">Approved</option><option value="published">Published</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Intelligence Item</th><th>Country</th><th>Sector</th><th>Status</th><th>AI</th><th>Updated</th><th>Actions</th></tr></thead>
+            <tbody id="iiBody"></tbody>
+          </table>
+        </div>
+      </div>`;
+
+    function draw() {
+      const query = ($("#iiSearch")?.value || "").toLowerCase();
+      const status = $("#iiStatus")?.value || "";
+      const rows = sorted.filter((item) => {
+        const text = `${item.title} ${item.summary} ${item.country} ${item.sector}`.toLowerCase();
+        return (!query || text.includes(query)) && (!status || item.status === status || item.workflowStatus === status);
+      });
+      $("#iiBody").innerHTML = rows.map((item) => `<tr data-id="${item.id}">
+        <td><b>${escapeHtml(item.title || "Untitled item")}</b><div class="muted" style="font-size:12px;max-width:620px">${escapeHtml(item.summary || item.whatHappened || "").slice(0, 180)}</div></td>
+        <td>${escapeHtml(item.country || "Pan-African")}</td>
+        <td>${escapeHtml(item.sector || item.eventType || "General")}</td>
+        <td>${pill(item.status || "draft", colorForStatus(item.status || "draft"))}</td>
+        <td class="muted-2">${escapeHtml(item.aiProvider || "manual")}</td>
+        <td class="muted-2">${formatDate(item.updatedAt || item.createdAt)}</td>
+        <td><div class="row-act">
+          <a href="workspace.html?storyId=${encodeURIComponent(item.id)}" title="Edit">${ic("edit")}</a>
+          ${item.status === "draft" ? `<button data-a="submit" title="Submit">${ic("send")}</button>` : ""}
+          ${item.status === "submitted_for_verification" ? `<button data-a="verify" title="Verify">${ic("check")}</button>` : ""}
+          ${item.status === "verified" ? `<button data-a="approve" title="Approve">${ic("checkCircle")}</button>` : ""}
+          ${item.status === "approved" ? `<button data-a="publish" title="Publish">${ic("send")}</button>` : ""}
+        </div></td>
+      </tr>`).join("") || `<tr><td colspan="7"><div class="empty">${ic("edit")}<div>No intelligence items yet. Convert raw articles first.</div></div></td></tr>`;
+    }
+
+    $("#iiSearch")?.addEventListener("input", draw);
+    $("#iiStatus")?.addEventListener("change", draw);
+    $("#iiBody")?.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-a]");
+      if (!button) return;
+      const id = event.target.closest("tr").dataset.id;
+      const action = button.dataset.a === "submit" ? "submit-verification" : button.dataset.a;
+      await API.post(`/intelligence-items/${id}/${action}`, { notes: "Updated from Intelligence Items list" });
+      toast("Intelligence item updated", "ok");
+      location.reload();
+    });
+    draw();
   }
 
   async function initScoring() {
@@ -734,46 +1019,47 @@
 
   async function initVerification() {
     await ensureDemoData();
-    const reports = await API.get("/agent/reports");
-    const stories = await API.get("/stories");
+    const items = await API.get("/intelligence-items?status=submitted_for_verification,verified,approved");
     const queue = $("#queue");
     const review = $("#review");
     if (!queue || !review) return;
-    let selected = reports.find((report) => report.status !== "reviewed") || reports[0];
+    let selected = items.find((item) => item.status !== "approved") || items[0];
     function draw() {
-      queue.innerHTML = reports.map((report) => {
-        const story = stories.find((item) => item.id === report.storyId) || {};
-        return `<div class="q-item ${selected?.id === report.id ? "active" : ""}" data-id="${report.id}"><div class="t">${escapeHtml(story.title || report.findings)}</div><div class="m">${escapeHtml(story.country || "")} · ${escapeHtml(report.id)} · ${escapeHtml(report.status)}</div></div>`;
-      }).join("");
-      $$(".q-item", queue).forEach((item) => item.onclick = () => { selected = reports.find((report) => report.id === item.dataset.id); draw(); });
+      queue.innerHTML = items.map((item) => `<div class="q-item ${selected?.id === item.id ? "active" : ""}" data-id="${item.id}"><div class="t">${escapeHtml(item.title)}</div><div class="m">${escapeHtml(item.country || "")} · ${escapeHtml(item.id)} · ${escapeHtml(item.status)}</div></div>`).join("") || `<div class="empty">${ic("listChecks")}<div>No intelligence items awaiting verification.</div></div>`;
+      $$(".q-item", queue).forEach((node) => node.onclick = () => { selected = items.find((item) => item.id === node.dataset.id); draw(); });
       drawReview();
     }
     function drawReview() {
       if (!selected) {
-        review.innerHTML = `<div class="empty">No reports to verify.</div>`;
+        review.innerHTML = `<div class="empty">No intelligence items to verify.</div>`;
         return;
       }
-      const story = stories.find((item) => item.id === selected.storyId) || {};
-      review.innerHTML = `<div class="row gap-8" style="margin-bottom:12px">${pill("In Review", "#E3B341")}<span class="muted" style="font-size:13px;margin-left:auto">${escapeHtml(selected.id)}</span></div>
-        <h2 style="font-size:24px;font-weight:800;line-height:1.15;margin-bottom:18px">${escapeHtml(story.title || selected.findings)}</h2>
-        <div class="rev-sec"><div class="eyebrow">Agent Findings</div><p style="color:var(--ink-2);line-height:1.6">${escapeHtml(selected.findings)}</p></div>
-        <div class="rev-sec"><div class="eyebrow">Evidence Summary</div><p style="color:var(--ink-2);line-height:1.6">${escapeHtml(selected.evidenceSummary)}</p></div>
+      review.innerHTML = `<div class="row gap-8" style="margin-bottom:12px">${pill(selected.status || "In Review", selected.status === "approved" ? "#3FB950" : "#E3B341")}<span class="muted" style="font-size:13px;margin-left:auto">${escapeHtml(selected.id)}</span></div>
+        <h2 style="font-size:24px;font-weight:800;line-height:1.15;margin-bottom:18px">${escapeHtml(selected.title)}</h2>
+        <div class="rev-sec"><div class="eyebrow">Summary</div><p style="color:var(--ink-2);line-height:1.6">${escapeHtml(selected.summary || selected.whatHappened || "")}</p></div>
+        <div class="rev-sec"><div class="eyebrow">Why It Matters</div><p style="color:var(--ink-2);line-height:1.6">${escapeHtml(linesText(selected.whyItMatters || selected.keyFacts))}</p></div>
+        <div class="rev-sec"><div class="eyebrow">Watch Next</div><p style="color:var(--ink-2);line-height:1.6">${escapeHtml(linesText(selected.watchNext || selected.whatToWatchNext))}</p></div>
         <div class="action-bar">
           <button class="btn btn-primary" id="apiPublish">${ic("send", 'width="16" height="16"')} Approve & Publish</button>
-          <button class="btn btn-ghost" id="apiApprove">${ic("check", 'width="16" height="16"')} Approve</button>
-          <button class="btn btn-ghost" id="apiClarify">${ic("message", 'width="16" height="16"')} Request Clarification</button>
-          <button class="btn btn-ghost" id="apiReject" style="color:#ff7378;margin-left:auto">${ic("x", 'width="16" height="16"')} Reject</button>
+          <button class="btn btn-ghost" id="apiVerify">${ic("check", 'width="16" height="16"')} Verify</button>
+          <button class="btn btn-ghost" id="apiApprove">${ic("checkCircle", 'width="16" height="16"')} Approve</button>
+          <button class="btn btn-ghost" id="apiDraft">${ic("arrowLeft", 'width="16" height="16"')} Return to Draft</button>
+          <a class="btn btn-ghost" href="workspace.html?storyId=${encodeURIComponent(selected.id)}">${ic("edit", 'width="16" height="16"')} Edit</a>
         </div>`;
-      $("#apiApprove").onclick = () => reviewReport("approved", false);
-      $("#apiPublish").onclick = () => reviewReport("approved", true);
-      $("#apiReject").onclick = () => reviewReport("rejected", false);
-      $("#apiClarify").onclick = () => reviewReport("more_info", false);
+      $("#apiVerify").onclick = () => itemAction("verify");
+      $("#apiApprove").onclick = () => itemAction("approve");
+      $("#apiDraft").onclick = () => itemAction("return-draft", "Returned to draft");
+      $("#apiPublish").onclick = async () => {
+        if (selected.status !== "approved") await API.post(`/intelligence-items/${selected.id}/approve`, { notes: "Approved from verification page" });
+        await API.post(`/intelligence-items/${selected.id}/publish`, {});
+        toast("Published intelligence", "ok");
+        location.href = "published.html";
+      };
     }
-    async function reviewReport(decision, publish) {
-      const reviewRecord = await API.post(`/verification/${selected.id}/review`, { decision, notes: "Reviewed in AFRIBN UI" });
-      if (publish && decision === "approved") await API.post(`/verification/${reviewRecord.id}/publish`, {});
-      toast(publish ? "Published intelligence" : "Review saved", publish || decision === "approved" ? "ok" : "warn");
-      location.href = publish ? "published.html" : "verification.html";
+    async function itemAction(action, message) {
+      await API.post(`/intelligence-items/${selected.id}/${action}`, { notes: "Reviewed in AFRIBN UI" });
+      toast(message || `Item ${action.replace("-", " ")}`, "ok");
+      location.reload();
     }
     draw();
   }
@@ -785,7 +1071,7 @@
     if (!grid) return;
     grid.innerHTML = items.map((item) => `<div class="pub-card" data-id="${item.id}">
       <div class="ph"><span class="pill">${escapeHtml(item.sector || item.eventType)}</span><div style="text-align:right"><div class="aiv" style="color:#E8252D">${item.signalScore || "-"}</div><div class="muted" style="font-size:10px">Signal</div></div></div>
-      <h3>${escapeHtml(item.title)}</h3><div class="pm">${escapeHtml(item.country)} · ${formatDate(item.publishedAt)} · ${escapeHtml(item.status)}</div>
+      <h3>${escapeHtml(item.title)}</h3><p class="muted" style="line-height:1.45;margin-top:8px">${escapeHtml(item.summary || "").slice(0, 190)}</p><div class="pm">${escapeHtml(item.country)} · ${formatDate(item.publishedAt)} · ${escapeHtml(item.status)}</div>
       <div class="aud-chips">${(item.audience || []).map((audience) => `<span class="aud-chip">${escapeHtml(audience)}</span>`).join("")}</div></div>`).join("");
     grid.addEventListener("click", async (event) => {
       const card = event.target.closest(".pub-card");
@@ -797,32 +1083,129 @@
   }
 
   async function initFeed() {
-    await ensureDemoData();
-    const feed = await API.get("/feed");
+    let feed = await API.get("/feed");
+    feed = feed.filter((item) => item.publishedIntelligenceId || item.stage === "PublishedIntelligence");
     const list = $(".feed-list") || $("#feedList") || $(".panel");
     if (!list) return;
-    if (!feed.length || !$("#feed")) return;
-    list.innerHTML = feed.map((item) => feedItemMarkup(item)).join("");
+    const render = () => {
+      const kw = ($("#kw")?.value || "").toLowerCase();
+      const country = $("#fCountry")?.value || "All Countries";
+      const topic = $("#fTopic")?.value || "All Topics";
+      const filtered = feed.filter((item) => {
+        const category = item.sector || item.eventType || "Intelligence";
+        const haystack = `${item.title} ${item.summary} ${item.country} ${category}`.toLowerCase();
+        if (kw && !haystack.includes(kw)) return false;
+        if (country !== "All Countries" && item.country !== country) return false;
+        if (topic !== "All Topics" && category !== topic) return false;
+        return true;
+      });
+      list.innerHTML = filtered.length
+        ? filtered.map((item) => feedItemMarkup(item)).join("")
+        : `<div style="padding:48px;text-align:center;color:var(--ink-3)">No published intelligence matches your filters.</div>`;
+      renderFeedSidebar(filtered);
+    };
+    render();
+    $("#kw")?.addEventListener("input", render);
+    $("#fCountry")?.addEventListener("change", render);
+    $("#fTopic")?.addEventListener("change", render);
+    $("#liveSwitch")?.addEventListener("click", () => toast("Feed now shows verified published intelligence only", "ok"));
+    $("#loadMore")?.addEventListener("click", () => toast("All available published intelligence is loaded", "ok"));
+    $("#customize")?.addEventListener("click", () => toast("Feed preferences will apply to published intelligence only", "ok"));
+    $("#filters")?.addEventListener("click", () => toast("Use the visible filters to refine published intelligence", "ok"));
   }
 
   function feedItemMarkup(item = {}) {
     const category = item.sector || item.eventType || "Intelligence";
     const meta = feedCategoryMeta(category);
     const highImpact = Number(item.signalScore || 0) >= 75 || String(item.impact || "").toLowerCase() === "high";
-    return `<article class="feed-item">
+    const publishedId = item.publishedIntelligenceId || item.id;
+    const title = feedDisplayTitle(item.title || "Published intelligence item");
+    const summary = feedDisplaySummary(item.summary || item.description || "");
+    const impact = impactLabel(item);
+    const tagCategory = feedTagText(category);
+    return `<a class="feed-item" href="story.html?publishedId=${encodeURIComponent(publishedId)}">
       <span class="impact" style="background:${meta.color}"></span>
       <span class="ftile" style="background:${meta.color}22;color:${meta.color}">${ic(meta.icon)}</span>
       <div class="body">
-        <div class="ttl">${escapeHtml(item.title)} ${highImpact ? '<span class="pill high-impact">High Impact</span>' : ""}</div>
-        <div class="desc">${escapeHtml(item.summary || item.description || "")}</div>
-        <div class="meta">${window.AFRIBN.flag(flagKey(item.country))} ${escapeHtml(item.country || "Pan-African")} <span class="sep"></span> ${escapeHtml(category)} <span class="sep"></span> ${escapeHtml(item.sourceName || item.originalSourceName || "AFRIBN")}</div>
+        <div class="ttl">${escapeHtml(title)}</div>
+        <div class="tag-strip">
+          <span class="pill ${meta.pill}">${escapeHtml(tagCategory)}</span>
+          <span class="pill ${highImpact ? "high-impact" : meta.pill}">${escapeHtml(impact)}</span>
+        </div>
+        <div class="desc">${escapeHtml(summary)}</div>
+        <div class="meta">${window.AFRIBN.flag(flagKey(item.country))} ${escapeHtml(item.country || "Pan-African")} <span class="sep"></span> ${escapeHtml(tagCategory)} <span class="sep"></span> ${escapeHtml(item.sourceName || item.originalSourceName || "AFRIBN")}</div>
       </div>
       <div class="right">
         <span class="tm">${formatDate(item.publishedAt || item.createdAt)}</span>
-        <span class="pill ${meta.pill}">${escapeHtml(category)}</span>
         <span class="more">${ic("more", 'width="18" height="18"')}</span>
       </div>
-    </article>`;
+    </a>`;
+  }
+
+  function feedTagText(value) {
+    const clean = compactDisplay(value).split(",")[0].trim() || "Intelligence";
+    if (clean.length <= 28) return clean;
+    return `${clean.slice(0, 29).replace(/\s+\S*$/, "").trim()}...`;
+  }
+
+  function feedDisplayTitle(title) {
+    const clean = compactDisplay(title);
+    if (clean.length <= 60) return clean;
+    const clipped = clean.slice(0, 61).replace(/\s+\S*$/, "").trim();
+    return `${clipped || clean.slice(0, 57).trim()}...`;
+  }
+
+  function feedDisplaySummary(text) {
+    const words = compactDisplay(text).split(/\s+/).filter(Boolean);
+    if (words.length <= 30) return words.join(" ");
+    return `${words.slice(0, 30).join(" ")}...`;
+  }
+
+  function compactDisplay(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function renderFeedSidebar(items = []) {
+    const total = $("#totalUpdates");
+    if (total) total.textContent = String(items.length);
+    const high = items.filter((item) => Number(item.signalScore || 0) >= 75 || /high|critical/i.test(item.impact || "")).length;
+    const medium = items.filter((item) => /medium/i.test(item.impact || "") || (Number(item.signalScore || 0) >= 50 && Number(item.signalScore || 0) < 75)).length;
+    const low = Math.max(0, items.length - high - medium);
+    const summaryLegend = $("#summaryLegend");
+    if (summaryLegend) {
+      summaryLegend.innerHTML = [
+        ["High Impact", "#E8252D", high],
+        ["Medium Impact", "#F0883E", medium],
+        ["Low Impact", "#4493F8", low],
+        ["Published", "#8B949E", items.length]
+      ].map(([name, color, value]) => `<div class="legend-li"><span class="cdot" style="background:${color}"></span><span class="nm">${name}</span><span class="vl">${value}</span></div>`).join("");
+    }
+    const spark = $("#summarySpark");
+    if (spark) spark.innerHTML = window.AFRIBN.spark(buildTinySeries(items.length), { w: 130, h: 46, color: "#E8252D", fill: true, sw: 2 });
+    renderRankList("#topCountries", countBy(items, "country"), (country) => window.AFRIBN.flag(flagKey(country)));
+    renderRankList("#topTopics", countBy(items.map((item) => ({ topic: item.sector || item.eventType || "Intelligence" })), "topic"));
+  }
+
+  function renderRankList(selector, counts, prefix = () => "") {
+    const node = $(selector);
+    if (!node) return;
+    const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const max = Math.max(1, ...rows.map(([, value]) => value));
+    const colors = ["#E8252D", "#F0883E", "#A371F7", "#4493F8", "#3FB950"];
+    node.innerHTML = rows.map(([name, value], index) => `<div class="rank-li">${prefix(name)}<span class="nm">${escapeHtml(name)}</span><span class="bar"><span style="width:${(value / max) * 100}%;background:${colors[index] || "#8B949E"}"></span></span><span class="vl">${value}</span></div>`).join("") || `<div class="muted" style="padding:12px 0">No published items yet.</div>`;
+  }
+
+  function countBy(items, key) {
+    return items.reduce((acc, item) => {
+      const value = item[key] || "Unknown";
+      acc[value] = (acc[value] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  function buildTinySeries(count) {
+    if (!count) return [0, 0, 0, 0, 0, 0, 0];
+    return [0.25, 0.35, 0.3, 0.55, 0.5, 0.75, 1].map((ratio) => Math.max(1, Math.round(count * ratio)));
   }
 
   function feedCategoryMeta(category = "") {
@@ -1222,6 +1605,158 @@
     if (body) body.innerHTML = reports.map((report) => `<tr><td>${escapeHtml(report.title)}</td><td>${escapeHtml(report.category || "Intelligence")}</td><td>${formatDate(report.createdAt)}</td><td><a class="btn btn-ghost btn-sm" href="/reports/${report.id}/download" target="_blank">${ic("download")} PDF</a></td></tr>`).join("") || body.innerHTML;
   }
 
+  async function initStoryPage() {
+    const params = new URLSearchParams(location.search);
+    const publishedId = params.get("publishedId");
+    const storyId = params.get("storyId");
+    let published = null;
+    let story = null;
+
+    if (publishedId) {
+      published = await API.get(`/published-intelligence/${publishedId}`);
+      if (published.storyId) story = await API.get(`/intelligence-items/${published.storyId}`).catch(() => API.get(`/stories/${published.storyId}`).catch(() => null));
+    } else if (storyId) {
+      story = await API.get(`/intelligence-items/${storyId}`).catch(() => API.get(`/stories/${storyId}`).catch(() => null));
+      published = story?.published || null;
+    } else {
+      const feed = await API.get("/feed").catch(() => []);
+      if (feed[0]?.publishedIntelligenceId) {
+        published = await API.get(`/published-intelligence/${feed[0].publishedIntelligenceId}`);
+        if (published.storyId) story = await API.get(`/intelligence-items/${published.storyId}`).catch(() => null);
+      }
+    }
+
+    const item = normalizePublishedStory(published, story);
+    if (!item) return renderMissingStory();
+    document.title = `AFRIBN — ${item.title}`;
+    $(".back")?.setAttribute("href", "feed.html");
+    const category = item.sector || item.eventType || "Intelligence";
+    const meta = feedCategoryMeta(category);
+    const tagRow = $(".tag-row");
+    if (tagRow) {
+      tagRow.innerHTML = `${pill(category, meta.color)}${pill(item.country || "Pan-African", "#A371F7")}${pill(impactLabel(item), impactColor(item))}<span class="when">${formatDate(item.publishedAt || item.createdAt)}</span>`;
+    }
+    const headline = $(".headline");
+    if (headline) headline.textContent = item.title;
+    setSectionText(".lead-p", item.whatHappened || item.summary);
+    renderList("#why", item.whyItMatters, "checkCircle", "why-li");
+    renderConsequences("#cons", item.potentialConsequences);
+    renderWatch("#watch", item.watchNext || item.whatToWatchNext);
+    renderImpactAssessment("#impact", item);
+    const signal = $(".signal-big");
+    if (signal) signal.innerHTML = `<span class="v">${Math.round(Number(item.signalScore || 0)) || "-"}</span><span class="o">/100</span>`;
+    renderLeaders("#leaders", item);
+    $("#b-link")?.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(location.href); } catch {}
+      toast("Article link copied", "ok");
+    });
+    $("#b-share")?.addEventListener("click", () => toast("Share article with your team", "ok"));
+    $("#b-save")?.addEventListener("click", () => toast("Saved to briefing", "ok"));
+    $("#b-more")?.addEventListener("click", () => toast("Export and follow actions will be connected next", "ok"));
+  }
+
+  function normalizePublishedStory(published, story) {
+    const item = published || story;
+    if (!item) return null;
+    return {
+      ...story,
+      ...published,
+      title: published?.title || story?.title,
+      summary: published?.summary || story?.summary || story?.whatHappened,
+      whatHappened: story?.whatHappened || published?.summary || story?.summary,
+      whyItMatters: story?.whyItMatters || published?.whyItMatters || [],
+      potentialConsequences: story?.potentialConsequences || published?.potentialConsequences || [],
+      watchNext: story?.watchNext || story?.whatToWatchNext || published?.watchNext || [],
+      keyFacts: story?.keyFacts || published?.keyFacts || []
+    };
+  }
+
+  function renderMissingStory() {
+    const content = $(".content");
+    if (!content) return;
+    content.innerHTML = `<a class="back" href="feed.html">${ic("arrowLeft")} Back to Feed</a><div class="empty">${ic("file")}<div><b>No published article found</b><br><span class="muted">Publish an intelligence item and open it from the Feed.</span></div></div>`;
+  }
+
+  function setSectionText(selector, text) {
+    const node = $(selector);
+    if (node) node.textContent = text || "No summary has been published for this intelligence item yet.";
+  }
+
+  function renderList(selector, values = [], iconName, className) {
+    const node = $(selector);
+    if (!node) return;
+    const list = normalizeUiList(values);
+    node.innerHTML = list.length
+      ? list.map((text) => `<div class="${className}">${ic(iconName)}<span>${escapeHtml(text)}</span></div>`).join("")
+      : `<div class="muted">No entries published yet.</div>`;
+  }
+
+  function renderConsequences(selector, values = []) {
+    const node = $(selector);
+    if (!node) return;
+    const icons = ["barChart", "users", "zap", "shield"];
+    const list = normalizeUiList(values).slice(0, 4);
+    node.innerHTML = list.length
+      ? list.map((text, index) => `<div class="cons"><div class="ci">${ic(icons[index] || "file")}</div><div class="cl">${escapeHtml(text)}</div></div>`).join("")
+      : `<div class="muted">No consequences published yet.</div>`;
+  }
+
+  function renderWatch(selector, values = []) {
+    const node = $(selector);
+    if (!node) return;
+    const list = normalizeUiList(values);
+    node.innerHTML = list.length
+      ? list.map((text) => `<div class="watch-li"><span class="b"></span><span>${escapeHtml(text)}</span></div>`).join("")
+      : `<div class="muted">No watch-next indicators published yet.</div>`;
+  }
+
+  function renderImpactAssessment(selector, item) {
+    const node = $(selector);
+    if (!node) return;
+    const score = Number(item.signalScore || 0);
+    const rating = score >= 85 ? 5 : score >= 75 ? 4 : score >= 60 ? 3 : score >= 40 ? 2 : 1;
+    const audiences = ["Governments", "Investors", "Diplomats", "Corporates"];
+    node.innerHTML = audiences.map((label, index) => `<div class="impact-row"><span class="lbl">${label}</span>${stars(Math.max(1, rating - (index === 2 && rating > 3 ? 1 : 0)))}</div>`).join("");
+  }
+
+  function renderLeaders(selector, item) {
+    const node = $(selector);
+    if (!node) return;
+    const facts = normalizeUiList(item.keyFacts).slice(0, 3);
+    const fallback = normalizeUiList(item.whyItMatters).slice(0, 3);
+    const rows = (facts.length ? facts : fallback).slice(0, 3);
+    const icons = ["users", "file", "link"];
+    node.innerHTML = rows.length
+      ? rows.map((text, index) => `<div class="leader-li"><span class="li-ic">${ic(icons[index] || "file")}</span><span class="tx">${escapeHtml(text)}</span></div>`).join("")
+      : `<div class="muted">No leader notes published yet.</div>`;
+  }
+
+  function stars(rating) {
+    let out = '<span class="stars">';
+    for (let i = 1; i <= 5; i += 1) {
+      out += `<svg viewBox="0 0 24 24"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" fill="${rating >= i ? "var(--red)" : "#3a3a40"}"/></svg>`;
+    }
+    return `${out}</span>`;
+  }
+
+  function impactLabel(item) {
+    if (Number(item.signalScore || 0) >= 75 || /high|critical/i.test(item.impact || "")) return "High Impact";
+    if (/low/i.test(item.impact || "")) return "Low Impact";
+    return "Medium Impact";
+  }
+
+  function impactColor(item) {
+    if (/critical|high/i.test(impactLabel(item))) return "#E8252D";
+    if (/low/i.test(impactLabel(item))) return "#4493F8";
+    return "#F0883E";
+  }
+
+  function normalizeUiList(values) {
+    if (Array.isArray(values)) return values.map((item) => String(item).trim()).filter(Boolean);
+    if (!values) return [];
+    return String(values).split(/\n|;/).map((item) => item.trim()).filter(Boolean);
+  }
+
   async function ensureDemoData() {
     const raw = await API.get("/raw-articles").catch(() => []);
     if (raw.length) return;
@@ -1238,8 +1773,8 @@
 
   async function currentStory() {
     const id = new URLSearchParams(location.search).get("storyId") || localStorage.getItem("afribn_storyId");
-    if (id) return API.get(`/stories/${id}`).catch(() => null);
-    const stories = await API.get("/stories");
+    if (id) return API.get(`/intelligence-items/${id}`).catch(() => API.get(`/stories/${id}`).catch(() => null));
+    const stories = await API.get("/intelligence-items").catch(() => API.get("/stories"));
     const story = stories.at(-1);
     if (story) remember("storyId", story.id);
     return story;
@@ -1250,12 +1785,20 @@
       title: $("#f_head")?.value || "",
       summary: $("#f_sum")?.value || "",
       whatHappened: $("#f_what")?.value || "",
-      whyItMatters: $("#f_why")?.value || "",
-      potentialConsequences: $("#f_cons")?.value || "",
-      watchNext: $("#f_watch")?.value || "",
+      whyItMatters: linesFrom($("#f_why")?.value || ""),
+      potentialConsequences: linesFrom($("#f_cons")?.value || ""),
+      watchNext: linesFrom($("#f_watch")?.value || ""),
       internalNotes: $("#f_notes")?.value || "",
       status
     };
+  }
+
+  function linesText(value) {
+    return Array.isArray(value) ? value.join("\n") : (value || "");
+  }
+
+  function linesFrom(value) {
+    return String(value || "").split(/\n|;/).map((item) => item.trim()).filter(Boolean);
   }
 
   function renderSourceStats(sources, summaries) {
@@ -1281,30 +1824,65 @@
       const summary = summaries[source.id] || {};
       const score = Math.round(summary.reliability?.adjustedReliabilityScore || source.reliability || 0);
       const decision = decisionText(summary.collection?.decision || source.status || "normal");
-      return `<tr data-id="${source.id}">
-        <td><div class="src-cell"><span class="si2">${ic(source.provider ? "server2" : "globe")}</span><div><div class="nm">${escapeHtml(source.name)}</div><div class="u">${escapeHtml(source.url)}</div></div></div></td>
+      const recommendation = source.initialAssessmentRecommendation ? `<div class="muted-2" style="font-size:11px">Probe: ${escapeHtml(source.initialAssessmentRecommendation)} · ${source.initialAssessmentScore || "-"}</div>` : "";
+      return `<tr data-id="${source.id}" style="cursor:pointer">
+        <td><div class="src-cell"><span class="si2">${ic(source.provider ? "server2" : "globe")}</span><div><div class="nm">${escapeHtml(source.name)}</div><div class="u">${escapeHtml(source.url)}</div>${recommendation}</div></div></td>
         <td><span class="pill">${escapeHtml(source.provider || source.type || "Website")}</span></td>
         <td class="muted-2">${escapeHtml(source.country || "Pan-African")} · ${escapeHtml(source.topic || source.sector || "General")}</td>
         <td><span class="relscore" style="color:${scoreColor(score)}">${score || "-"}</span></td>
         <td>${pill(decision, decisionColor(decision))}</td>
         <td class="muted-2">${formatDate(source.lastScrapedAt)}</td>
         <td class="tabnum">-</td><td>${pill(source.status || "active", source.status === "inactive" ? "#8B949E" : "#3FB950")}</td>
-        <td><div class="row-act"><button data-a="run">${ic("refresh")}</button><button data-a="rel">${ic("target")}</button><button data-a="black">${ic("ban")}</button></div></td></tr>`;
+        <td><div class="row-act">
+          <button data-a="run" title="Run scrape">${ic("refresh")}</button>
+          <button data-a="assess" title="Initial assessment">${ic("flask")}</button>
+          <button data-a="edit" title="Edit">${ic("edit")}</button>
+          <button data-a="approve" title="Approve">${ic("check")}</button>
+          <button data-a="probation" title="Probation">${ic("clock")}</button>
+          <button data-a="black" title="Blacklist">${ic("ban")}</button>
+          <button data-a="pause" title="Pause">${ic("pause")}</button>
+        </div></td></tr>`;
     }).join("");
     body.addEventListener("click", async (event) => {
       const button = event.target.closest("button[data-a]");
-      if (!button) return;
-      event.stopPropagation();
       const id = event.target.closest("tr").dataset.id;
+      if (!button) {
+        location.href = `source-detail.html?sourceId=${encodeURIComponent(id)}`;
+        return;
+      }
+      event.stopPropagation();
+      const source = sources.find((item) => item.id === id);
       if (button.dataset.a === "run") {
         await API.post("/workers/scrape", { sourceId: id, limit: 5 });
         toast("Scrape completed", "ok");
       }
+      if (button.dataset.a === "assess") {
+        const result = await API.post(`/sources/${id}/initial-assessment`, { limit: 5 });
+        toast(`Assessment: ${result.recommendation} (${result.score})`, "ok");
+      }
+      if (button.dataset.a === "edit") {
+        const name = prompt("Source name", source?.name || "");
+        if (name !== null) await API.patch(`/sources/${id}`, { name });
+        toast("Source updated", "ok");
+      }
+      if (button.dataset.a === "approve") {
+        await API.post(`/sources/${id}/approve`, {});
+        toast("Source approved", "ok");
+      }
+      if (button.dataset.a === "probation") {
+        await API.post(`/sources/${id}/probation`, {});
+        toast("Source placed on 7-day probation", "warn");
+      }
       if (button.dataset.a === "rel") location.href = `reliability.html?sourceId=${encodeURIComponent(id)}`;
       if (button.dataset.a === "black") {
-        await API.post(`/source-reliability/${id}/blacklist`, { reason: "Manual UI action" });
+        await API.post(`/sources/${id}/blacklist`, { reason: "Manual UI action" });
         toast("Source blacklisted", "warn");
       }
+      if (button.dataset.a === "pause") {
+        await API.post(`/sources/${id}/pause`, {});
+        toast("Source paused", "warn");
+      }
+      if (!["rel"].includes(button.dataset.a)) setTimeout(() => location.reload(), 500);
     });
   }
 

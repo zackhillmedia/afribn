@@ -27,6 +27,7 @@ const collections = [
   "rawDocuments",
   "rawEvents",
   "stories",
+  "storyVersions",
   "events",
   "policies",
   "deals",

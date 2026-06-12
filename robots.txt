@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /design/index.html
+Allow: /design/product.html
+Allow: /design/pricing.html
+Allow: /design/solutions.html
+Allow: /design/about.html
+Allow: /design/methodology.html
+Allow: /design/resources.html
+Allow: /design/careers.html
+Allow: /design/contact.html
+
+# Application, admin and auth surfaces are not for indexing.
+Disallow: /design/admin.html
+Disallow: /design/workspace.html
+Disallow: /design/dashboards.html
+Disallow: /design/tasks.html
+Disallow: /design/login.html
+Disallow: /design/signup.html
+Disallow: /design/request-access.html
+Disallow: /app
+
+Sitemap: https://www.afribn.com/sitemap.xml
