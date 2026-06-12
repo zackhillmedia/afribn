@@ -41,6 +41,7 @@ const { runScrapeWorker } = require("./scrapers");
 const { listSourceAdapters } = require("./adapters");
 const { STRATEGIC_MARKETS } = require("./strategic-markets");
 const oauth = require("./oauth");
+const billing = require("./billing");
 
 // Routes reachable without authentication. "strategic-markets" is a static list
 // of public market names/flags used by the marketing site; everything else that
@@ -87,8 +88,12 @@ function createRouter(store) {
     // above are intentionally public; /auth handles its own login/register.
     // This closes the hole where data endpoints (feed, dashboard, reports, etc.)
     // served live JSON to anonymous callers via the currentUser() fallback.
-    if (!PUBLIC_ROUTES.has(parts[0])) requireUser(store, req);
+    // The plan catalog is public (pricing page) and the Stripe webhook
+    // authenticates via signature, so both bypass the bearer-token gate.
+    const publicBilling = parts[0] === "billing" && (parts[1] === "plans" || parts[1] === "webhook");
+    if (!PUBLIC_ROUTES.has(parts[0]) && !publicBilling) requireUser(store, req);
 
+    if (parts[0] === "billing") return handleBilling(req, res, parts);
     if (parts[0] === "users") return handleUsers(req, res, parts, currentUser);
     if (parts[0] === "users-directory") return handleUsersDirectory(req, res);
     if (parts[0] === "organizations") return handleCollection(req, res, parts, "organizations", ["name", "type", "country"]);
@@ -229,6 +234,52 @@ function createRouter(store) {
       return sendJson(res, 200, { token: signJwt({ sub: user.id, roleId: user.roleId, organizationId: user.organizationId }) });
     }
     throw notFound("Auth route not found");
+  }
+
+  async function handleBilling(req, res, parts) {
+    if (req.method === "GET" && parts[1] === "plans") {
+      return sendJson(res, 200, { data: billing.listPlans() });
+    }
+    if (req.method === "POST" && parts[1] === "webhook") {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const raw = Buffer.concat(chunks).toString("utf8");
+      const event = billing.verifyWebhook(raw, req.headers["stripe-signature"]);
+      return sendJson(res, 200, { data: billing.applyWebhookEvent(store, event) });
+    }
+
+    const user = requireUser(store, req);
+    const orgId = user.organizationId;
+
+    if (req.method === "GET" && parts[1] === "subscription") {
+      const sub = billing.getSubscription(store, orgId);
+      const plan = billing.PLANS[sub.plan];
+      return sendJson(res, 200, {
+        data: { ...sub, planId: sub.plan, plan: plan ? { id: plan.id, name: plan.name, priceUsd: plan.priceUsd, interval: plan.interval } : null, entitlements: billing.entitlements(sub) }
+      });
+    }
+    if (req.method === "POST" && parts[1] === "trial") {
+      const body = await readBody(req);
+      if (!body.plan) throw badRequest("plan is required");
+      return sendJson(res, 201, { data: billing.startTrial(store, orgId, body.plan, body) });
+    }
+    if (req.method === "POST" && parts[1] === "cancel") {
+      return sendJson(res, 200, { data: billing.cancelSubscription(store, orgId) });
+    }
+    if (req.method === "POST" && parts[1] === "checkout") {
+      const body = await readBody(req);
+      if (!body.plan) throw badRequest("plan is required");
+      const plan = billing.planById(body.plan);
+      if (plan.salesAssisted) return sendJson(res, 200, { data: { mode: "sales", next: "/request-access" } });
+      const session = await billing.createCheckoutSession({ plan, organizationId: orgId, email: user.email, seats: body.seats, baseUrl: requestBaseUrl(req) });
+      if (session.configured && session.url) {
+        return sendJson(res, 200, { data: { mode: "stripe", url: session.url, sessionId: session.sessionId } });
+      }
+      // Stripe not configured yet — start the trial so the flow works end-to-end.
+      const subscription = billing.startTrial(store, orgId, plan.id, body);
+      return sendJson(res, 201, { data: { mode: "trial", subscription, message: `Started your ${plan.name} trial. Add a payment method to continue after it ends.` } });
+    }
+    throw notFound("Billing route not found");
   }
 
   async function handleUsers(req, res, parts, currentUser) {

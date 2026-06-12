@@ -128,11 +128,35 @@
   // light card formatting
   $('#ccNum').addEventListener('input',e=>{ e.target.value=e.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim(); });
 
-  $('#payBtn').addEventListener('click',()=>{
-    if(PLANS[plan].m===null){ location.href='request-access.html'; return; }
-    AFRIBN.toast('Processing payment…','ok'); $('#okPlan').textContent=plan;
-    setTimeout(()=>$('#okBack').classList.add('open'),700);
+  $('#payBtn').addEventListener('click', async ()=>{
+    if(PLANS[plan].m===null){ location.href='/request-access'; return; }
+    const token = localStorage.getItem('afribn_token');
+    if(!token){ location.href='/login?next='+encodeURIComponent('/checkout?plan='+plan); return; }
+    AFRIBN.toast('Starting checkout…','ok');
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({ plan: plan.toLowerCase(), billingCycle: cycle })
+      });
+      const payload = await res.json();
+      if(!res.ok) throw new Error(payload?.error?.message || 'Checkout failed');
+      const data = payload.data;
+      if(data.mode==='stripe' && data.url){ location.href = data.url; return; } // Stripe hosted checkout
+      if(data.mode==='sales'){ location.href = '/request-access'; return; }
+      $('#okPlan').textContent = plan;               // trial fallback until Stripe keys are set
+      $('#okBack').classList.add('open');
+      if(data.message) AFRIBN.toast(data.message,'ok');
+    } catch(err){ AFRIBN.toast(err.message,'err'); }
   });
+
+  // Preselect a plan from ?plan= and show the success state on Stripe return.
+  (function initFromQuery(){
+    const q = new URLSearchParams(location.search);
+    const pre = q.get('plan');
+    if(pre){ const match = Object.keys(PLANS).find(n => n.toLowerCase() === pre.toLowerCase()); if(match){ plan = match; render(); } }
+    if(q.get('status')==='success'){ $('#okPlan').textContent = plan; $('#okBack').classList.add('open'); }
+  })();
 </script>
 </body>
 </html>
