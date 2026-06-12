@@ -5,8 +5,6 @@
 const { signJwt, verifyJwt } = require("./auth");
 const { badRequest } = require("./http");
 
-const MS_TENANT = () => process.env.MICROSOFT_OAUTH_TENANT || "common";
-
 const PROVIDERS = {
   google: {
     label: "Google",
@@ -20,20 +18,6 @@ const PROVIDERS = {
       email: info.email,
       name: info.name || info.given_name || info.email,
       verified: info.email_verified !== false
-    })
-  },
-  microsoft: {
-    label: "Microsoft",
-    scope: "openid email profile",
-    authorizeUrl: () => `https://login.microsoftonline.com/${MS_TENANT()}/oauth2/v2.0/authorize`,
-    tokenUrl: () => `https://login.microsoftonline.com/${MS_TENANT()}/oauth2/v2.0/token`,
-    userInfoUrl: () => "https://graph.microsoft.com/oidc/userinfo",
-    clientId: () => process.env.MICROSOFT_OAUTH_CLIENT_ID || "",
-    clientSecret: () => process.env.MICROSOFT_OAUTH_CLIENT_SECRET || "",
-    profile: (info) => ({
-      email: info.email || info.preferred_username || info.upn,
-      name: info.name || info.email || info.preferred_username,
-      verified: true
     })
   }
 };

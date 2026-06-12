@@ -99,9 +99,6 @@
 
       <div class="alt">or continue with</div>
       <div class="sso" id="sso"></div>
-
-      <div class="alt">or fill a demo email</div>
-      <div class="roles" id="roles"></div>
       <p class="muted" style="font-size:12px;text-align:center;margin-top:22px">Protected by JWT session auth · SSO available for enterprise</p>
     </div>
   </div>
@@ -117,24 +114,7 @@
     nodes:[{x:40,y:14,r:3},{x:54,y:24,r:4},{x:52,y:42,r:5},{x:74,y:38,r:3},{x:48,y:72,r:3},{x:46,y:92,r:2.6}],
     links:[[0,2],[1,2],[2,3],[2,4],[4,5],[0,1]] });
 
-  const ROLES = [
-    ['admin','user','Admin','Operations','admin@afribn.local'],
-    ['analyst','edit','Analyst','Production','analyst@afribn.local'],
-    ['agent','pin','Field Agent','Field tasks','agent@afribn.local'],
-    ['verifier','listChecks','Verifier','Review','verifier@afribn.local'],
-    ['client','globe','Client','Products','client@afribn.local'],
-  ];
-  const LANDING = { admin:'home.html', analyst:'raw.html', agent:'tasks.html', verifier:'verification.html', client:'home.html' };
-  $('#roles').innerHTML = ROLES.map(([r,ic,nm,desc,em])=>`
-    <button class="role-chip" data-role="${r}" data-email="${em}" title="${em}">
-      <span class="ri">${AFRIBN.ic(ic)}</span><div><div class="rn">${nm}</div><div class="rd">${desc}</div></div>
-    </button>`).join('');
-
-  // Role chips pre-fill the demo EMAIL only — passwords are never shipped to the client.
-  $('#roles').querySelectorAll('.role-chip').forEach(c=>c.addEventListener('click',()=>{
-    $('#email').value=c.dataset.email; $('#password').value=''; $('#password').focus();
-    AFRIBN.toast('Demo email filled. Enter the password to sign in.','ok');
-  }));
+  const LANDING = { admin:'/home', analyst:'/raw', agent:'/tasks', verifier:'/verification', client:'/home' };
 
   function roleName(user){ return (user && (user.role?.name || user.roleName || user.role)) || 'client'; }
   function landingFor(user){

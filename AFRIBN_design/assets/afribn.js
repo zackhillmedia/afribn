@@ -158,8 +158,11 @@
   const ALL = ['client', 'analyst', 'agent', 'verifier', 'admin'];
   const INTERNAL = ['analyst', 'agent', 'verifier', 'admin'];
   NS.ROLE_LABEL = { client: 'Client', analyst: 'Analyst', agent: 'Field Agent', verifier: 'Verifier', admin: 'Admin' };
-  NS.role = () => localStorage.getItem('afribn_role') || 'admin';
-  NS.setRole = (r) => { localStorage.setItem('afribn_role', r); location.reload(); };
+  // Role is authoritative from the authenticated session: set at login from the
+  // server and NOT user-switchable (prevents client-side privilege escalation).
+  // Server-side RBAC enforces the real permissions regardless. Defaults to the
+  // least-privileged role if somehow unset.
+  NS.role = () => localStorage.getItem('afribn_role') || 'client';
 
   // [icon, label, href, group, roles, badge]
   const NAV = [
@@ -213,8 +216,6 @@
     }
     const top = document.getElementById('topbar');
     if (top) {
-      const roleMenu = Object.keys(NS.ROLE_LABEL).map(r =>
-        `<button class="av-opt${r === role ? ' on' : ''}" data-role="${r}">${NS.ic('user', 'width="15" height="15"')} View as ${NS.ROLE_LABEL[r]}${r === role ? NS.ic('check', 'width="15" height="15"') : ''}</button>`).join('');
       top.innerHTML = `
         <button class="icon-btn menu-btn" id="menuBtn" title="Menu">${NS.ic('menu')}</button>
         <div class="search">
@@ -235,8 +236,7 @@
             <div class="av-meta"><div class="av-name">David Okoye</div><div class="av-role">${NS.ROLE_LABEL[role]}</div></div>
             ${NS.ic('chevDown')}
             <div class="av-menu" id="avMenu">
-              <div class="av-head">Switch role <span class="muted" style="font-weight:400">(demo)</span></div>
-              ${roleMenu}
+              <div class="av-head">Signed in as <span class="muted" style="font-weight:400">${NS.ROLE_LABEL[role] || 'Client'}</span></div>
               <div class="av-sep"></div>
               <a class="av-opt" href="/login?logout=1">${NS.ic('logout', 'width="15" height="15"')} Log out</a>
             </div>
@@ -257,7 +257,6 @@
       const av = top.querySelector('#avatarBtn'), menu = top.querySelector('#avMenu');
       av.addEventListener('click', (e) => { e.stopPropagation(); av.classList.toggle('open'); });
       document.addEventListener('click', () => av.classList.remove('open'));
-      menu.querySelectorAll('.av-opt[data-role]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); NS.setRole(b.dataset.role); }));
       const mb = top.querySelector('#menuBtn');
       if (mb) mb.addEventListener('click', () => document.querySelector('.app')?.classList.toggle('nav-open'));
       const rb = top.querySelector('#readabilityBtn');
