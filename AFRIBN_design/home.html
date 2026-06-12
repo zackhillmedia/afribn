@@ -144,65 +144,67 @@
   const $ = s => document.querySelector(s);
   AFRIBN.shell('home');
   const ic = AFRIBN.ic;
-  $('#datepill').innerHTML = ic('calendar') + ' May 15, 2024';
+  $('#datepill').innerHTML = ic('calendar') + ' ' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   ['#va1','#va3','#va4','#va5'].forEach(s=>$(s).innerHTML = ic('arrowRight'));
   $('#rf').innerHTML = ic('refresh','width="14" height="14"');
 
-  // featured + mini stories
-  $('#feat').innerHTML = `
-    <img class="img" src="${AFRIBN.scene('bridge',520,330)}" alt="">
-    <div class="feat-meta">
-      <div class="cat" style="color:#ff7378"><span class="cdot" style="background:#e5484d"></span> POLITICS</div>
-      <h4>Nigeria approves ₦6.2tn supplementary budget</h4>
-      <p>The budget focuses on infrastructure, defense, and social investment priorities ahead of the fiscal year.</p>
-      <div class="feat-foot">${AFRIBN.flag('nigeria')} Nigeria · 2m ago</div>
-    </div>`;
-  const MINI = [
-    ['energy','#ffa05a','#f0883e','ENERGY','5m ago','Dangote Refinery begins diesel exports to West Africa'],
-    ['security','#bd9bff','#a371f7','SECURITY','8m ago','Security alert: Attack on mining site in eastern DRC'],
-    ['finance','#5ed46e','#3fb950','ECONOMY','15m ago','Kenya Central Bank cuts policy rate to 12.0%'],
-  ];
-  $('#ministories').innerHTML = MINI.map(([sc,tc,dc,cat,tm,title])=>`
-    <div class="mini-story">
-      <img class="img" src="${AFRIBN.scene(sc,160,110)}" alt="">
-      <div>
-        <div class="cat" style="color:${tc}"><span class="cdot" style="background:${dc}"></span>${cat} · <span class="muted" style="font-weight:400;letter-spacing:0">${tm}</span></div>
-        <h5>${title}</h5>
-      </div>
-    </div>`).join('');
+  // --- real data: Top Stories / Updates / Alerts come from the live API ---
+  const token = localStorage.getItem('afribn_token');
+  const api = (p) => fetch('/api'+p,{headers: token?{Authorization:'Bearer '+token}:{}}).then(r=>r.ok?r.json():{data:[]}).then(j=>j.data||[]).catch(()=>[]);
+  const esc = (s) => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const flagKey = (c) => String(c||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  const SECT = { Energy:['energy','#f0883e'], Security:['security','#a371f7'], Economy:['finance','#3fb950'], 'Financial Services':['finance','#3fb950'], Policy:['file','#4493f8'], Trade:['handshake','#4493f8'], Politics:['file','#e5484d'] };
+  const sect = (s) => SECT[s] || ['bridge','#e5484d'];
+  const ago = (d) => { if(!d) return ''; const m=Math.max(0,Math.round((Date.now()-new Date(d))/60000)); if(m<60) return m+'m ago'; const h=Math.round(m/60); if(h<24) return h+'h ago'; return Math.round(h/24)+'d ago'; };
+  const empty = (t) => `<div class="muted" style="padding:18px 4px;font-size:13.5px">${t}</div>`;
 
-  // alerts
-  const ALERTS = [
-    ['shield','#e5484d','Security alert: Political unrest in South Sudan','10m ago','High','high'],
-    ['bank','#e3b341','Ethiopia raises import tariff on steel','25m ago','Medium','med'],
-    ['file','#a371f7','New energy policy amendment in Nigeria','45m ago','High','high'],
-    ['handshake','#4493f8','AfCFTA: New trade facilitation portal goes live','1h ago','Low','low'],
-    ['globe','#3fb950','IMF revises growth forecast for Africa','2h ago','Low','low'],
-  ];
-  $('#alerts').innerHTML = ALERTS.map(([icn,c,t,tm,pr,prc])=>`
-    <div class="alert-li">
-      <div class="ai" style="background:${c}22;color:${c}">${ic(icn)}</div>
-      <div><div class="t">${t}</div><div class="m">${tm}</div></div>
-      <span class="pr"><span class="prtag ${prc}">${pr}</span></span>
-    </div>`).join('');
+  (async () => {
+    const feed = await api('/feed');
+    if (feed.length){
+      const f = feed[0]; const [scn,col] = sect(f.sector);
+      $('#feat').setAttribute('href','/story?storyId='+encodeURIComponent(f.storyId||''));
+      $('#feat').innerHTML = `
+        <img class="img" src="${AFRIBN.scene(scn,520,330)}" alt="">
+        <div class="feat-meta">
+          <div class="cat" style="color:${col}"><span class="cdot" style="background:${col}"></span> ${esc(String(f.sector||'Intelligence').toUpperCase())}</div>
+          <h4>${esc(f.title)}</h4>
+          <p>${esc((f.summary||'').slice(0,170))}</p>
+          <div class="feat-foot">${AFRIBN.flag(flagKey(f.country))} ${esc(f.country)} · ${ago(f.publishedAt)}</div>
+        </div>`;
+      $('#ministories').innerHTML = feed.slice(1,4).map(it=>{const [s2,c2]=sect(it.sector);return `
+        <div class="mini-story">
+          <img class="img" src="${AFRIBN.scene(s2,160,110)}" alt="">
+          <div>
+            <div class="cat" style="color:${c2}"><span class="cdot" style="background:${c2}"></span>${esc(String(it.sector||'').toUpperCase())} · <span class="muted" style="font-weight:400;letter-spacing:0">${ago(it.publishedAt)}</span></div>
+            <h5>${esc(it.title)}</h5>
+          </div>
+        </div>`;}).join('');
+      $('#updates').innerHTML = feed.slice(0,6).map(it=>{const [,c]=sect(it.sector);return `<div class="upd-li"><span class="d" style="background:${c}"></span><div class="t">${esc(it.title)}</div><span class="tm">${ago(it.publishedAt)}</span></div>`;}).join('');
+      const counts={}; feed.forEach(it=>{ if(it.sector) counts[it.sector]=(counts[it.sector]||0)+1; });
+      const tr=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+      $('#trending').innerHTML = tr.length ? tr.map(([n,c])=>`<span class="chip"><span class="ct">${esc(n)}</span><span class="cn">${c}</span><span class="cu">${ic('trendUp','width="12" height="12"')}</span></span>`).join('') : empty('No topics yet.');
+    } else {
+      $('#feat').removeAttribute('href');
+      $('#feat').innerHTML = empty('No published intelligence yet — items appear here as they are published.');
+      $('#ministories').innerHTML = '';
+      $('#updates').innerHTML = empty('No updates yet.');
+      $('#trending').innerHTML = empty('No topics yet.');
+    }
 
-  // updates
-  const UPD = [
-    ['#e5484d','Mozambique launches gas production at Coral Sul FLNG','2m ago'],
-    ['#f0883e','Uganda signs $1.2bn road infrastructure deal with AfDB','30m ago'],
-    ['#a371f7','DR Congo and Rwanda hold peace talks in Nairobi','1h ago'],
-    ['#4493f8','Ghana\'s inflation drops to 23.1% in April 2024','2h ago'],
-    ['#3fb950','South Africa implements new cybersecurity regulations','3h ago'],
-  ];
-  $('#updates').innerHTML = UPD.map(([c,t,tm])=>`
-    <div class="upd-li"><span class="d" style="background:${c}"></span><div class="t">${t}</div><span class="tm">${tm}</span></div>`).join('');
+    const alerts = await api('/alerts');
+    const PR = { high:['High','high'], medium:['Medium','med'], low:['Low','low'] };
+    $('#alerts').innerHTML = alerts.length
+      ? alerts.slice(0,6).map(a=>{const [,c]=sect(a.sector);const [pl,pc]=PR[a.priority]||PR.medium;return `
+        <div class="alert-li">
+          <div class="ai" style="background:${c}22;color:${c}">${ic('bell')}</div>
+          <div><div class="t">${esc(a.title)}</div><div class="m">${ago(a.triggeredAt||a.createdAt)}</div></div>
+          <span class="pr"><span class="prtag ${pc}">${pl}</span></span>
+        </div>`;}).join('')
+      : empty('No alerts yet.');
+  })();
 
-  // trending
-  const TR = [['Elections',128],['Oil & Gas',96],['Infrastructure',84],['AfCFTA',72],['Security',68],['Trade',54],['Energy Transition',46],['Mining',38]];
-  $('#trending').innerHTML = TR.map(([n,c])=>`<span class="chip"><span class="ct">${n}</span><span class="cn">${c}</span><span class="cu">${ic('trendUp','width="12" height="12"')}</span></span>`).join('');
-
-  // footer strip
-  const FOOT = [['globe','#E8252D','Coverage','54 Countries'],['file','#E3B341','Sources','1,248 Active'],['message','#A371F7','Languages','12 Supported'],['checkCircle','#3FB950','Last Updated','2 minutes ago']];
+  // footer strip (platform status — not article data)
+  const FOOT = [['globe','#E8252D','Coverage','10 Markets'],['file','#E3B341','Pipeline','Live'],['message','#A371F7','Language','EN'],['checkCircle','#3FB950','Status','Operational']];
   $('#footstrip').innerHTML = FOOT.map(([icn,c,l,v])=>`<div class="fs"><div class="fi" style="background:${c}22;color:${c}">${ic(icn)}</div><div><div class="fl">${l}</div><div class="fv">${v}</div></div></div>`).join('');
 </script>
 </body>

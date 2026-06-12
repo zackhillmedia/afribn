@@ -1769,19 +1769,9 @@
     return String(values).split(/\n|;/).map((item) => item.trim()).filter(Boolean);
   }
 
-  async function ensureDemoData() {
-    const raw = await API.get("/raw-articles").catch(() => []);
-    if (raw.length) return;
-    const sources = await API.get("/sources").catch(() => []);
-    if (!sources.length) return;
-    await API.post("/pipeline/demo-run", {
-      sourceId: sources[0].id,
-      rawArticle: {
-        title: "Kenya signs $2.1bn renewable energy agreement with UAE consortium",
-        body: "Kenya signed a $2.1 billion renewable energy agreement. The project affects energy security, investment flows, and regional partnerships."
-      }
-    }).catch(() => null);
-  }
+  // Disabled: the app no longer injects demo pipeline data. The pipeline runs on
+  // real sources only, so pages show real published intelligence or empty states.
+  async function ensureDemoData() {}
 
   async function currentStory() {
     const id = new URLSearchParams(location.search).get("storyId") || localStorage.getItem("afribn_storyId");
