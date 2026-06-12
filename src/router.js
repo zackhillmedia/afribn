@@ -42,6 +42,7 @@ const { listSourceAdapters } = require("./adapters");
 const { STRATEGIC_MARKETS } = require("./strategic-markets");
 const oauth = require("./oauth");
 const billing = require("./billing");
+const { topicsWithCounts, itemsForTopic } = require("./topics");
 
 // Routes reachable without authentication. "strategic-markets" is a static list
 // of public market names/flags used by the marketing site; everything else that
@@ -116,6 +117,12 @@ function createRouter(store) {
     if (parts[0] === "published-intelligence") return handlePublishedIntelligence(req, res, parts);
     if (parts[0] === "strategic-markets") return sendJson(res, 200, { data: STRATEGIC_MARKETS });
     if (parts[0] === "feed") return sendJson(res, 200, { data: listFeed(store, query) });
+    if (parts[0] === "topics") {
+      if (!parts[1]) return sendJson(res, 200, { data: topicsWithCounts(store) });
+      const result = itemsForTopic(store, parts[1]);
+      if (!result) throw notFound("Topic not found");
+      return sendJson(res, 200, { data: result });
+    }
     if (parts[0] === "countries" || parts[0] === "country-briefs") return handleCountries(req, res, parts);
     if (parts[0] === "policies") return handleProductList(res, "policies", query);
     if (parts[0] === "deals") return handleProductList(res, "deals", query);

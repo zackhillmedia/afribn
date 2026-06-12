@@ -8,7 +8,7 @@
     "start": "node server.js",
     "start:prod": "NODE_ENV=production node server.js",
     "migrate:postgres": "node scripts/migrate-postgres.mjs",
-    "test": "node tests/scoring-formulas.mjs && node tests/source-reliability-formulas.mjs && node tests/api-adapters.mjs && node tests/scraper-pipeline.mjs && node tests/api-smoke.mjs && node tests/persistence-smoke.mjs && node tests/scheduler.mjs && node tests/relevance.mjs && node tests/billing.mjs"
+    "test": "node tests/scoring-formulas.mjs && node tests/source-reliability-formulas.mjs && node tests/api-adapters.mjs && node tests/scraper-pipeline.mjs && node tests/api-smoke.mjs && node tests/persistence-smoke.mjs && node tests/scheduler.mjs && node tests/relevance.mjs && node tests/billing.mjs && node tests/topics.mjs"
   },
   "engines": {
     "node": ">=20"

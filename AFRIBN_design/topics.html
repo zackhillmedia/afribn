@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFRIBN — Topics</title>
+<!-- afribn:seo -->
+<meta name="description" content="Strategic intelligence topics across Africa — political stability, security, sovereign risk, energy, policy, geopolitics, infrastructure, trade and governance.">
+<link rel="canonical" href="https://www.afribn.com/topics">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AFRIBN">
+<meta property="og:title" content="AFRIBN — Topics">
+<meta property="og:url" content="https://www.afribn.com/topics">
+<meta name="theme-color" content="#0a0809">
+<link rel="stylesheet" href="/assets/afribn.css">
+<style>
+  .wrap { padding: 32px 40px; max-width: 1180px; }
+  .page-h h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+  .page-h p { color: var(--ink-3); margin-top: 6px; font-size: 14.5px; }
+  .tier-h { display: flex; align-items: center; gap: 12px; margin: 34px 0 16px; font-size: 12.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .tier-h .ln { flex: 1; height: 1px; background: var(--line); }
+  .tier-h .tg { padding: 3px 9px; border-radius: 30px; font-size: 11px; letter-spacing: .04em; }
+  .t1 { background: rgba(232,37,45,.14); color: var(--red-bright); }
+  .t2 { background: rgba(99,123,255,.14); color: #8fa6ff; }
+  .topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+  .topic-card { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; cursor: pointer; transition: .15s; display: flex; flex-direction: column; gap: 10px; }
+  .topic-card:hover { border-color: rgba(232,37,45,.45); background: var(--red-tint); transform: translateY(-2px); }
+  .topic-card .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--red-tint); color: var(--red-bright); }
+  .topic-card .ic svg { width: 20px; height: 20px; }
+  .topic-card h3 { font-size: 16px; font-weight: 700; }
+  .topic-card p { color: var(--ink-3); font-size: 13px; line-height: 1.4; }
+  .topic-card .cnt { margin-top: auto; font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+  .topic-card .cnt b { color: #fff; font-size: 18px; }
+  .back { display: inline-flex; align-items: center; gap: 8px; color: var(--red-bright); font-weight: 600; font-size: 14px; cursor: pointer; margin-bottom: 18px; }
+  .item-li { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .item-li .meta { font-size: 12px; color: var(--ink-3); display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
+  .item-li h4 { font-size: 15.5px; font-weight: 650; }
+  .item-li p { color: var(--ink-3); font-size: 13px; margin-top: 5px; line-height: 1.45; }
+  .item-li .score { margin-left: auto; font-weight: 700; color: var(--red-bright); white-space: nowrap; }
+  .empty { color: var(--ink-3); padding: 40px 0; text-align: center; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="wrap">
+      <div id="listView">
+        <div class="page-h"><h1>Strategic Topics</h1><p>Intelligence organised by the themes that drive African decision-making, ranked by strategic value.</p></div>
+        <div id="tier1"></div>
+        <div id="tier2"></div>
+      </div>
+      <div id="detailView" style="display:none">
+        <div class="back" id="backBtn"></div>
+        <div class="page-h"><h1 id="dTitle"></h1><p id="dBlurb"></p></div>
+        <div id="dItems" style="margin-top:18px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/afribn.js"></script>
+<script>
+  const $ = s => document.querySelector(s);
+  AFRIBN.shell('trendUp');
+  const ic = AFRIBN.ic;
+  const token = localStorage.getItem('afribn_token');
+  const api = (p) => fetch('/api'+p,{headers: token?{Authorization:'Bearer '+token}:{}}).then(r=>r.ok?r.json():{data:null}).then(j=>j.data).catch(()=>null);
+  const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const flagKey = c => String(c||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,'');
+  const ago = d => { if(!d) return ''; const m=Math.max(0,Math.round((Date.now()-new Date(d))/60000)); if(m<60) return m+'m ago'; const h=Math.round(m/60); if(h<24) return h+'h ago'; return Math.round(h/24)+'d ago'; };
+  $('#backBtn').innerHTML = ic('arrowLeft','width="16" height="16"') + ' All topics';
+
+  function card(t){
+    return `<button class="topic-card" data-slug="${t.slug}">
+      <div class="ic">${ic(t.icon)}</div>
+      <h3>${esc(t.name)}</h3>
+      <p>${esc(t.blurb)}</p>
+      <div class="cnt"><b>${t.count}</b> ${t.count===1?'item':'items'}</div>
+    </button>`;
+  }
+  function tierBlock(topics, tier){
+    const list = topics.filter(t=>t.tier===tier);
+    return `<div class="tier-h"><span class="tg ${tier===1?'t1':'t2'}">Tier ${tier}</span>
+      ${tier===1?'Moves capital &amp; operations':'Reshapes the operating environment'}<span class="ln"></span></div>
+      <div class="topic-grid">${list.map(card).join('')}</div>`;
+  }
+
+  async function loadList(){
+    const topics = await api('/topics') || [];
+    $('#tier1').innerHTML = tierBlock(topics, 1);
+    $('#tier2').innerHTML = tierBlock(topics, 2);
+    document.querySelectorAll('.topic-card').forEach(c => c.addEventListener('click', () => openTopic(c.dataset.slug)));
+    $('#listView').style.display=''; $('#detailView').style.display='none';
+  }
+
+  async function openTopic(slug){
+    history.replaceState(null,'','/topics?topic='+encodeURIComponent(slug));
+    const data = await api('/topics/'+encodeURIComponent(slug));
+    if(!data){ loadList(); return; }
+    $('#dTitle').textContent = data.topic.name;
+    $('#dBlurb').textContent = data.topic.blurb;
+    $('#dItems').innerHTML = data.items.length ? data.items.map(it=>`
+      <a class="item-li" href="/story?storyId=${encodeURIComponent(it.storyId||'')}">
+        <div>
+          <div class="meta">${AFRIBN.flag(flagKey(it.country))} ${esc(it.country)} · ${esc(it.sector||'')} · ${ago(it.publishedAt)}</div>
+          <h4>${esc(it.title)}</h4>
+          <p>${esc((it.summary||'').slice(0,180))}</p>
+        </div>
+        ${it.signalScore!=null?`<span class="score">${Math.round(it.signalScore)}</span>`:''}
+      </a>`).join('') : `<div class="empty">No published intelligence in this topic yet.</div>`;
+    $('#listView').style.display='none'; $('#detailView').style.display='';
+  }
+
+  $('#backBtn').addEventListener('click', () => { history.replaceState(null,'','/topics'); loadList(); });
+
+  const pre = new URLSearchParams(location.search).get('topic');
+  if(pre){ openTopic(pre); } else { loadList(); }
+</script>
+</body>
+</html>
