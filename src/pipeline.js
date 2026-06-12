@@ -1,8 +1,27 @@
 const { badRequest, notFound } = require("./http");
 const { distillArticleWithOpenAI } = require("./openai-client");
 const { calculateConfidenceScore, calculateRiskScore, calculateSignalScore } = require("./scoring");
+const { calculateAndStoreScore } = require("./scoring-service");
 const { resolveEntitiesForStory } = require("./graph/entity-resolution");
 const { upsertSearchDocument } = require("./search/indexer");
+
+// Scores a story with the full scoring engine (impact, signal, confidence,
+// risk, …). Factors are derived automatically from the story/event/context,
+// so this needs no manual input and is safe to call inside the pipeline.
+// Failures are logged but never block distillation or the editorial workflow.
+function autoScoreStory(store, storyId) {
+  try {
+    return calculateAndStoreScore(store, { objectType: "story", objectId: storyId });
+  } catch (error) {
+    store.insert("scoringAuditLogs", {
+      objectType: "story",
+      objectId: storyId,
+      action: "score.failed",
+      error: error.message
+    });
+    return null;
+  }
+}
 
 const STAGE = Object.freeze({
   SOURCE: "Source",
@@ -267,6 +286,7 @@ async function distillRawArticleWithAI(store, rawArticleId, options = {}) {
       aiProvider: null,
       aiModel: null
     });
+    autoScoreStory(store, fallback.story.id);
     store.update("rawArticles", rawArticleId, {
       status: "rules_distilled",
       aiProvider: "rules_fallback",
@@ -326,6 +346,7 @@ async function distillRawArticleWithAI(store, rawArticleId, options = {}) {
     aiModel: result.model
   });
   resolveEntitiesForStory(store, storyEvent.story.id);
+  autoScoreStory(store, storyEvent.story.id);
 
   store.update("rawArticles", rawArticleId, {
     status: "ai_distilled",
@@ -403,6 +424,8 @@ function transitionIntelligenceItem(store, storyId, action, input = {}) {
     source: "intelligence_item_workflow",
     nextObject: status === "approved" ? { type: "PublishedIntelligence", pending: true } : null
   });
+  // Re-score against the final edited content before it can be published.
+  if (action === "approve") autoScoreStory(store, storyId);
   return updated;
 }
 
@@ -691,6 +714,10 @@ function createVerificationReview(store, agentReportId, input = {}) {
     nextObject: null
   });
 
+  // The evidence chain enriches confidence and attaches a review, but it does
+  // NOT own story.status — only the editorial state machine
+  // (transitionIntelligenceItem) moves a story between draft/verified/approved/
+  // published. This keeps a single source of truth for workflow status.
   const confidenceScore = store.list("confidenceScores", (score) => score.storyId === story.id).at(-1);
   if (confidenceScore && decision === "approved") {
     store.update("confidenceScores", confidenceScore.id, {
@@ -699,7 +726,6 @@ function createVerificationReview(store, agentReportId, input = {}) {
     });
   }
 
-  store.update("stories", story.id, { status: verificationReview.status });
   store.update("agentReports", agentReportId, {
     status: "reviewed",
     nextObject: { type: "VerificationReview", id: verificationReview.id }
@@ -707,60 +733,24 @@ function createVerificationReview(store, agentReportId, input = {}) {
   return verificationReview;
 }
 
+// Thin compatibility wrapper over the single publish implementation
+// (publishStory). The evidence-chain entrypoint takes a verification review;
+// it marks the story approved (a verified review implies approval) and then
+// delegates, so there is exactly one publish code path.
 function publishIntelligence(store, verificationReviewId, input = {}) {
   const review = store.get("verificationReviews", verificationReviewId);
   if (!review) throw notFound("VerificationReview not found");
   if (review.status !== "verified") throw badRequest("Only verified reviews can be published");
   const story = store.get("stories", review.storyId);
-  const event = store.list("events", (item) => item.storyId === story.id)[0];
-  const signalScore = store.list("signalScores", (score) => score.storyId === story.id).at(-1);
-  const confidenceScore = store.list("confidenceScores", (score) => score.storyId === story.id).at(-1);
-
-  const published = store.insert("publishedIntelligence", {
-    stage: STAGE.PUBLISHED_INTELLIGENCE,
-    storyId: story.id,
-    eventId: event.id,
-    title: story.title,
-    summary: story.summary,
-    country: story.country,
-    sector: story.sector,
-    eventType: event.eventType,
-    impact: story.impact,
-    signalScore: signalScore?.score || null,
-    confidenceScore: confidenceScore?.score || null,
-    publishedAt: input.publishedAt || new Date().toISOString(),
-    audience: input.audience || ["government", "investor", "corporate", "diplomatic"],
-    status: "published",
-    nextObject: { type: STAGE.DASHBOARD, products: ["Feed", "Country Intelligence", "Alerts", "Reports"] }
-  });
-
-  const feedItem = store.insert("feedItems", {
-    publishedIntelligenceId: published.id,
-    storyId: story.id,
-    title: story.title,
-    summary: story.summary,
-    country: story.country,
-    sector: story.sector,
-    impact: story.impact,
-    signalScore: published.signalScore,
-    publishedAt: published.publishedAt
-  });
-  upsertSearchDocument(store, "published_intelligence", published.id, {
-    title: published.title,
-    body: published.summary,
-    country: published.country,
-    sector: published.sector,
-    tags: [published.eventType, published.impact]
-  });
-
+  if (story && !["approved", "published"].includes(story.status)) {
+    store.update("stories", story.id, { status: "approved", workflowStatus: "approved" });
+  }
+  const result = publishStory(store, review.storyId, input);
   store.update("verificationReviews", verificationReviewId, {
     status: "published",
-    nextObject: { type: "PublishedIntelligence", id: published.id }
+    nextObject: { type: "PublishedIntelligence", id: result.publishedIntelligence.id }
   });
-  store.update("stories", story.id, { status: "published" });
-
-  evaluateAlertRules(store, published, feedItem);
-  return { publishedIntelligence: published, feedItem };
+  return result;
 }
 
 function evaluateAlertRules(store, published, feedItem) {
