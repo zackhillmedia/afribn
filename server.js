@@ -8,6 +8,7 @@ const { createRouter } = require("./src/router");
 const { seedStore } = require("./src/seed");
 const { validateConfig, publicConfig } = require("./src/config");
 const { createRateLimiter } = require("./src/rate-limit");
+const { startScheduler } = require("./src/scheduler");
 
 loadEnv();
 
@@ -199,6 +200,10 @@ if (require.main === module) {
   server.listen(port, () => {
     console.log(`AFRIBN backend listening on http://127.0.0.1:${port}`);
     for (const warning of configWarnings) console.warn(`CONFIG WARNING: ${warning}`);
+    const scheduler = startScheduler(store);
+    console.log(scheduler.enabled
+      ? `Collection scheduler enabled (tick ${process.env.SCHEDULER_TICK_MS || 60000}ms)`
+      : "Collection scheduler disabled (set SCHEDULER_ENABLED=true to enable)");
   });
 }
 

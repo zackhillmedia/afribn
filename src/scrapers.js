@@ -1,7 +1,12 @@
+const crypto = require("node:crypto");
 const { badRequest, notFound } = require("./http");
 const { latestCollectionDecision } = require("./source-reliability-service");
 const { getSourceAdapter } = require("./adapters");
 const { checksumFor } = require("./adapters/provider-utils");
+
+function hashContent(body) {
+  return crypto.createHash("sha1").update(String(body || "")).digest("hex");
+}
 
 const MAX_BODY_CHARS = 12000;
 const MIN_EXTRACTED_BODY_CHARS = 260;
@@ -16,6 +21,12 @@ async function runScrapeWorker(store, sourceId, options = {}) {
   }
 
   const config = normalizeConfig(source, options, approved, decision);
+  // Scheduler-driven runs send prior validators so an unchanged page returns 304
+  // (or matches the stored content hash) and is skipped without re-processing.
+  if (config.conditional) {
+    config.etag = source.lastEtag || null;
+    config.lastModified = source.lastModified || null;
+  }
   const scrapeJob = store.insert("scrapeJobs", {
     stage: "ScrapeJob",
     sourceId,
@@ -31,6 +42,41 @@ async function runScrapeWorker(store, sourceId, options = {}) {
 
   try {
     const discovery = await discoverSourceItems(source, config);
+
+    // Conditional short-circuit: nothing changed since the last scheduled run.
+    if (config.conditional && (discovery.notModified || (discovery.contentHash && discovery.contentHash === source.contentHash))) {
+      store.update("scrapeJobs", scrapeJob.id, {
+        status: "unchanged",
+        completedAt: new Date().toISOString(),
+        discoveredCount: discovery.items.length,
+        createdCount: 0,
+        duplicateCount: 0,
+        nextObject: null
+      });
+      store.update("sources", source.id, {
+        lastScrapedAt: new Date().toISOString(),
+        lastEtag: discovery.etag || source.lastEtag || null,
+        lastModified: discovery.lastModified || source.lastModified || null,
+        emptyStreak: Number(source.emptyStreak || 0) + 1
+      });
+      store.insert("sourceHealth", {
+        sourceId: source.id,
+        status: "unchanged",
+        lastCheckedAt: new Date().toISOString(),
+        uptimePct: 100,
+        lastLatencyMs: discovery.diagnostics.latencyMs || null
+      });
+      return {
+        scrapeJob: store.get("scrapeJobs", scrapeJob.id),
+        rawArticles: [],
+        unchanged: true,
+        candidatesFound: discovery.items.length,
+        discoveredItems: [],
+        crawledPages: [],
+        extractionResults: []
+      };
+    }
+
     const candidates = filterCandidates(discovery.items, config).slice(0, config.limit);
     const rawArticles = [];
     const crawledPages = [];
@@ -67,7 +113,13 @@ async function runScrapeWorker(store, sourceId, options = {}) {
         ? { type: "RawArticle", id: rawArticles[0].id }
         : { type: "RawArticle[]", ids: rawArticles.map((article) => article.id) }
     });
-    store.update("sources", source.id, { lastScrapedAt: new Date().toISOString() });
+    store.update("sources", source.id, {
+      lastScrapedAt: new Date().toISOString(),
+      lastEtag: discovery.etag || source.lastEtag || null,
+      lastModified: discovery.lastModified || source.lastModified || null,
+      contentHash: discovery.contentHash || source.contentHash || null,
+      emptyStreak: rawArticles.length ? 0 : Number(source.emptyStreak || 0) + 1
+    });
     store.insert("sourceHealth", {
       sourceId: source.id,
       status: "healthy",
@@ -136,10 +188,25 @@ async function discoverSourceItems(source, config = {}) {
   }
 
   const fetched = await fetchSource(source.url, config);
+  if (fetched.notModified) {
+    return {
+      method: "unchanged",
+      items: [],
+      notModified: true,
+      etag: fetched.etag,
+      lastModified: fetched.lastModified,
+      contentHash: null,
+      diagnostics: { method: "unchanged", sourceUrl: source.url, latencyMs: fetched.latencyMs || null, discoveredCount: 0 }
+    };
+  }
+  const contentHash = hashContent(fetched.body);
   const items = discoverFromFetchedSource(fetched, source, config);
   return {
     method: items.method,
     items: items.items,
+    etag: fetched.etag,
+    lastModified: fetched.lastModified,
+    contentHash,
     diagnostics: {
       method: items.method,
       sourceUrl: fetched.url || source.url,
@@ -156,14 +223,28 @@ async function fetchSource(url, options = {}) {
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 15000);
   const startedAt = Date.now();
 
+  const headers = {
+    "User-Agent": options.userAgent || "AFRIBNBot/0.2 (+https://afribn.com)",
+    Accept: "text/html,application/rss+xml,application/atom+xml,application/xml,text/xml;q=0.9,*/*;q=0.8"
+  };
+  // Conditional request: only sent when prior validators are supplied (scheduler runs).
+  if (options.etag) headers["If-None-Match"] = options.etag;
+  if (options.lastModified) headers["If-Modified-Since"] = options.lastModified;
+
   try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": options.userAgent || "AFRIBNBot/0.2 (+https://afribn.com)",
-        Accept: "text/html,application/rss+xml,application/atom+xml,application/xml,text/xml;q=0.9,*/*;q=0.8"
-      }
-    });
+    const response = await fetch(url, { signal: controller.signal, headers });
+    if (response.status === 304) {
+      return {
+        url: response.url || url,
+        status: 304,
+        notModified: true,
+        contentType: "",
+        body: "",
+        etag: options.etag || null,
+        lastModified: options.lastModified || null,
+        latencyMs: Date.now() - startedAt
+      };
+    }
     const body = await response.text();
     if (!response.ok) throw badRequest(`Source fetch failed with HTTP ${response.status}`);
     return {
@@ -171,6 +252,8 @@ async function fetchSource(url, options = {}) {
       contentType: response.headers.get("content-type") || "",
       status: response.status,
       body,
+      etag: response.headers.get("etag") || null,
+      lastModified: response.headers.get("last-modified") || null,
       latencyMs: Date.now() - startedAt
     };
   } finally {
