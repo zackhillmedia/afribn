@@ -6,21 +6,21 @@
 <title>AFRIBN — Resources</title>
 <!-- afribn:seo -->
 <meta name="description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
-<link rel="canonical" href="https://www.afribn.com/design/resources.html">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="canonical" href="https://www.afribn.com/resources">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AFRIBN">
 <meta property="og:title" content="AFRIBN — Resources">
 <meta property="og:description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
-<meta property="og:url" content="https://www.afribn.com/design/resources.html">
-<meta property="og:image" content="https://www.afribn.com/design/assets/favicon-512.png">
+<meta property="og:url" content="https://www.afribn.com/resources">
+<meta property="og:image" content="https://www.afribn.com/assets/favicon-512.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFRIBN — Resources">
 <meta name="twitter:description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
 <meta name="theme-color" content="#0a0809">
-<link rel="stylesheet" href="assets/afribn.css">
-<link rel="stylesheet" href="assets/marketing.css">
+<link rel="stylesheet" href="/assets/afribn.css">
+<link rel="stylesheet" href="/assets/marketing.css">
 </head>
 <body class="mkt">
 <header id="mhead"></header>
@@ -57,8 +57,8 @@
 
 <footer id="mfoot" class="mfoot"></footer>
 
-<script src="assets/afribn.js"></script>
-<script src="assets/marketing.js"></script>
+<script src="/assets/afribn.js"></script>
+<script src="/assets/marketing.js"></script>
 <script>
   const $ = s => document.querySelector(s); const ic = AFRIBN.ic;
   AFRIBN.marketing('Resources');
@@ -74,7 +74,7 @@
     ['industry','Industry','Critical minerals & the new scramble','Cobalt, copper and lithium across the Copperbelt.','9 min read'],
     ['trade','Trade','Ports, corridors & logistics','The infrastructure quietly rewiring African trade.','7 min read'],
   ];
-  $('#insights').innerHTML=INS.map(([sc,cat,t,d,r])=>`<a class="mcard" href="sample-reports.html"><img src="${AFRIBN.scene(sc,400,200)}" style="width:100%;height:150px;object-fit:cover;border-radius:11px;margin-bottom:16px" alt=""><span class="pill ${({Energy:'energy',Security:'security',Economy:'economy',Policy:'politics',Industry:'industry',Trade:'trade'})[cat]}">${cat}</span><h3 style="margin-top:12px;font-size:17px">${t}</h3><p>${d}</p><div class="muted" style="font-size:12.5px;margin-top:12px">${r}</div></a>`).join('');
+  $('#insights').innerHTML=INS.map(([sc,cat,t,d,r])=>`<a class="mcard" href="/sample-reports"><img src="${AFRIBN.scene(sc,400,200)}" style="width:100%;height:150px;object-fit:cover;border-radius:11px;margin-bottom:16px" alt=""><span class="pill ${({Energy:'energy',Security:'security',Economy:'economy',Policy:'politics',Industry:'industry',Trade:'trade'})[cat]}">${cat}</span><h3 style="margin-top:12px;font-size:17px">${t}</h3><p>${d}</p><div class="muted" style="font-size:12.5px;margin-top:12px">${r}</div></a>`).join('');
 
   $('#nlForm').addEventListener('submit',e=>{ e.preventDefault(); if(!/.+@.+\..+/.test($('#nlEmail').value)){AFRIBN.toast('Enter a valid email','warn');return;} AFRIBN.toast('Subscribed to The Africa Brief','ok'); $('#nlEmail').value=''; });
 </script>

@@ -28,7 +28,9 @@ server.stderr.on("data", (chunk) => { output += chunk.toString(); });
 let authToken = null;
 
 async function request(path, options = {}) {
-  const response = await fetch(`${base}${path}`, {
+  // The JSON API is served under /api/*; page/ops routes (/ready, /app) are hit
+  // directly via fetch where needed.
+  const response = await fetch(`${base}/api${path}`, {
     ...options,
     headers: {
       ...(options.body && typeof options.body === "string" ? { "Content-Type": "application/json" } : {}),
@@ -63,7 +65,7 @@ try {
 
   const health = await request("/health");
   assert(health.status === "ok", "health should be ok");
-  const ready = await request("/ready");
+  const ready = await fetch(`${base}/ready`).then((r) => r.json());
   assert(ready.status === "ready", "readiness should be ready");
 
   // Authenticate up front — the API gates all data endpoints behind a token.
@@ -76,7 +78,7 @@ try {
   const authHeaders = { Authorization: `Bearer ${login.token}` };
 
   // Gated endpoints must reject anonymous callers.
-  const anon = await fetch(`${base}/feed`);
+  const anon = await fetch(`${base}/api/feed`);
   assert(anon.status === 401, "data endpoints should require authentication");
 
   const stages = await request("/pipeline/stages");
@@ -85,8 +87,9 @@ try {
   const me = await request("/users/me");
   assert(me.data.email === "admin@afribn.local", "JWT should resolve current user");
 
+  // No sources are seeded any more — the store starts empty.
   const sources = await request("/sources");
-  assert(sources.data.length >= 1, "seed sources should exist");
+  assert(sources.data.length === 0, "store should start with no seeded sources");
 
   const html = [
     "<html><head><title>AFRIBN Test Source</title>",
@@ -183,7 +186,7 @@ try {
   const demo = await request("/pipeline/demo-run", {
     method: "POST",
     body: JSON.stringify({
-      sourceId: sources.data[0].id,
+      sourceId: source.data.id,
       rawArticle: {
         title: "Kenya signs $2.1bn renewable energy agreement with UAE consortium",
         body: "Kenya signed a $2.1 billion renewable energy agreement. The project affects energy security, investment flows, and regional partnerships."
@@ -298,8 +301,8 @@ try {
   const search = await request("/search?q=Kenya");
   assert(search.data.length >= 1, "search should return indexed results");
 
-  const appHtml = await request("/app");
-  assert(Buffer.from(appHtml).toString().includes("AFRIBN MVP Console"), "server should serve frontend");
+  const appHtml = await fetch(`${base}/app`).then((r) => r.text());
+  assert(appHtml.includes("AFRIBN MVP Console"), "server should serve frontend");
 
   console.log("AFRIBN API smoke test passed");
 } finally {

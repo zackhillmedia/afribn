@@ -6,20 +6,20 @@
 <title>AFRIBN — Collection Jobs</title>
 <!-- afribn:seo -->
 <meta name="description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
-<link rel="canonical" href="https://www.afribn.com/design/jobs.html">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="canonical" href="https://www.afribn.com/jobs">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AFRIBN">
 <meta property="og:title" content="AFRIBN — Collection Jobs">
 <meta property="og:description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
-<meta property="og:url" content="https://www.afribn.com/design/jobs.html">
-<meta property="og:image" content="https://www.afribn.com/design/assets/favicon-512.png">
+<meta property="og:url" content="https://www.afribn.com/jobs">
+<meta property="og:image" content="https://www.afribn.com/assets/favicon-512.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFRIBN — Collection Jobs">
 <meta name="twitter:description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
 <meta name="theme-color" content="#0a0809">
-<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="/assets/afribn.css">
 <style>
   .kpi-row { grid-template-columns: repeat(5, 1fr); }
   .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -68,7 +68,7 @@
 <div class="drawer-back" id="drawerBack"></div>
 <aside class="drawer" id="drawer"></aside>
 
-<script src="assets/afribn.js"></script>
+<script src="/assets/afribn.js"></script>
 <script>
   const $ = s => document.querySelector(s);
   AFRIBN.shell('refresh');
@@ -146,7 +146,7 @@
         ${err?`<div class="panel" style="margin-top:16px;border-color:rgba(229,72,77,0.3);background:rgba(229,72,77,0.06)"><div class="eyebrow" style="color:#ff7378;margin-bottom:8px">Error Detail</div><div style="font-size:13.5px;color:var(--ink-2);font-family:var(--font-mono,monospace)">${err}</div></div>`:''}
         <div class="row gap-12" style="margin-top:20px">
           ${status==='Failed'?`<button class="btn btn-primary" style="flex:1" id="dRetry">${ic('refresh','width=\"16\" height=\"16\"')} Retry job</button>`:''}
-          <a class="btn btn-ghost" style="flex:1" href="raw.html">${ic('inbox','width=\"16\" height=\"16\"')} View articles</a>
+          <a class="btn btn-ghost" style="flex:1" href="/raw">${ic('inbox','width=\"16\" height=\"16\"')} View articles</a>
         </div>
       </div>`;
     $('#drawerBack').classList.add('open'); $('#drawer').classList.add('open');

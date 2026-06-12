@@ -6,20 +6,20 @@
 <title>AFRIBN — Agent Reports</title>
 <!-- afribn:seo -->
 <meta name="description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
-<link rel="canonical" href="https://www.afribn.com/design/agentreports.html">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="canonical" href="https://www.afribn.com/agentreports">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AFRIBN">
 <meta property="og:title" content="AFRIBN — Agent Reports">
 <meta property="og:description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
-<meta property="og:url" content="https://www.afribn.com/design/agentreports.html">
-<meta property="og:image" content="https://www.afribn.com/design/assets/favicon-512.png">
+<meta property="og:url" content="https://www.afribn.com/agentreports">
+<meta property="og:image" content="https://www.afribn.com/assets/favicon-512.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFRIBN — Agent Reports">
 <meta name="twitter:description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
 <meta name="theme-color" content="#0a0809">
-<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="/assets/afribn.css">
 <style>
   .ar-cell { display:flex; align-items:center; gap:12px; }
   .ar-cell .av2 { width:36px; height:36px; border-radius:50%; background:var(--panel-3); display:grid; place-items:center; color:var(--ink-2); flex:none; font-family:var(--font-display); font-weight:700; font-size:13px; }
@@ -40,7 +40,7 @@
           <div class="page-sub">Field-submitted evidence awaiting routing to verification.</div></div>
         <div class="row gap-12">
           <select class="select" id="fStatus"><option>All Status</option><option>Submitted</option><option>In Review</option><option>Sent to Verification</option></select>
-          <a class="btn btn-ghost" href="tasks.html"><span id="fti"></span> Field Tasks</a>
+          <a class="btn btn-ghost" href="/tasks"><span id="fti"></span> Field Tasks</a>
         </div>
       </div>
       <div class="kpi-row" id="stats" style="grid-template-columns:repeat(4,1fr)"></div>
@@ -56,7 +56,7 @@
 <div class="drawer-back" id="drawerBack"></div>
 <aside class="drawer" id="drawer"></aside>
 
-<script src="assets/afribn.js"></script>
+<script src="/assets/afribn.js"></script>
 <script>
   const $ = s => document.querySelector(s);
   AFRIBN.shell('listChecks');

@@ -1,4 +1,4 @@
-window.AFRIBN_API_BASE = window.AFRIBN_API_BASE || "";
+window.AFRIBN_API_BASE = window.AFRIBN_API_BASE || "/api";
 
 window.AFRIBNApi = {
   token: localStorage.getItem("afribn_token") || "",

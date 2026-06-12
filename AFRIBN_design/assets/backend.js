@@ -9,7 +9,12 @@
     "client@afribn.local": "client"
   };
 
-  const PAGE = location.pathname.split("/").pop() || "index.html";
+  // Clean URLs serve pages without a .html suffix (e.g. /feed). Normalise back
+  // to the legacy "<name>.html" key the handler map and auth list are keyed by.
+  const PAGE = (() => {
+    const last = location.pathname.split("/").filter(Boolean).pop() || "index";
+    return last.includes(".") ? last : `${last}.html`;
+  })();
   const API = {
     token: () => localStorage.getItem("afribn_token") || "",
     headers(extra = {}) {
@@ -19,8 +24,9 @@
         ...extra.headers
       };
     },
+    base: "/api",
     async request(path, options = {}) {
-      const response = await fetch(path, { ...options, headers: API.headers(options) });
+      const response = await fetch(API.base + path, { ...options, headers: API.headers(options) });
       const contentType = response.headers.get("content-type") || "";
       const payload = contentType.includes("application/json") ? await response.json() : await response.blob();
       if (!response.ok) throw new Error(payload?.error?.message || `${response.status} ${response.statusText}`);
@@ -51,7 +57,7 @@
       return;
     }
     const handlers = {
-      "login.html": initLogin,
+      // login.html owns its own auth + SSO logic inline; no backend handler.
       "sources.html": initSources,
       "source-assessment.html": initSourceAssessment,
       "source-detail.html": initSourceDetail,

@@ -94,17 +94,34 @@ const server = http.createServer(async (req, res) => {
       if (serveFile(res, path.join(process.cwd(), "sitemap.xml"))) return;
     }
     if (req.method === "GET" && url.pathname === "/favicon.ico") {
-      res.writeHead(302, { Location: "/design/assets/favicon-32.png" });
+      res.writeHead(302, { Location: "/assets/favicon-32.png" });
       res.end();
       return;
     }
-    if (req.method === "GET" && url.pathname === "/") {
-      res.writeHead(302, { Location: "/design/index.html" });
-      res.end();
+
+    // The JSON API lives under /api/* so the root namespace belongs to pages.
+    // /health is also accepted at the root for platform health probes.
+    const isApi = url.pathname === "/api" || url.pathname.startsWith("/api/");
+    if (isApi || url.pathname === "/health") {
+      const apiUrl = new URL(req.url, `http://${req.headers.host}`);
+      apiUrl.pathname = isApi ? url.pathname.slice("/api".length) || "/" : "/health";
+      await router.handle(req, res, apiUrl, { requestId, startedAt });
       return;
     }
-    if (req.method === "GET" && serveStatic(req, res, url)) return;
-    await router.handle(req, res, url, { requestId, startedAt });
+
+    // 301 legacy paths (/design/*, *.html) to their canonical clean URL.
+    if (req.method === "GET") {
+      const target = legacyRedirect(url.pathname);
+      if (target) {
+        res.writeHead(301, { Location: target + (url.search || "") });
+        res.end();
+        return;
+      }
+      if (serveStatic(req, res, url)) return;
+    }
+
+    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Not found");
   } catch (error) {
     const status = error.statusCode || 500;
     res.writeHead(status, { "Content-Type": "application/json" });
@@ -118,26 +135,41 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+// Maps a legacy path to its canonical clean URL, or null when none applies.
+// Old links (/design/pricing.html, /pricing.html) keep working via 301.
+function legacyRedirect(pathname) {
+  if (pathname === "/design" || pathname === "/design/" || pathname === "/design/index.html") return "/";
+  if (pathname.startsWith("/design/assets/")) return "/assets/" + pathname.slice("/design/assets/".length);
+  if (pathname.startsWith("/design/")) {
+    const name = pathname.slice("/design/".length).replace(/\.html$/, "");
+    return name === "index" ? "/" : "/" + name;
+  }
+  if (pathname === "/index.html") return "/";
+  if (/^\/[a-z0-9-]+\.html$/i.test(pathname)) return pathname.replace(/\.html$/, "");
+  return null;
+}
+
 function serveStatic(req, res, url) {
-  if (url.pathname === "/design") {
-    res.writeHead(302, { Location: "/design/index.html" });
-    res.end();
-    return true;
+  const cwd = process.cwd();
+  const design = path.join(cwd, "AFRIBN_design");
+
+  // Clean asset route: /assets/* -> AFRIBN_design/assets/*
+  if (url.pathname.startsWith("/assets/")) {
+    return serveFile(res, path.join(design, "assets", decodeURIComponent(url.pathname.slice("/assets/".length))));
   }
-  if (url.pathname.startsWith("/design/")) {
-    return serveFile(res, path.join(process.cwd(), "AFRIBN_design", decodeURIComponent(url.pathname.slice("/design/".length))));
-  }
-  const routes = {
-    "/app": "index.html",
-    "/app/": "index.html",
-    "/index.html": "index.html",
-    "/styles.css": "styles.css",
-    "/app.js": "app.js",
-    "/frontend-api.js": "frontend-api.js"
-  };
-  const file = routes[url.pathname];
-  if (!file) return false;
-  return serveFile(res, path.join(process.cwd(), file));
+
+  // Marketing/app homepage.
+  if (url.pathname === "/") return serveFile(res, path.join(design, "index.html"));
+
+  // Repo-root MVP console and its assets (kept for the /app prototype).
+  const rootRoutes = { "/app": "index.html", "/app/": "index.html", "/styles.css": "styles.css", "/app.js": "app.js", "/frontend-api.js": "frontend-api.js" };
+  if (rootRoutes[url.pathname]) return serveFile(res, path.join(cwd, rootRoutes[url.pathname]));
+
+  // Clean page route: /<name> -> AFRIBN_design/<name>.html
+  const match = url.pathname.match(/^\/([a-z0-9][a-z0-9-]*)$/i);
+  if (match) return serveFile(res, path.join(design, `${match[1]}.html`));
+
+  return false;
 }
 
 function serveFile(res, requestedPath) {

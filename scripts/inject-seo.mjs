@@ -42,7 +42,8 @@ for (const file of readdirSync(DIR).filter((f) => f.endsWith(".html"))) {
   }
   const title = titleMatch[1].trim();
   const desc = DESCRIPTIONS[file] || DEFAULT_DESC;
-  const canonical = `${SITE}/design/${file}`;
+  const slug = file.replace(/\.html$/, "");
+  const canonical = slug === "index" ? `${SITE}/` : `${SITE}/${slug}`;
 
   const block = `${MARKER}
 <meta name="description" content="${desc}">
@@ -54,7 +55,7 @@ for (const file of readdirSync(DIR).filter((f) => f.endsWith(".html"))) {
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${desc}">
 <meta property="og:url" content="${canonical}">
-<meta property="og:image" content="${SITE}/design/assets/favicon-512.png">
+<meta property="og:image" content="${SITE}/assets/favicon-512.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${desc}">

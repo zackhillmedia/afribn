@@ -6,20 +6,20 @@
 <title>AFRIBN — Sign in</title>
 <!-- afribn:seo -->
 <meta name="description" content="Sign in to AFRIBN — Africa's strategic news intelligence network.">
-<link rel="canonical" href="https://www.afribn.com/design/login.html">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="canonical" href="https://www.afribn.com/login">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AFRIBN">
 <meta property="og:title" content="AFRIBN — Sign in">
 <meta property="og:description" content="Sign in to AFRIBN — Africa's strategic news intelligence network.">
-<meta property="og:url" content="https://www.afribn.com/design/login.html">
-<meta property="og:image" content="https://www.afribn.com/design/assets/favicon-512.png">
+<meta property="og:url" content="https://www.afribn.com/login">
+<meta property="og:image" content="https://www.afribn.com/assets/favicon-512.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFRIBN — Sign in">
 <meta name="twitter:description" content="Sign in to AFRIBN — Africa's strategic news intelligence network.">
 <meta name="theme-color" content="#0a0809">
-<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="/assets/afribn.css">
 <style>
   body { height: 100vh; overflow: hidden; }
   .login { display: grid; grid-template-columns: 1.05fr 1fr; height: 100vh; }
@@ -107,7 +107,7 @@
   </div>
 </div>
 
-<script src="assets/afribn.js"></script>
+<script src="/assets/afribn.js"></script>
 <script>
   const $ = s => document.querySelector(s);
   $('#brandLogo').innerHTML = AFRIBN.logo();
@@ -152,7 +152,7 @@
   async function goAfterAuth(token, user, next){
     persistSession(token, user);
     if (!user){
-      try { user = await fetch('/users/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()).then(j=>j.data); persistSession(token, user); } catch {}
+      try { user = await fetch('/api/users/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()).then(j=>j.data); persistSession(token, user); } catch {}
     }
     localStorage.setItem('afribn_role', roleName(user));
     location.href = next || landingFor(user);
@@ -164,7 +164,7 @@
     const email = $('#email').value.trim(), password = $('#password').value;
     if (!email || !password){ AFRIBN.toast('Enter your email and password.','err'); return; }
     try {
-      const res = await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+      const res = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error?.message || 'Sign in failed');
       const next = new URLSearchParams(location.search).get('next');
@@ -189,7 +189,7 @@
   };
   (async function renderSSO(){
     let providers = [{id:'google',label:'Google',configured:false},{id:'microsoft',label:'Microsoft',configured:false}];
-    try { providers = await fetch('/auth/providers').then(r=>r.json()).then(j=>j.data || providers); } catch {}
+    try { providers = await fetch('/api/auth/providers').then(r=>r.json()).then(j=>j.data || providers); } catch {}
     const next = new URLSearchParams(location.search).get('next') || '';
     $('#sso').innerHTML = providers.map(p=>{
       const dis = p.configured ? '' : 'disabled title="Not configured yet"';
@@ -198,7 +198,7 @@
     }).join('');
     $('#sso').querySelectorAll('button[data-provider]').forEach(b=>b.addEventListener('click',()=>{
       const q = next ? ('?next=' + encodeURIComponent(next)) : '';
-      location.href = '/auth/oauth/' + b.dataset.provider + '/start' + q;
+      location.href = '/api/auth/oauth/' + b.dataset.provider + '/start' + q;
     }));
   })();
 </script>

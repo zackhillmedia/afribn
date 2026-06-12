@@ -6,20 +6,20 @@
 <title>AFRIBN — Daily Executive Brief</title>
 <!-- afribn:seo -->
 <meta name="description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
-<link rel="canonical" href="https://www.afribn.com/design/brief.html">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="canonical" href="https://www.afribn.com/brief">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AFRIBN">
 <meta property="og:title" content="AFRIBN — Daily Executive Brief">
 <meta property="og:description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
-<meta property="og:url" content="https://www.afribn.com/design/brief.html">
-<meta property="og:image" content="https://www.afribn.com/design/assets/favicon-512.png">
+<meta property="og:url" content="https://www.afribn.com/brief">
+<meta property="og:image" content="https://www.afribn.com/assets/favicon-512.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFRIBN — Daily Executive Brief">
 <meta name="twitter:description" content="AFRIBN delivers real-time strategic intelligence on Africa's top markets — political, security, economic and policy signals for investors, institutions and decision-makers.">
 <meta name="theme-color" content="#0a0809">
-<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="/assets/afribn.css">
 <style>
   .brief-grid { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
   .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
@@ -103,7 +103,7 @@
 
 <div class="toast" id="toast" style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel-2);border:1px solid var(--line-2);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transition:.25s;z-index:80;box-shadow:var(--shadow);pointer-events:none"></div>
 
-<script src="assets/afribn.js"></script>
+<script src="/assets/afribn.js"></script>
 <script>
   const $ = s => document.querySelector(s);
   AFRIBN.shell('file');
@@ -141,7 +141,7 @@
     $('#devs').innerHTML = list.map((d,i)=>{
       const [imp,title,sub,score]=d;
       const [pb,pc]=IMP[imp];
-      return `<a class="dev" href="story.html">
+      return `<a class="dev" href="/story">
         <span class="accent" style="background:${rankColors[i]}"></span>
         <span class="rank" style="background:${rankColors[i]}22;color:${rankColors[i]}">${i+1}</span>
         <div class="body">

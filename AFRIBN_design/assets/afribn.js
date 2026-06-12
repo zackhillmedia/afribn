@@ -35,9 +35,9 @@
   </svg>`;
 
   NS.logo = (opts = {}) => {
-    const href = opts.href || 'index.html';
+    const href = opts.href || '/';
     const h = 63;
-    return `<a class="logo" href="${href}" aria-label="AFRIBN"><img class="logo-img" src="assets/afribn-logo.png" alt="AFRIBN" style="height:${h}px"></a>`;
+    return `<a class="logo" href="${href}" aria-label="AFRIBN"><img class="logo-img" src="/assets/afribn-logo.png" alt="AFRIBN" style="height:${h}px"></a>`;
   };
 
   /* ---------- icons (lucide-derived) ---------- */
@@ -129,24 +129,24 @@
 
   // [icon, label, href, group, roles, badge]
   const NAV = [
-    ['home', 'Home', 'home.html', 'Intelligence', ALL],
-    ['feed', 'Feed', 'feed.html', 'Intelligence', ALL],
-    ['bell', 'Alerts', 'alerts.html', 'Intelligence', ALL, 4],
-    ['star', 'Watchlist', 'watchlist.html', 'Intelligence', INTERNAL],
-    ['globe', 'Country Intelligence', 'country.html', 'Intelligence', ALL],
-    ['grid', 'Dashboards', 'dashboards.html', 'Intelligence', INTERNAL],
-    ['file', 'Reports', 'reports.html', 'Intelligence', ALL],
-    ['policy', 'Policy Monitor', 'policy.html', 'Intelligence', INTERNAL],
-    ['deal', 'Deal Tracker', 'deal.html', 'Intelligence', INTERNAL],
-    ['calendar', 'Event Tracker', 'event.html', 'Intelligence', ALL],
-    ['gauge', 'Risk Dashboard', 'risk.html', 'Intelligence', INTERNAL],
-    ['database', 'Sources', 'sources.html', 'Production', INTERNAL],
-    ['refresh', 'Collection Jobs', 'jobs.html', 'Production', INTERNAL],
-    ['inbox', 'Raw Articles', 'raw.html', 'Production', INTERNAL],
-    ['edit', 'Intelligence Items', 'workspace.html', 'Production', INTERNAL],
-    ['listChecks', 'Verification', 'verification.html', 'Production', INTERNAL],
-    ['send', 'Published Intelligence', 'published.html', 'Production', INTERNAL],
-    ['sliders', 'Admin / Operations', 'admin.html', 'Operations', ['admin']],
+    ['home', 'Home', '/home', 'Intelligence', ALL],
+    ['feed', 'Feed', '/feed', 'Intelligence', ALL],
+    ['bell', 'Alerts', '/alerts', 'Intelligence', ALL, 4],
+    ['star', 'Watchlist', '/watchlist', 'Intelligence', INTERNAL],
+    ['globe', 'Country Intelligence', '/country', 'Intelligence', ALL],
+    ['grid', 'Dashboards', '/dashboards', 'Intelligence', INTERNAL],
+    ['file', 'Reports', '/reports', 'Intelligence', ALL],
+    ['policy', 'Policy Monitor', '/policy', 'Intelligence', INTERNAL],
+    ['deal', 'Deal Tracker', '/deal', 'Intelligence', INTERNAL],
+    ['calendar', 'Event Tracker', '/event', 'Intelligence', ALL],
+    ['gauge', 'Risk Dashboard', '/risk', 'Intelligence', INTERNAL],
+    ['database', 'Sources', '/sources', 'Production', INTERNAL],
+    ['refresh', 'Collection Jobs', '/jobs', 'Production', INTERNAL],
+    ['inbox', 'Raw Articles', '/raw', 'Production', INTERNAL],
+    ['edit', 'Intelligence Items', '/workspace', 'Production', INTERNAL],
+    ['listChecks', 'Verification', '/verification', 'Production', INTERNAL],
+    ['send', 'Published Intelligence', '/published', 'Production', INTERNAL],
+    ['sliders', 'Admin / Operations', '/admin', 'Operations', ['admin']],
   ];
 
   /* ---------- shell ---------- */
@@ -161,8 +161,8 @@
         if (!items.length) return;
         if (g !== 'Intelligence') body += `<div class="nav-group">${g}</div>`;
         body += `<nav class="nav">` + items.map(([icon, label, href, grp, roles, badge]) => {
-          if (role === 'client' && href === 'country.html') label = 'Country Brief';
-          if (role === 'client' && href === 'event.html') label = 'Event Monitor';
+          if (role === 'client' && href === '/country') label = 'Country Brief';
+          if (role === 'client' && href === '/event') label = 'Event Monitor';
           const on = icon === active ? ' active' : '';
           const bdg = badge ? `<span class="nav-badge">${badge}</span>` : '';
           return `<a class="nav-item${on}" href="${href}">${NS.ic(icon)}<span>${label}</span>${bdg}</a>`;
@@ -174,7 +174,7 @@
         <div class="nav-sep"></div>
         <nav class="nav">
           <a class="nav-item" href="#">${NS.ic('settings')}<span>Settings</span></a>
-          <a class="nav-item" href="login.html?logout=1">${NS.ic('logout')}<span>Log out</span></a>
+          <a class="nav-item" href="/login?logout=1">${NS.ic('logout')}<span>Log out</span></a>
         </nav>`;
     }
     const top = document.getElementById('topbar');
@@ -190,7 +190,7 @@
         </div>
         <div class="topbar-actions">
           <button class="icon-btn readability-btn" id="readabilityBtn" title="Use larger text" aria-label="Use larger text" aria-pressed="false"><span>Aa</span></button>
-          <a class="icon-btn" href="alerts.html" title="Alerts">${NS.ic('bell')}<span class="dot"></span></a>
+          <a class="icon-btn" href="/alerts" title="Alerts">${NS.ic('bell')}<span class="dot"></span></a>
           <button class="icon-btn" id="messageBtn" title="Messages">${NS.ic('message')}<span class="badge-count" id="messageBadge">0</span></button>
           <div class="avatar" id="avatarBtn" tabindex="0">
             <img src="${NS.AVATAR}" alt="David" />
@@ -200,7 +200,7 @@
               <div class="av-head">Switch role <span class="muted" style="font-weight:400">(demo)</span></div>
               ${roleMenu}
               <div class="av-sep"></div>
-              <a class="av-opt" href="login.html?logout=1">${NS.ic('logout', 'width="15" height="15"')} Log out</a>
+              <a class="av-opt" href="/login?logout=1">${NS.ic('logout', 'width="15" height="15"')} Log out</a>
             </div>
           </div>
         </div>`;
@@ -507,7 +507,7 @@
 
   if (!document.querySelector('script[data-afribn-backend]')) {
     const script = document.createElement('script');
-    script.src = 'assets/backend.js';
+    script.src = '/assets/backend.js';
     script.defer = true;
     script.dataset.afribnBackend = '1';
     document.head.appendChild(script);

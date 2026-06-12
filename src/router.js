@@ -162,7 +162,7 @@ function createRouter(store) {
     if (req.method === "GET" && parts[1] === "oauth" && parts[3] === "start") {
       const providerId = parts[2];
       const next = new URL(req.url, requestBaseUrl(req)).searchParams.get("next") || "";
-      const redirectUri = `${requestBaseUrl(req)}/auth/oauth/${providerId}/callback`;
+      const redirectUri = `${requestBaseUrl(req)}/api/auth/oauth/${providerId}/callback`;
       const url = oauth.authorizeUrl({ providerId, redirectUri, state: oauth.createState(providerId, next) });
       res.writeHead(302, { Location: url });
       res.end();
@@ -171,14 +171,14 @@ function createRouter(store) {
     if (req.method === "GET" && parts[1] === "oauth" && parts[3] === "callback") {
       const providerId = parts[2];
       const params = new URL(req.url, requestBaseUrl(req)).searchParams;
-      const loginPage = `${requestBaseUrl(req)}/design/login.html`;
+      const loginPage = `${requestBaseUrl(req)}/login`;
       try {
         if (params.get("error")) throw badRequest(params.get("error_description") || params.get("error"));
         const state = oauth.verifyState(params.get("state"), providerId);
         const profile = await oauth.exchangeCodeForProfile({
           providerId,
           code: params.get("code"),
-          redirectUri: `${requestBaseUrl(req)}/auth/oauth/${providerId}/callback`
+          redirectUri: `${requestBaseUrl(req)}/api/auth/oauth/${providerId}/callback`
         });
         const user = findOrCreateOAuthUser(profile);
         const token = signJwt({ sub: user.id, roleId: user.roleId, organizationId: user.organizationId });

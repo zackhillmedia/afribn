@@ -6,20 +6,20 @@
 <title>AFRIBN — Country Intelligence</title>
 <!-- afribn:seo -->
 <meta name="description" content="Country intelligence briefs covering political, security and economic developments across Africa's strategic markets.">
-<link rel="canonical" href="https://www.afribn.com/design/country.html">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="canonical" href="https://www.afribn.com/country">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AFRIBN">
 <meta property="og:title" content="AFRIBN — Country Intelligence">
 <meta property="og:description" content="Country intelligence briefs covering political, security and economic developments across Africa's strategic markets.">
-<meta property="og:url" content="https://www.afribn.com/design/country.html">
-<meta property="og:image" content="https://www.afribn.com/design/assets/favicon-512.png">
+<meta property="og:url" content="https://www.afribn.com/country">
+<meta property="og:image" content="https://www.afribn.com/assets/favicon-512.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFRIBN — Country Intelligence">
 <meta name="twitter:description" content="Country intelligence briefs covering political, security and economic developments across Africa's strategic markets.">
 <meta name="theme-color" content="#0a0809">
-<link rel="stylesheet" href="assets/afribn.css">
+<link rel="stylesheet" href="/assets/afribn.css">
 <style>
   .ci-eyebrow { font-size: 22px; font-weight: 700; color: var(--ink); font-family: var(--font-display); letter-spacing: -0.01em; margin-bottom: 14px; }
   .ci-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
@@ -120,7 +120,7 @@
           <div class="panel panel-pad-lg">
             <div class="panel-h"><div class="eyebrow">Latest High Impact Stories</div></div>
             <div id="cistories"></div>
-            <a class="link-r" href="feed.html" style="margin-top:14px;display:inline-flex">View all stories <span id="vas"></span></a>
+            <a class="link-r" href="/feed" style="margin-top:14px;display:inline-flex">View all stories <span id="vas"></span></a>
           </div>
         </div>
 
@@ -145,7 +145,7 @@
 
 <div class="toast" id="toast" style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel-2);border:1px solid var(--line-2);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transition:.25s;z-index:80;box-shadow:var(--shadow);pointer-events:none"></div>
 
-<script src="assets/afribn.js"></script>
+<script src="/assets/afribn.js"></script>
 <script>
   const $ = s => document.querySelector(s);
   AFRIBN.shell('globe');
@@ -227,7 +227,7 @@
 
     // stories
     $('#cistories').innerHTML = d.stories.map(([sc,pc,tc,dc,cat,title,desc,score,tm])=>`
-      <a class="ci-story" href="story.html">
+      <a class="ci-story" href="/story">
         <img class="img" src="${AFRIBN.scene(sc,150,120)}" alt="">
         <div class="grow">
           <div class="cat" style="color:${tc}">${cat}</div>
