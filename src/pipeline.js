@@ -2,16 +2,23 @@ const { badRequest, notFound } = require("./http");
 const { distillArticleWithOpenAI } = require("./openai-client");
 const { calculateConfidenceScore, calculateRiskScore, calculateSignalScore } = require("./scoring");
 const { calculateAndStoreScore } = require("./scoring-service");
+const { sourceMandate, scoreRelevance } = require("./relevance");
 const { resolveEntitiesForStory } = require("./graph/entity-resolution");
 const { upsertSearchDocument } = require("./search/indexer");
 
 // Scores a story with the full scoring engine (impact, signal, confidence,
 // risk, …). Factors are derived automatically from the story/event/context,
 // so this needs no manual input and is safe to call inside the pipeline.
+// Also sets the Phase-2 promotion flag: stories whose signal clears
+// PROMOTION_MIN_SIGNAL are surfaced for the editorial queue / feed candidacy.
 // Failures are logged but never block distillation or the editorial workflow.
 function autoScoreStory(store, storyId) {
   try {
-    return calculateAndStoreScore(store, { objectType: "story", objectId: storyId });
+    const result = calculateAndStoreScore(store, { objectType: "story", objectId: storyId });
+    const signal = Number(result?.scores?.signal?.score ?? 0);
+    const min = Number(process.env.PROMOTION_MIN_SIGNAL || 60);
+    store.update("stories", storyId, { promoted: signal >= min, promotionSignal: signal });
+    return result;
   } catch (error) {
     store.insert("scoringAuditLogs", {
       objectType: "story",
@@ -376,6 +383,47 @@ async function distillRawArticleWithAI(store, rawArticleId, options = {}) {
     },
     ...storyEvent
   };
+}
+
+// Phase 2 triage: walk freshly collected raw articles, distil the ones that
+// clear the relevance threshold (so AI spend goes only to likely-relevant
+// items) and mark the rest as filtered. Relevance is computed at scrape time
+// but recomputed here as a fallback for articles created by other paths.
+async function triageAndDistill(store, options = {}) {
+  const limit = Number(options.limit || 25);
+  const summary = { distilled: 0, filtered: 0, failed: 0, items: [] };
+  const pending = store.list("rawArticles", (a) => a.status === "collected").slice(0, limit);
+
+  for (const article of pending) {
+    let relevance = Number(article.relevanceScore ?? NaN);
+    let relevant = article.relevant;
+    if (Number.isNaN(relevance)) {
+      const source = store.get("sources", article.sourceId) || {};
+      const scored = scoreRelevance(`${article.title} ${article.body || article.summary || ""}`, sourceMandate(source));
+      relevance = scored.score;
+      relevant = scored.relevant;
+    }
+    const min = Number(options.relevanceMin || process.env.RELEVANCE_MIN || 40);
+    if (relevant === false || relevance < min) {
+      store.update("rawArticles", article.id, {
+        status: "filtered_low_relevance",
+        relevanceScore: relevance,
+        filteredReason: `relevance ${relevance} below threshold ${min}`
+      });
+      summary.filtered += 1;
+      summary.items.push({ id: article.id, title: article.title, relevance, action: "filtered" });
+      continue;
+    }
+    try {
+      const result = await distillRawArticleWithAI(store, article.id, options);
+      summary.distilled += 1;
+      summary.items.push({ id: article.id, title: article.title, relevance, action: "distilled", storyId: result.story?.id, promoted: store.get("stories", result.story?.id)?.promoted });
+    } catch (error) {
+      summary.failed += 1;
+      summary.items.push({ id: article.id, title: article.title, relevance, action: "failed", error: error.message });
+    }
+  }
+  return summary;
 }
 
 function updateStoryDraft(store, storyId, patch = {}, status = null) {
@@ -811,6 +859,7 @@ module.exports = {
   createRawArticle,
   createStoryEvent,
   distillRawArticleWithAI,
+  triageAndDistill,
   updateStoryDraft,
   transitionIntelligenceItem,
   publishStory,

@@ -4,6 +4,7 @@
 // docs/ADR-001-collection-scheduler-and-resilience.md.
 const { enqueueJob } = require("./workers/queue");
 const { processWorkerQueue } = require("./workers/processor");
+const { triageAndDistill } = require("./pipeline");
 
 const COLLECTION_QUEUE = "collection";
 
@@ -107,12 +108,16 @@ function startScheduler(store, options = {}) {
   const domainLastAt = new Map();
   let running = false;
 
+  const triageEnabled = String(process.env.SCHEDULER_TRIAGE || "true").toLowerCase() !== "false";
   const run = async () => {
     if (running) return;
     running = true;
     try {
       tick(store, { domainLastAt });
       await drain(store);
+      // Phase 2: triage freshly collected items — distil the relevant ones,
+      // filter the rest — so the pipeline auto-advances without ingesting noise.
+      if (triageEnabled) await triageAndDistill(store, { limit: 25 });
     } catch (error) {
       console.warn(`SCHEDULER ERROR: ${error.message}`);
     } finally {

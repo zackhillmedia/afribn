@@ -1,5 +1,5 @@
 const { runScrapeWorker } = require("../scrapers");
-const { distillRawArticleWithAI, createScore, createGapReport } = require("../pipeline");
+const { distillRawArticleWithAI, createScore, createGapReport, triageAndDistill } = require("../pipeline");
 const { calculateAndStoreScore } = require("../scoring-service");
 const { calculateSourceReliabilityForSource, calculateCredibilityForObject } = require("../source-reliability-service");
 const { deliverQueuedAlerts } = require("../alert-delivery");
@@ -11,6 +11,7 @@ const { processQueue } = require("./queue");
 async function processWorkerQueue(store, queue, options = {}) {
   const handlers = {
     scrape_source: async (payload) => runScrapeWorker(store, payload.sourceId, payload),
+    triage_and_distill: async (payload) => triageAndDistill(store, payload),
     ai_distill_article: async (payload) => distillRawArticleWithAI(store, payload.rawArticleId, payload),
     calculate_score: async (payload) => calculateAndStoreScore(store, payload),
     score_event: async (payload) => createScore(store, payload.eventId, payload),

@@ -3,6 +3,7 @@ const { badRequest, notFound } = require("./http");
 const { latestCollectionDecision } = require("./source-reliability-service");
 const { getSourceAdapter } = require("./adapters");
 const { checksumFor } = require("./adapters/provider-utils");
+const { sourceMandate, scoreRelevance, passesMandate } = require("./relevance");
 
 function hashContent(body) {
   return crypto.createHash("sha1").update(String(body || "")).digest("hex");
@@ -21,6 +22,7 @@ async function runScrapeWorker(store, sourceId, options = {}) {
   }
 
   const config = normalizeConfig(source, options, approved, decision);
+  config.mandate = sourceMandate(source);
   // Scheduler-driven runs send prior validators so an unchanged page returns 304
   // (or matches the stored content hash) and is skipped without re-processing.
   if (config.conditional) {
@@ -662,9 +664,13 @@ function articleCandidate(source, article) {
 }
 
 function buildRawArticle(scrapeJob, source, candidate, item, crawled, extracted) {
+  const relevance = scoreRelevance(`${candidate.title} ${candidate.body || candidate.summary || ""}`, sourceMandate(source));
   return {
     stage: "RawArticle",
     scrapeJobId: scrapeJob.id,
+    relevanceScore: relevance.score,
+    relevant: relevance.relevant,
+    relevanceReasons: relevance.reasons,
     sourceId: source.id,
     sourceName: source.name,
     originalSourceName: candidate.sourceName || source.name,
@@ -719,6 +725,8 @@ function filterCandidates(candidates, options = {}) {
     if (options.excludeUrlPattern && new RegExp(options.excludeUrlPattern, "i").test(item.url)) return false;
     if (options.minimumTitleLength && item.title.length < Number(options.minimumTitleLength)) return false;
     if (isBlockedContentUrl(item.url) || isBlockedContentTitle(item.title)) return false;
+    // Mandate pre-filter: drops only on explicit exclude / required-include rules.
+    if (options.mandate && !passesMandate(item, options.mandate)) return false;
     return true;
   });
 }

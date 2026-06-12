@@ -28,6 +28,7 @@ const {
   createScrapeJob,
   createStoryEvent,
   distillRawArticleWithAI,
+  triageAndDistill,
   updateStoryDraft,
   transitionIntelligenceItem,
   publishStory,
@@ -370,6 +371,10 @@ function createRouter(store) {
       const source = body.sourceId ? store.get("sources", body.sourceId) : store.list("sources")[0];
       if (!source) throw notFound("Source not found");
       return sendJson(res, 201, { data: runDemoPipeline(store, source.id, body) });
+    }
+    if (req.method === "POST" && parts[1] === "triage") {
+      requirePermission(store, req, "ai:process");
+      return sendJson(res, 200, { data: await triageAndDistill(store, await readBody(req)) });
     }
     throw notFound("Pipeline route not found");
   }
