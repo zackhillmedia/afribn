@@ -208,7 +208,7 @@ function createRouter(store) {
       }
       return sendJson(res, 200, {
         token: signJwt({ sub: user.id, roleId: user.roleId, organizationId: user.organizationId }),
-        user: publicUser(user)
+        user: { ...publicUser(user), role: store.get("roles", user.roleId) }
       });
     }
     if (req.method === "POST" && parts[1] === "register") {
@@ -226,7 +226,7 @@ function createRouter(store) {
       });
       return sendJson(res, 201, {
         token: signJwt({ sub: user.id, roleId: user.roleId, organizationId: user.organizationId }),
-        user: publicUser(user)
+        user: { ...publicUser(user), role: store.get("roles", user.roleId) }
       });
     }
     if (req.method === "POST" && parts[1] === "refresh") {

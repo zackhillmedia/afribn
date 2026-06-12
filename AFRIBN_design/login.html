@@ -116,26 +116,31 @@
 
   const LANDING = { admin:'/home', analyst:'/raw', agent:'/tasks', verifier:'/verification', client:'/home' };
 
-  function roleName(user){ return (user && (user.role?.name || user.roleName || user.role)) || 'client'; }
-  function landingFor(user){
-    const n = roleName(user).toLowerCase();
-    if (n.includes('admin')) return LANDING.admin;
-    if (n.includes('analyst')) return LANDING.analyst;
-    if (n.includes('agent')) return LANDING.agent;
-    if (n.includes('verif')) return LANDING.verifier;
-    return LANDING.client;
+  // Map a role NAME (e.g. "Platform Administrator") to the short key the app
+  // nav uses (admin/analyst/agent/verifier/client).
+  function shortRole(user){
+    const n = String((user && (user.role?.name || user.roleName || user.role)) || '').toLowerCase();
+    if (n.includes('admin')) return 'admin';
+    if (n.includes('analyst')) return 'analyst';
+    if (n.includes('agent')) return 'agent';
+    if (n.includes('verif')) return 'verifier';
+    return 'client';
   }
+  function hasRole(user){ return !!(user && (user.role?.name || user.roleName || user.role)); }
   function persistSession(token, user){
     localStorage.setItem('afribn_token', token);
     if (user) localStorage.setItem('afribn_user', JSON.stringify(user));
   }
   async function goAfterAuth(token, user, next){
     persistSession(token, user);
-    if (!user){
+    // The login response may omit the resolved role — fetch the authoritative
+    // /users/me so the correct role (and nav) is applied.
+    if (!hasRole(user)){
       try { user = await fetch('/api/users/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()).then(j=>j.data); persistSession(token, user); } catch {}
     }
-    localStorage.setItem('afribn_role', roleName(user));
-    location.href = next || landingFor(user);
+    const role = shortRole(user);
+    localStorage.setItem('afribn_role', role);
+    location.href = next || LANDING[role] || LANDING.client;
   }
 
   // --- Email/password login (real API call; no client-side passwords) ---
