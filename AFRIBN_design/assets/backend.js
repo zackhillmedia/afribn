@@ -1089,20 +1089,26 @@
   }
 
   async function initFeed() {
-    let feed = await API.get("/feed");
-    feed = feed.filter((item) => item.publishedIntelligenceId || item.stage === "PublishedIntelligence");
+    const all = (await API.get("/feed")).filter((item) => item.publishedIntelligenceId || item.stage === "PublishedIntelligence");
     const list = $(".feed-list") || $("#feedList") || $(".panel");
     if (!list) return;
+    let current = all;
+
+    // Populate the topic filter from the strategic topic catalog (Tier 1 / 2).
+    const fTopic = $("#fTopic");
+    const topics = await API.get("/topics").catch(() => []);
+    if (fTopic && topics.length) {
+      fTopic.innerHTML = `<option value="">All Topics</option>` + topics.map((t) => `<option value="${escapeAttr(t.slug)}">${escapeHtml(t.name)}</option>`).join("");
+    }
+
     const render = () => {
       const kw = ($("#kw")?.value || "").toLowerCase();
       const country = $("#fCountry")?.value || "All Countries";
-      const topic = $("#fTopic")?.value || "All Topics";
-      const filtered = feed.filter((item) => {
+      const filtered = current.filter((item) => {
         const category = item.sector || item.eventType || "Intelligence";
         const haystack = `${item.title} ${item.summary} ${item.country} ${category}`.toLowerCase();
         if (kw && !haystack.includes(kw)) return false;
         if (country !== "All Countries" && item.country !== country) return false;
-        if (topic !== "All Topics" && category !== topic) return false;
         return true;
       });
       list.innerHTML = filtered.length
@@ -1110,10 +1116,16 @@
         : `<div style="padding:48px;text-align:center;color:var(--ink-3)">No published intelligence matches your filters.</div>`;
       renderFeedSidebar(filtered);
     };
+    // Topic filtering uses the same term-matcher as the Topics page.
+    const applyTopic = async () => {
+      const slug = fTopic?.value;
+      current = slug ? ((await API.get(`/topics/${encodeURIComponent(slug)}`).catch(() => null))?.items || []) : all;
+      render();
+    };
     render();
     $("#kw")?.addEventListener("input", render);
     $("#fCountry")?.addEventListener("change", render);
-    $("#fTopic")?.addEventListener("change", render);
+    fTopic?.addEventListener("change", applyTopic);
     $("#liveSwitch")?.addEventListener("click", () => toast("Feed now shows verified published intelligence only", "ok"));
     $("#loadMore")?.addEventListener("click", () => toast("All available published intelligence is loaded", "ok"));
     $("#customize")?.addEventListener("click", () => toast("Feed preferences will apply to published intelligence only", "ok"));
