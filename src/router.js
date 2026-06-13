@@ -43,6 +43,7 @@ const { STRATEGIC_MARKETS } = require("./strategic-markets");
 const oauth = require("./oauth");
 const billing = require("./billing");
 const { topicsWithCounts, itemsForTopic } = require("./topics");
+const { seedStrategicMarketSources } = require("./seed-sources");
 
 // Routes reachable without authentication. "strategic-markets" is a static list
 // of public market names/flags used by the marketing site; everything else that
@@ -349,6 +350,10 @@ function createRouter(store) {
       }));
       const currentSource = store.get("sources", source.id);
       return sendJson(res, 201, { data: { ...currentSource, source: currentSource, assessment } });
+    }
+    if (req.method === "POST" && parts[1] === "seed-markets" && parts.length === 2) {
+      requirePermission(store, req, "sources:manage");
+      return sendJson(res, 201, { data: seedStrategicMarketSources(store, await readBody(req)) });
     }
     const id = parts[1];
     const source = store.get("sources", id);
