@@ -173,7 +173,6 @@
     ['globe', 'Country Intelligence', '/country', 'Intelligence', ALL],
     ['grid', 'Dashboards', '/dashboards', 'Intelligence', INTERNAL],
     ['file', 'Reports', '/reports', 'Intelligence', ALL],
-    ['trendUp', 'Topics', '/topics', 'Intelligence', ALL],
     ['policy', 'Policy Monitor', '/policy', 'Intelligence', INTERNAL],
     ['deal', 'Deal Tracker', '/deal', 'Intelligence', INTERNAL],
     ['calendar', 'Event Tracker', '/event', 'Intelligence', ALL],
